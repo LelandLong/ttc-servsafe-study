@@ -1,0 +1,19 @@
+{
+  "name": "Chef's Kitchen - ServSafe Study Aid",
+  "short_name": "Chef's Kitchen",
+  "description": "CUL 104 ServSafe exam study aid for Trident Technical College",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FFF8F0",
+  "theme_color": "#B91C1C",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "chef-idle.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["education", "food"]
+}
