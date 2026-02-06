@@ -2263,27 +2263,27 @@
       function NetworkStatus(props) {
         var status = props.status;
         if (status === 'connected') {
-          return e('div', {
+          return createElement('div', {
             className: 'fixed top-0 left-0 right-0 z-50 bg-green-500 text-white text-center py-1 text-xs font-medium flex items-center justify-center gap-2',
             style: { fontSize: '11px' }
           },
-            e('span', { className: 'inline-block w-2 h-2 bg-white rounded-full animate-pulse' }),
+            createElement('span', { className: 'inline-block w-2 h-2 bg-white rounded-full animate-pulse' }),
             'Live Cloud Data'
           );
         } else if (status === 'connecting') {
-          return e('div', {
+          return createElement('div', {
             className: 'fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-white text-center py-1 text-xs font-medium flex items-center justify-center gap-2',
             style: { fontSize: '11px' }
           },
-            e('span', { className: 'inline-block w-2 h-2 bg-white rounded-full animate-spin' }),
+            createElement('span', { className: 'inline-block w-2 h-2 bg-white rounded-full animate-spin' }),
             'Connecting to cloud...'
           );
         } else {
-          return e('div', {
+          return createElement('div', {
             className: 'fixed top-0 left-0 right-0 z-50 bg-gray-500 text-white text-center py-1 text-xs font-medium flex items-center justify-center gap-2',
             style: { fontSize: '11px' }
           },
-            e('span', { className: 'inline-block w-2 h-2 bg-orange-300 rounded-full' }),
+            createElement('span', { className: 'inline-block w-2 h-2 bg-orange-300 rounded-full' }),
             'Offline Mode - Using Local Data'
           );
         }
