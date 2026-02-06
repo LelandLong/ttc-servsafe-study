@@ -7,8 +7,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Convex Client for cloud database -->
-  <script src="https://unpkg.com/convex@1.17.0/dist/browser.bundle.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -46,18 +44,37 @@
       // Leland's Convex deployment - DO NOT CHANGE
       const CONVEX_URL = "https://good-alpaca-167.convex.cloud";
 
-      // Initialize Convex client if configured
-      var convexClient = null;
-      var useConvex = false;
-      if (CONVEX_URL && window.Convex) {
-        try {
-          convexClient = new window.Convex.ConvexHttpClient(CONVEX_URL);
-          useConvex = true;
-          console.log('Convex client initialized - using cloud database');
-        } catch (err) {
-          console.log('Convex initialization failed, using localStorage:', err.message);
-        }
+      // Use Convex if URL is configured
+      var useConvex = !!CONVEX_URL;
+
+      // Direct HTTP API calls to Convex (no SDK needed)
+      function convexQuery(functionName, args) {
+        return fetch(CONVEX_URL + '/api/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: functionName, args: args || {} })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.status === 'success') return data.value;
+          throw new Error(data.errorMessage || 'Query failed');
+        });
       }
+
+      function convexMutation(functionName, args) {
+        return fetch(CONVEX_URL + '/api/mutation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: functionName, args: args || {} })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.status === 'success') return data.value;
+          throw new Error(data.errorMessage || 'Mutation failed');
+        });
+      }
+
+      console.log('Convex configured - using cloud database at', CONVEX_URL);
 
       // Local storage key for admin changes - shared with index.html for LIVE updates
       const ADMIN_STORAGE_KEY = 'chefKitchenAdminQuestions';
@@ -134,7 +151,7 @@
 
       // Sync all questions to Convex (bulk update)
       function syncToConvex(questions) {
-        if (!useConvex || !convexClient) return;
+        if (!useConvex) return;
 
         // Convert app format to Convex format
         var convexQuestions = questions.map(function(q) {
@@ -150,7 +167,7 @@
           };
         });
 
-        convexClient.mutation("questions:bulkImport", { questions: convexQuestions })
+        convexMutation("questions:bulkImport", { questions: convexQuestions })
           .then(function(count) {
             console.log('Synced ' + count + ' questions to Convex cloud');
           })
@@ -161,12 +178,12 @@
 
       // Load questions from Convex (async)
       function loadFromConvex(callback, errorCallback) {
-        if (!useConvex || !convexClient) {
+        if (!useConvex) {
           callback(null);
           return;
         }
 
-        convexClient.query("questions:getAll")
+        convexQuery("questions:getAll")
           .then(function(convexQuestions) {
             if (convexQuestions && convexQuestions.length > 0) {
               var formatted = convexQuestions.map(function(q) {

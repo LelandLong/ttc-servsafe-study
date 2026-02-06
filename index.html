@@ -10,8 +10,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Convex Client for cloud database -->
-  <script src="https://unpkg.com/convex@1.17.0/dist/browser.bundle.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
@@ -353,7 +351,6 @@
 
       // ============ CONVEX SYNC (if configured) ============
       // This will update questions in the background once Convex responds
-      var convexClient = null;
       var convexStatusListeners = []; // Listeners for status changes
 
       function updateConvexStatus(status) {
@@ -370,52 +367,60 @@
         };
       }
 
-      if (CONVEX_URL && window.Convex) {
-        try {
-          convexClient = new window.Convex.ConvexHttpClient(CONVEX_URL);
-          // Fetch questions from Convex and update localStorage cache
-          convexClient.query("questions:getAll").then(function(convexQuestions) {
-            if (convexQuestions && convexQuestions.length > 0) {
-              // Convert Convex format to app format
-              var formatted = convexQuestions.map(function(q) {
-                return {
-                  id: q.questionId,
-                  question: q.question,
-                  options: q.options,
-                  correct: q.correct,
-                  hint: q.hint,
-                  explanation: q.explanation,
-                  category: q.category,
-                  examFocus: q.examFocus
-                };
-              });
-              // Cache in localStorage for offline/fast reload
-              localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(formatted));
-              // Update global questions
-              questionsDB = formatted;
-              liveQuestionsDB = formatted;
-              console.log('Synced ' + formatted.length + ' questions from Convex cloud');
-              updateConvexStatus('connected');
-            } else {
-              // Connected but empty - still counts as connected
-              updateConvexStatus('connected');
-            }
-          }).catch(function(err) {
-            console.log('Convex sync failed (using local data):', err.message);
-            updateConvexStatus('offline');
-          });
+      // Direct HTTP API call to Convex (no SDK needed)
+      function convexQuery(functionName, args) {
+        return fetch(CONVEX_URL + '/api/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: functionName, args: args || {} })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.status === 'success') return data.value;
+          throw new Error(data.errorMessage || 'Query failed');
+        });
+      }
 
-          convexClient.query("questions:getCategories").then(function(convexCategories) {
-            if (convexCategories && convexCategories.length > 0) {
-              localStorage.setItem(ADMIN_CATEGORIES_KEY, JSON.stringify(convexCategories));
-              categories = convexCategories;
-              liveCategories = convexCategories;
-            }
-          }).catch(function() {});
-        } catch (err) {
-          console.log('Convex client initialization failed:', err.message);
+      if (CONVEX_URL) {
+        // Fetch questions from Convex and update localStorage cache
+        convexQuery("questions:getAll").then(function(convexQuestions) {
+          if (convexQuestions && convexQuestions.length > 0) {
+            // Convert Convex format to app format
+            var formatted = convexQuestions.map(function(q) {
+              return {
+                id: q.questionId,
+                question: q.question,
+                options: q.options,
+                correct: q.correct,
+                hint: q.hint,
+                explanation: q.explanation,
+                category: q.category,
+                examFocus: q.examFocus
+              };
+            });
+            // Cache in localStorage for offline/fast reload
+            localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(formatted));
+            // Update global questions
+            questionsDB = formatted;
+            liveQuestionsDB = formatted;
+            console.log('Synced ' + formatted.length + ' questions from Convex cloud');
+            updateConvexStatus('connected');
+          } else {
+            // Connected but empty - still counts as connected
+            updateConvexStatus('connected');
+          }
+        }).catch(function(err) {
+          console.log('Convex sync failed (using local data):', err.message);
           updateConvexStatus('offline');
-        }
+        });
+
+        convexQuery("questions:getCategories").then(function(convexCategories) {
+          if (convexCategories && convexCategories.length > 0) {
+            localStorage.setItem(ADMIN_CATEGORIES_KEY, JSON.stringify(convexCategories));
+            categories = convexCategories;
+            liveCategories = convexCategories;
+          }
+        }).catch(function() {});
       } else {
         updateConvexStatus('offline');
       }
