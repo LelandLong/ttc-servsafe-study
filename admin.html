@@ -135,7 +135,7 @@
         }
 
         // Sync to Convex if configured
-        if (useConvex && convexClient) {
+        if (useConvex) {
           syncToConvex(questions);
         }
       }
@@ -955,7 +955,7 @@
 
         // Load from Convex on startup (if configured)
         useEffect(function() {
-          if (!useConvex || !convexClient) return;
+          if (!useConvex) return;
 
           loadFromConvex(
             function(convexQuestions) {
