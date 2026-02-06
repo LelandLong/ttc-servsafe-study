@@ -20,8 +20,44 @@
       --warm-red: #B91C1C;
       --copper: #B87333;
       --brown: #5D4037;
+      /* Light mode (default) */
+      --bg-primary: #FFF8F0;
+      --bg-secondary: #FFFFFF;
+      --bg-card: #FFFFFF;
+      --text-primary: #1F2937;
+      --text-secondary: #4B5563;
+      --text-muted: #6B7280;
+      --border-color: #E5E7EB;
+      --shadow-color: rgba(0,0,0,0.1);
     }
-    body { font-family: 'Nunito', sans-serif; }
+    [data-theme="dark"] {
+      --bg-primary: #1a1a2e;
+      --bg-secondary: #16213e;
+      --bg-card: #1f2937;
+      --text-primary: #F3F4F6;
+      --text-secondary: #D1D5DB;
+      --text-muted: #9CA3AF;
+      --border-color: #374151;
+      --shadow-color: rgba(0,0,0,0.4);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg-primary: #1a1a2e;
+        --bg-secondary: #16213e;
+        --bg-card: #1f2937;
+        --text-primary: #F3F4F6;
+        --text-secondary: #D1D5DB;
+        --text-muted: #9CA3AF;
+        --border-color: #374151;
+        --shadow-color: rgba(0,0,0,0.4);
+      }
+    }
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
     h1, h2, h3, .brand { font-family: 'Fredoka', sans-serif; }
 
     @keyframes gentleFloat {
@@ -52,6 +88,81 @@
       100% { opacity: 0; transform: translateY(-30px) scale(1.2); }
     }
 
+    /* === FANCY HOME SCREEN ANIMATIONS === */
+    @keyframes heroFloat {
+      0%, 100% { transform: translateY(0) rotate(-1deg); }
+      25% { transform: translateY(-12px) rotate(0.5deg); }
+      50% { transform: translateY(-6px) rotate(1deg); }
+      75% { transform: translateY(-14px) rotate(0deg); }
+    }
+    @keyframes glowPulse {
+      0%, 100% {
+        box-shadow: 0 0 15px 5px rgba(249, 115, 22, 0.5), 0 0 30px 10px rgba(249, 115, 22, 0.25);
+      }
+      50% {
+        box-shadow: 0 0 25px 8px rgba(249, 115, 22, 0.7), 0 0 50px 15px rgba(249, 115, 22, 0.35);
+      }
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0; transform: scale(0.3); }
+      50% { opacity: 1; transform: scale(1.3); }
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(10px) scale(0.7); opacity: 0; }
+      20% { opacity: 1; transform: translateY(0) scale(1); }
+      80% { opacity: 1; }
+      100% { transform: translateY(-100px) scale(0.9); opacity: 0; }
+    }
+    @keyframes shadowBob {
+      0%, 100% { transform: translateX(-50%) scaleX(1) scaleY(1); opacity: 0.6; }
+      25% { transform: translateX(-50%) scaleX(0.92) scaleY(0.9); opacity: 0.45; }
+      50% { transform: translateX(-50%) scaleX(0.85) scaleY(0.8); opacity: 0.3; }
+      75% { transform: translateX(-50%) scaleX(0.9) scaleY(0.85); opacity: 0.4; }
+    }
+
+    .chef-hero {
+      /* animation now applied via .chef-hero-glow img */
+    }
+    .chef-hero-container {
+      position: relative;
+      padding: 30px 20px 40px 20px;
+      overflow: visible;
+    }
+    .chef-hero-glow {
+      display: inline-block;
+      position: relative;
+      z-index: 2;
+    }
+    .chef-hero-glow img {
+      animation: heroFloat 4s ease-in-out infinite, glowPulse 3s ease-in-out infinite;
+    }
+    .chef-hero-shadow {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 25px;
+      background: radial-gradient(ellipse, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 40%, transparent 70%);
+      animation: shadowBob 4s ease-in-out infinite;
+      border-radius: 50%;
+      z-index: 1;
+    }
+    .sparkle-particle {
+      position: absolute;
+      pointer-events: none;
+      animation: twinkle 2s ease-in-out infinite;
+      z-index: 10;
+      font-size: 1.5rem;
+    }
+    .float-icon {
+      position: absolute;
+      pointer-events: none;
+      animation: floatUp 5s ease-out infinite;
+      z-index: 3;
+      font-size: 1.75rem;
+    }
+
     .chef-idle { animation: gentleFloat 4s ease-in-out infinite; }
     .chef-celebrate { animation: celebrate 0.6s ease-in-out infinite; }
     .chef-encourage { animation: gentlePulse 2s ease-in-out infinite; }
@@ -72,7 +183,7 @@
     }
 
     .kitchen-bg {
-      background-color: var(--warm-cream);
+      background-color: var(--bg-primary);
       background-image:
         linear-gradient(rgba(255, 248, 240, 0.4), rgba(255, 248, 240, 0.5)),
         url('assets/kitchen-bg.jpg');
@@ -80,26 +191,163 @@
       background-position: center;
       background-attachment: fixed;
       background-repeat: no-repeat;
+      transition: background-color 0.3s ease;
+    }
+    [data-theme="dark"] .kitchen-bg,
+    .kitchen-bg.dark-mode {
+      background-image:
+        linear-gradient(rgba(26, 26, 46, 0.85), rgba(22, 33, 62, 0.9)),
+        url('assets/kitchen-bg.jpg');
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .kitchen-bg {
+        background-image:
+          linear-gradient(rgba(26, 26, 46, 0.85), rgba(22, 33, 62, 0.9)),
+          url('assets/kitchen-bg.jpg');
+      }
     }
 
     .progress-ring {
       transition: stroke-dashoffset 0.5s ease;
+    }
+
+    /* === DARK MODE UTILITY CLASSES === */
+    .card-bg {
+      background-color: var(--bg-card);
+      transition: background-color 0.3s ease;
+    }
+    .text-primary {
+      color: var(--text-primary);
+    }
+    .text-secondary {
+      color: var(--text-secondary);
+    }
+    .text-muted {
+      color: var(--text-muted);
+    }
+    .border-themed {
+      border-color: var(--border-color);
+    }
+    /* Special card styles for answer buttons */
+    .answer-card-default {
+      background-color: #FFFBEB;
+      border-color: #FDE68A;
+    }
+    [data-theme="dark"] .answer-card-default {
+      background-color: #292524;
+      border-color: #57534e;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .answer-card-default {
+        background-color: #292524;
+        border-color: #57534e;
+      }
+    }
+    .answer-card-default:hover:not(:disabled) {
+      background-color: #FFF7ED;
+      border-color: #FB923C;
+    }
+    [data-theme="dark"] .answer-card-default:hover:not(:disabled) {
+      background-color: #44403c;
+      border-color: #F97316;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .answer-card-default:hover:not(:disabled) {
+        background-color: #44403c;
+        border-color: #F97316;
+      }
+    }
+    /* Hint section dark mode */
+    .hint-section {
+      background-color: #FDF4FF;
+      border-color: #FDE047;
+    }
+    [data-theme="dark"] .hint-section {
+      background-color: #422006;
+      border-color: #854d0e;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .hint-section {
+        background-color: #422006;
+        border-color: #854d0e;
+      }
+    }
+    /* Hint tracker dark mode */
+    .hint-tracker {
+      background: linear-gradient(to right, #FEFCE8, #FEF3C7);
+    }
+    [data-theme="dark"] .hint-tracker {
+      background: linear-gradient(to right, #1c1917, #292524);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .hint-tracker {
+        background: linear-gradient(to right, #1c1917, #292524);
+      }
+    }
+    /* Gray bg for disabled answers */
+    .answer-disabled {
+      background-color: #F9FAFB;
+      border-color: #E5E7EB;
+      color: #9CA3AF;
+    }
+    [data-theme="dark"] .answer-disabled {
+      background-color: #1f2937;
+      border-color: #374151;
+      color: #6B7280;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .answer-disabled {
+        background-color: #1f2937;
+        border-color: #374151;
+        color: #6B7280;
+      }
     }
   </style>
 </head>
 <body class="kitchen-bg min-h-screen">
   <div id="root"></div>
 
+  <!-- Questions Database - Default file and original backup for reset functionality -->
+  <script src="questions.js"></script>
+  <script src="questions-original.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const useState = React.useState;
       const useEffect = React.useEffect;
       const createElement = React.createElement;
 
-      // ============ QUESTIONS DATABASE ============
-      // Sources: Quiz #1, Study Guide, PowerPoints, Class Notes from Chef Carmel
-      // examFocus: true = Professor emphasized for exam, false = basic knowledge
-      const questionsDB = [
+      // ============ LIVE QUESTIONS LOADING ============
+      // Check localStorage first for admin edits, fall back to questions.js
+      // This allows professor's edits to be immediately live without file replacement
+      const ADMIN_STORAGE_KEY = 'chefKitchenAdminQuestions';
+      const ADMIN_CATEGORIES_KEY = 'chefKitchenAdminCategories';
+
+      var liveQuestionsDB;
+      var liveCategories;
+
+      try {
+        var savedQuestions = localStorage.getItem(ADMIN_STORAGE_KEY);
+        var savedCategories = localStorage.getItem(ADMIN_CATEGORIES_KEY);
+        if (savedQuestions) {
+          liveQuestionsDB = JSON.parse(savedQuestions);
+          liveCategories = savedCategories ? JSON.parse(savedCategories) : categories;
+        }
+      } catch (e) {
+        console.log('Could not load from localStorage, using defaults');
+      }
+
+      // Use live data if available, otherwise use questions.js defaults
+      if (!liveQuestionsDB || liveQuestionsDB.length === 0) {
+        liveQuestionsDB = questionsDB;
+        liveCategories = categories;
+      }
+
+      // Replace the global references so the rest of the app uses live data
+      questionsDB = liveQuestionsDB;
+      categories = liveCategories;
+
+      /* QUESTIONS DATABASE REMOVED - Now loaded from questions.js with localStorage override
+      const questionsDB_original = [
         // ========== QUIZ #1 ACTUAL QUESTIONS ==========
         {
           id: 1,
@@ -1195,9 +1443,12 @@
           examFocus: true
         }
       ];
+      END OF QUESTIONS DATABASE */
 
-      // Get unique categories
-      const categories = [...new Set(questionsDB.map(q => q.category))];
+      // questionsDB and categories are now:
+      // 1. Loaded from localStorage if admin has made edits (LIVE changes)
+      // 2. Fall back to questions.js if no localStorage data
+      // Professor can edit questions at /admin.html and changes appear immediately!
 
       // ============ STORAGE HELPERS ============
       const STORAGE_KEY = 'chefKitchenProgress';
@@ -1313,6 +1564,57 @@
         );
       }
 
+      // Hero Chef for Home Screen - with fancy animations!
+      function HeroChef(props) {
+        const [particles, setParticles] = useState([]);
+
+        // Generate floating particles on mount
+        useEffect(function() {
+          var newParticles = [];
+          // Floating food/cooking icons - randomized positions and staggered vertical starts
+          var foodEmojis = ['🍳', '🥄', '🧂', '🌿', '🔥', '🧈', '🍅', '🧄', '🥕', '🌶️', '🥗', '🍴'];
+          for (var j = 0; j < 8; j++) {
+            var randomEmoji = foodEmojis[Math.floor(Math.random() * foodEmojis.length)];
+            newParticles.push({
+              id: 'float-' + j,
+              type: 'float',
+              emoji: randomEmoji,
+              left: (-10 + Math.random() * 110) + '%',
+              bottom: (10 + Math.random() * 50) + 'px',
+              delay: (Math.random() * 5) + 's',
+              duration: (4 + Math.random() * 3) + 's'
+            });
+          }
+          setParticles(newParticles);
+        }, []);
+
+        return createElement('div', { className: 'chef-hero-container' },
+          // Floating food icons behind chef
+          particles.filter(function(p) { return p.type === 'float'; }).map(function(p) {
+            return createElement('span', {
+              key: p.id,
+              className: 'float-icon',
+              style: {
+                left: p.left,
+                bottom: p.bottom,
+                animationDelay: p.delay,
+                animationDuration: p.duration
+              }
+            }, p.emoji);
+          }),
+          // Shadow underneath chef
+          createElement('div', { className: 'chef-hero-shadow' }),
+          // Main chef image with glow effect
+          createElement('div', { className: 'chef-hero-glow' },
+            createElement('img', {
+              src: 'assets/chef-greeting.jpg',
+              alt: 'Chef Whiskers',
+              className: 'w-36 md:w-44 chef-hero rounded-2xl'
+            })
+          )
+        );
+      }
+
       // Category to Chef Image mapping
       function getCategoryImage(category) {
         const categoryImages = {
@@ -1393,17 +1695,17 @@
           'Food Defense': '🛡️'
         }[cat] || '📋';
 
-        return createElement('div', { className: 'bg-white rounded-xl p-3 border-2 border-gray-100 flex items-center gap-3' },
+        return createElement('div', { className: 'card-bg rounded-xl p-3 border-2 border-themed flex items-center gap-3' },
           createElement('div', { className: 'relative' },
             createElement(ProgressRing, { percentage: percentage, size: 50, strokeWidth: 5 }),
-            createElement('div', { className: 'absolute inset-0 flex items-center justify-center text-xs font-bold' }, percentage + '%')
+            createElement('div', { className: 'absolute inset-0 flex items-center justify-center text-xs font-bold text-primary' }, percentage + '%')
           ),
           createElement('div', { className: 'flex-1 min-w-0' },
             createElement('div', { className: 'flex items-center gap-1' },
               createElement('span', null, icon),
-              createElement('span', { className: 'font-semibold text-sm text-gray-800 truncate' }, cat)
+              createElement('span', { className: 'font-semibold text-sm text-primary truncate' }, cat)
             ),
-            createElement('div', { className: 'text-xs text-gray-500' }, stats.correct + '/' + stats.total + ' correct')
+            createElement('div', { className: 'text-xs text-muted' }, stats.correct + '/' + stats.total + ' correct')
           )
         );
       }
@@ -1415,6 +1717,8 @@
         const progress = props.progress;
         const onSelectMode = props.onSelectMode;
         const onResetProgress = props.onResetProgress;
+        const theme = props.theme;
+        const onCycleTheme = props.onCycleTheme;
         const totalPercentage = progress.totalAnswered > 0
           ? Math.round((progress.totalCorrect / progress.totalAnswered) * 100)
           : 0;
@@ -1426,27 +1730,44 @@
           return (stats.correct / stats.total) < 0.7;
         });
 
+        // Theme icons and labels
+        const themeIcon = theme === 'dark' ? '🌙' : theme === 'light' ? '☀️' : '🖥️';
+        const themeLabel = theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'Auto';
+
         return createElement('div', { className: 'min-h-screen' },
           // Header
           createElement('header', { className: 'bg-gradient-to-r from-red-700 via-red-600 to-orange-600 text-white p-6 shadow-lg' },
-            createElement('div', { className: 'max-w-4xl mx-auto text-center' },
-              createElement('div', { className: 'text-5xl mb-2' }, '🍳'),
-              createElement('h1', { className: 'brand text-3xl font-bold' }, "Chef's Kitchen"),
-              createElement('p', { className: 'text-orange-200' }, 'CUL 104 • ServSafe Study Aid')
+            createElement('div', { className: 'max-w-4xl mx-auto' },
+              // Theme toggle in top right
+              createElement('div', { className: 'flex justify-end mb-2' },
+                createElement('button', {
+                  onClick: onCycleTheme,
+                  className: 'flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-full text-sm transition-colors',
+                  title: 'Toggle theme: ' + themeLabel
+                },
+                  createElement('span', null, themeIcon),
+                  createElement('span', { className: 'hidden sm:inline' }, themeLabel)
+                )
+              ),
+              createElement('div', { className: 'text-center' },
+                createElement('div', { className: 'text-5xl mb-2' }, '🍳'),
+                createElement('h1', { className: 'brand text-3xl font-bold' }, "Chef's Kitchen"),
+                createElement('p', { className: 'text-orange-200' }, 'CUL 104 • ServSafe Study Aid')
+              )
             )
           ),
 
           // Main Content
           createElement('main', { className: 'max-w-4xl mx-auto p-6' },
             // Chef and overall stats
-            createElement('div', { className: 'bg-white rounded-2xl shadow-xl p-6 mb-6 border-4 border-amber-200' },
+            createElement('div', { className: 'card-bg rounded-2xl shadow-xl p-6 mb-6 border-4 border-amber-200' },
               createElement('div', { className: 'flex flex-col md:flex-row items-center gap-6' },
                 createElement('div', { className: 'flex-shrink-0' },
-                  createElement(ChefCharacter, { state: 'greeting', size: 'small' })
+                  createElement(HeroChef, null)
                 ),
                 createElement('div', { className: 'flex-1 text-center md:text-left' },
-                  createElement('h2', { className: 'text-2xl font-bold text-gray-800' }, 'Welcome back, Chef!'),
-                  createElement('p', { className: 'text-gray-600 mt-1' },
+                  createElement('h2', { className: 'text-2xl font-bold text-primary' }, 'Welcome back, Chef!'),
+                  createElement('p', { className: 'text-secondary mt-1' },
                     progress.totalAnswered === 0
                       ? "Ready to start your food safety training?"
                       : "You've answered " + progress.totalAnswered + " questions with " + totalPercentage + "% accuracy."
@@ -1457,7 +1778,7 @@
                       createElement('div', { className: 'absolute inset-0 flex items-center justify-center text-sm font-bold' }, totalPercentage + '%')
                     ),
                     createElement('div', { className: 'text-left' },
-                      createElement('div', { className: 'text-sm text-gray-500' }, 'Overall Score'),
+                      createElement('div', { className: 'text-sm text-muted' }, 'Overall Score'),
                       createElement('div', { className: 'font-bold text-lg' }, progress.totalCorrect + '/' + progress.totalAnswered)
                     )
                   )
@@ -1466,35 +1787,35 @@
             ),
 
             // Hint Statistics (only show if they've answered questions)
-            progress.totalAnswered > 0 && createElement('div', { className: 'bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl shadow-lg p-5 mb-6 border-2 border-yellow-300' },
+            progress.totalAnswered > 0 && createElement('div', { className: 'hint-tracker rounded-2xl shadow-lg p-5 mb-6 border-2 border-yellow-300' },
               createElement('div', { className: 'flex items-center gap-3 mb-3' },
                 createElement('span', { className: 'text-2xl' }, '💡'),
-                createElement('h3', { className: 'font-bold text-gray-800' }, 'Hint Tracker')
+                createElement('h3', { className: 'font-bold text-primary' }, 'Hint Tracker')
               ),
               createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4' },
-                createElement('div', { className: 'text-center p-3 bg-white rounded-xl' },
+                createElement('div', { className: 'text-center p-3 card-bg rounded-xl' },
                   createElement('div', { className: 'text-2xl font-bold text-yellow-600' },
                     progress.correctWithoutHint || 0
                   ),
-                  createElement('div', { className: 'text-xs text-gray-500' }, 'Correct Without Hints')
+                  createElement('div', { className: 'text-xs text-muted' }, 'Correct Without Hints')
                 ),
-                createElement('div', { className: 'text-center p-3 bg-white rounded-xl' },
+                createElement('div', { className: 'text-center p-3 card-bg rounded-xl' },
                   createElement('div', { className: 'text-2xl font-bold text-amber-600' },
                     progress.hintsUsed || 0
                   ),
-                  createElement('div', { className: 'text-xs text-gray-500' }, 'Hints Used')
+                  createElement('div', { className: 'text-xs text-muted' }, 'Hints Used')
                 ),
-                createElement('div', { className: 'text-center p-3 bg-white rounded-xl' },
+                createElement('div', { className: 'text-center p-3 card-bg rounded-xl' },
                   createElement('div', { className: 'text-2xl font-bold text-orange-600' },
                     progress.currentNoHintStreak || 0
                   ),
-                  createElement('div', { className: 'text-xs text-gray-500' }, 'Current Streak')
+                  createElement('div', { className: 'text-xs text-muted' }, 'Current Streak')
                 ),
-                createElement('div', { className: 'text-center p-3 bg-white rounded-xl' },
+                createElement('div', { className: 'text-center p-3 card-bg rounded-xl' },
                   createElement('div', { className: 'text-2xl font-bold text-red-600' },
                     '🔥 ' + (progress.bestNoHintStreak || 0)
                   ),
-                  createElement('div', { className: 'text-xs text-gray-500' }, 'Best Streak')
+                  createElement('div', { className: 'text-xs text-muted' }, 'Best Streak')
                 )
               ),
               // Encouragement message based on performance
@@ -1503,12 +1824,12 @@
                   ? createElement('span', { className: 'text-green-600 font-medium' }, '🌟 Amazing! No hints used yet - true chef confidence!')
                   : progress.correctWithoutHint > progress.hintsUsed
                     ? createElement('span', { className: 'text-amber-600' }, '👨‍🍳 Great self-reliance! Keep trusting your knowledge.')
-                    : createElement('span', { className: 'text-gray-600' }, '💪 Hints help you learn - try answering without them to test yourself!')
+                    : createElement('span', { className: 'text-secondary' }, '💪 Hints help you learn - try answering without them to test yourself!')
               )
             ),
 
             // Study Mode Selection
-            createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-4' }, '📚 Choose Study Mode'),
+            createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '📚 Choose Study Mode'),
             createElement('div', { className: 'grid md:grid-cols-2 gap-4 mb-6' },
               // Exam Focus - RECOMMENDED
               createElement('button', {
@@ -1517,10 +1838,10 @@
               },
                 createElement('div', { className: 'flex items-center gap-3 mb-2' },
                   createElement('span', { className: 'text-3xl' }, '⭐'),
-                  createElement('span', { className: 'font-bold text-lg text-gray-800' }, 'Exam Focus'),
+                  createElement('span', { className: 'font-bold text-lg text-primary' }, 'Exam Focus'),
                   createElement('span', { className: 'text-xs bg-red-500 text-white px-2 py-0.5 rounded-full ml-2' }, 'RECOMMENDED')
                 ),
-                createElement('p', { className: 'text-gray-600 text-sm' },
+                createElement('p', { className: 'text-secondary text-sm' },
                   questionsDB.filter(function(q) { return q.examFocus; }).length + ' questions Chef Carmel emphasized for the test.'
                 )
               ),
@@ -1528,27 +1849,27 @@
               // All Questions
               createElement('button', {
                 onClick: function() { onSelectMode('all'); },
-                className: 'mode-card bg-white rounded-xl p-5 border-2 border-amber-200 text-left hover:border-orange-400'
+                className: 'mode-card card-bg rounded-xl p-5 border-2 border-amber-200 text-left hover:border-orange-400'
               },
                 createElement('div', { className: 'flex items-center gap-3 mb-2' },
                   createElement('span', { className: 'text-3xl' }, '📚'),
-                  createElement('span', { className: 'font-bold text-lg text-gray-800' }, 'Full Coverage')
+                  createElement('span', { className: 'font-bold text-lg text-primary' }, 'Full Coverage')
                 ),
-                createElement('p', { className: 'text-gray-600 text-sm' }, 'All ' + questionsDB.length + ' questions including basic knowledge.')
+                createElement('p', { className: 'text-secondary text-sm' }, 'All ' + questionsDB.length + ' questions including basic knowledge.')
               ),
 
               // Weak Areas
               createElement('button', {
                 onClick: function() { onSelectMode('weak'); },
                 disabled: weakCategories.length === 0,
-                className: 'mode-card bg-white rounded-xl p-5 border-2 text-left ' +
-                  (weakCategories.length > 0 ? 'border-red-200 hover:border-red-400' : 'border-gray-200 opacity-50 cursor-not-allowed')
+                className: 'mode-card card-bg rounded-xl p-5 border-2 text-left ' +
+                  (weakCategories.length > 0 ? 'border-red-200 hover:border-red-400' : 'border-themed opacity-50 cursor-not-allowed')
               },
                 createElement('div', { className: 'flex items-center gap-3 mb-2' },
                   createElement('span', { className: 'text-3xl' }, '🔥'),
-                  createElement('span', { className: 'font-bold text-lg text-gray-800' }, 'Weak Areas')
+                  createElement('span', { className: 'font-bold text-lg text-primary' }, 'Weak Areas')
                 ),
-                createElement('p', { className: 'text-gray-600 text-sm' },
+                createElement('p', { className: 'text-secondary text-sm' },
                   weakCategories.length > 0
                     ? 'Focus on ' + weakCategories.length + ' categories below 70%.'
                     : 'No weak areas yet! Keep practicing.'
@@ -1558,20 +1879,20 @@
               // Basic Knowledge Only
               createElement('button', {
                 onClick: function() { onSelectMode('basicOnly'); },
-                className: 'mode-card bg-white rounded-xl p-5 border-2 border-gray-200 text-left hover:border-gray-400'
+                className: 'mode-card card-bg rounded-xl p-5 border-2 border-themed text-left hover:border-amber-400'
               },
                 createElement('div', { className: 'flex items-center gap-3 mb-2' },
                   createElement('span', { className: 'text-3xl' }, '📖'),
-                  createElement('span', { className: 'font-bold text-lg text-gray-800' }, 'Basic Knowledge')
+                  createElement('span', { className: 'font-bold text-lg text-primary' }, 'Basic Knowledge')
                 ),
-                createElement('p', { className: 'text-gray-600 text-sm' },
+                createElement('p', { className: 'text-secondary text-sm' },
                   questionsDB.filter(function(q) { return !q.examFocus; }).length + ' foundational questions for deeper understanding.'
                 )
               )
             ),
 
             // Category Selection
-            createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-4' }, '📂 Study by Category'),
+            createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '📂 Study by Category'),
             createElement('div', { className: 'grid grid-cols-2 md:grid-cols-3 gap-3 mb-6' },
               categories.map(function(cat) {
                 const stats = progress.categoryStats[cat] || { correct: 0, total: 0 };
@@ -1590,11 +1911,11 @@
                 return createElement('button', {
                   key: cat,
                   onClick: function() { onSelectMode('category', cat); },
-                  className: 'mode-card bg-white rounded-xl p-4 border-2 border-gray-200 text-left hover:border-amber-400'
+                  className: 'mode-card card-bg rounded-xl p-4 border-2 border-themed text-left hover:border-amber-400'
                 },
                   createElement('div', { className: 'text-2xl mb-1' }, icon),
-                  createElement('div', { className: 'font-semibold text-sm text-gray-800 truncate' }, cat),
-                  createElement('div', { className: 'text-xs text-gray-500' }, count + ' questions'),
+                  createElement('div', { className: 'font-semibold text-sm text-primary truncate' }, cat),
+                  createElement('div', { className: 'text-xs text-muted' }, count + ' questions'),
                   stats.total > 0 && createElement('div', { className: 'text-xs mt-1 ' + (stats.correct / stats.total >= 0.7 ? 'text-green-600' : 'text-orange-600') },
                     Math.round((stats.correct / stats.total) * 100) + '% mastery'
                   )
@@ -1604,7 +1925,7 @@
 
             // Category Progress Overview
             progress.totalAnswered > 0 && createElement('div', null,
-              createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-4' }, '📊 Your Progress'),
+              createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '📊 Your Progress'),
               createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-3 mb-6' },
                 categories.map(function(cat) {
                   return createElement(CategoryStatsCard, {
@@ -1620,13 +1941,13 @@
             progress.totalAnswered > 0 && createElement('div', { className: 'text-center' },
               createElement('button', {
                 onClick: onResetProgress,
-                className: 'text-gray-500 hover:text-red-600 text-sm underline'
+                className: 'text-muted hover:text-red-600 text-sm underline'
               }, '🗑️ Reset All Progress')
             ),
 
             // Footer
             createElement('footer', { className: 'mt-8 text-center' },
-              createElement('p', { className: 'text-gray-500 text-sm' }, '🏫 CUL 104 • Trident Technical College • Charleston, SC')
+              createElement('p', { className: 'text-muted text-sm' }, '🏫 CUL 104 • Trident Technical College • Charleston, SC')
             )
           )
         );
@@ -1687,9 +2008,9 @@
             setSessionScore(function(p) { return p + 1; });
             setChefState('celebrate');
           } else {
-            // Show sick/spoiled image first, then transition to encourage
+            // Show sick/spoiled image longer, then transition to encourage
             setChefState(currentQuestion.category === 'Foodborne Illness' ? 'spoiled' : 'sick');
-            setTimeout(function() { setChefState('encourage'); }, 1500);
+            setTimeout(function() { setChefState('encourage'); }, 3500);
           }
 
           onAnswer(currentQuestion, isCorrect, usedHint);
@@ -1727,10 +2048,10 @@
             } else if (index === selectedAnswer) {
               btnClass += 'bg-red-100 border-red-500 text-red-800';
             } else {
-              btnClass += 'bg-gray-50 border-gray-200 text-gray-400';
+              btnClass += 'answer-disabled';
             }
           } else {
-            btnClass += 'bg-amber-50 border-amber-200 hover:border-orange-400 hover:bg-orange-50 text-gray-700 cursor-pointer';
+            btnClass += 'answer-card-default text-secondary cursor-pointer';
           }
 
           return createElement('button', {
@@ -1739,7 +2060,7 @@
             disabled: showResult,
             className: btnClass
           },
-            createElement('span', { className: 'w-8 h-8 rounded-full bg-white border-2 border-current flex items-center justify-center font-bold text-sm flex-shrink-0' },
+            createElement('span', { className: 'w-8 h-8 rounded-full card-bg border-2 border-current flex items-center justify-center font-bold text-sm flex-shrink-0' },
               String.fromCharCode(65 + index)
             ),
             createElement('span', { className: 'flex-1' }, option),
@@ -1776,14 +2097,14 @@
 
               // Left - Chef
               createElement('div', { className: 'md:col-span-1' },
-                createElement('div', { className: 'bg-white rounded-2xl shadow-xl p-4 border-4 border-amber-200' },
+                createElement('div', { className: 'card-bg rounded-2xl shadow-xl p-4 border-4 border-amber-200' },
                   createElement(ChefCharacter, { state: chefState }),
-                  createElement('h3', { className: 'text-center font-bold text-lg text-gray-800 mt-3' }, 'Chef Whiskers'),
-                  createElement('div', { className: 'bg-amber-50 border-2 border-amber-200 rounded-xl p-3 mt-3' },
-                    createElement('p', { className: 'text-gray-700 text-center text-sm italic' }, getSpeechText())
+                  createElement('h3', { className: 'text-center font-bold text-lg text-primary mt-3' }, 'Chef Whiskers'),
+                  createElement('div', { className: 'hint-section border-2 rounded-xl p-3 mt-3' },
+                    createElement('p', { className: 'text-secondary text-center text-sm italic' }, getSpeechText())
                   ),
                   createElement('div', { className: 'mt-4 text-center' },
-                    createElement('div', { className: 'text-sm text-gray-500' }, 'Session Score'),
+                    createElement('div', { className: 'text-sm text-muted' }, 'Session Score'),
                     createElement('div', { className: 'text-xl font-bold text-amber-700' }, sessionScore + '/' + sessionAnswered)
                   )
                 )
@@ -1791,7 +2112,7 @@
 
               // Right - Quiz
               createElement('div', { className: 'md:col-span-2' },
-                createElement('div', { className: 'bg-white rounded-2xl shadow-xl overflow-hidden border-4 border-amber-200' },
+                createElement('div', { className: 'card-bg rounded-2xl shadow-xl overflow-hidden border-4 border-amber-200' },
                   // Category header
                   createElement('div', { className: 'bg-gradient-to-r from-amber-500 to-orange-500 p-4' },
                     createElement('span', { className: 'bg-white/20 text-white px-3 py-1 rounded-full text-sm font-medium' }, currentQuestion.category)
@@ -1799,7 +2120,7 @@
 
                   // Question
                   createElement('div', { className: 'p-6' },
-                    createElement('h2', { className: 'text-xl font-bold text-gray-800 mb-6' }, currentQuestion.question),
+                    createElement('h2', { className: 'text-xl font-bold text-primary mb-6' }, currentQuestion.question),
                     createElement('div', { className: 'space-y-3' }, answerButtons),
 
                     // Hint
@@ -1810,7 +2131,7 @@
                           className: 'text-orange-600 hover:text-orange-700 text-sm flex items-center gap-2'
                         }, createElement('span', null, '💡'), createElement('span', null, 'Need a hint?')
                         ) :
-                        createElement('div', { className: 'bg-yellow-50 border-2 border-yellow-300 rounded-xl p-4' },
+                        createElement('div', { className: 'hint-section border-2 rounded-xl p-4' },
                           createElement('p', { className: 'text-yellow-700 text-sm italic' }, '📝 ' + currentQuestion.hint)
                         )
                     ),
@@ -1841,11 +2162,46 @@
       }
 
       // ============ MAIN APP ============
+      // Theme management
+      const THEME_KEY = 'chefKitchenTheme';
+      function getInitialTheme() {
+        try {
+          var saved = localStorage.getItem(THEME_KEY);
+          if (saved) return saved;
+        } catch (e) {}
+        return 'system';
+      }
+      function applyTheme(theme) {
+        var root = document.documentElement;
+        if (theme === 'system') {
+          root.removeAttribute('data-theme');
+        } else {
+          root.setAttribute('data-theme', theme);
+        }
+      }
+
       function App() {
         const [screen, setScreen] = useState('home');
         const [progress, setProgress] = useState(loadProgress);
         const [quizQuestions, setQuizQuestions] = useState([]);
         const [modeName, setModeName] = useState('');
+        const [theme, setTheme] = useState(getInitialTheme);
+
+        // Apply theme on mount and when it changes
+        useEffect(function() {
+          applyTheme(theme);
+          try {
+            localStorage.setItem(THEME_KEY, theme);
+          } catch (e) {}
+        }, [theme]);
+
+        function cycleTheme() {
+          setTheme(function(current) {
+            if (current === 'system') return 'light';
+            if (current === 'light') return 'dark';
+            return 'system';
+          });
+        }
 
         function handleSelectMode(mode, category) {
           var filtered = questionsDB;
@@ -1951,7 +2307,9 @@
         return createElement(HomeScreen, {
           progress: progress,
           onSelectMode: handleSelectMode,
-          onResetProgress: handleResetProgress
+          onResetProgress: handleResetProgress,
+          theme: theme,
+          onCycleTheme: cycleTheme
         });
       }
 

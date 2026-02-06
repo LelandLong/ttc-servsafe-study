@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | Chef's Kitchen Question Manager</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .modal-overlay {
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+    .question-row:hover { background-color: #f8fafc; }
+    .category-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div id="root"></div>
+
+  <!-- Load questions database and original backup for reset functionality -->
+  <script src="questions.js"></script>
+  <script src="questions-original.js"></script>
+
+  <script>
+    (function() {
+      const useState = React.useState;
+      const useEffect = React.useEffect;
+      const createElement = React.createElement;
+      const e = createElement;
+
+      // Local storage key for admin changes - shared with index.html for LIVE updates
+      const ADMIN_STORAGE_KEY = 'chefKitchenAdminQuestions';
+      const ADMIN_CATEGORIES_KEY = 'chefKitchenAdminCategories';
+
+      // Check if user has made any edits (localStorage has data)
+      function hasLocalEdits() {
+        try {
+          return localStorage.getItem(ADMIN_STORAGE_KEY) !== null;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      // Load questions - check localStorage first for admin edits, fall back to questions.js
+      function loadQuestions() {
+        try {
+          const saved = localStorage.getItem(ADMIN_STORAGE_KEY);
+          if (saved) {
+            return JSON.parse(saved);
+          }
+        } catch (err) {
+          console.log('Could not load saved questions:', err);
+        }
+        // Fall back to questions.js data
+        return typeof questionsDB !== 'undefined' ? [...questionsDB] : [];
+      }
+
+      // Load original questions from backup file (for reset functionality)
+      function loadOriginalQuestions() {
+        return typeof originalQuestionsDB !== 'undefined' ? [...originalQuestionsDB] : [];
+      }
+
+      function loadOriginalCategories() {
+        return typeof originalCategories !== 'undefined' ? [...originalCategories] : [];
+      }
+
+      // Load categories
+      function loadCategories() {
+        try {
+          const saved = localStorage.getItem(ADMIN_CATEGORIES_KEY);
+          if (saved) {
+            return JSON.parse(saved);
+          }
+        } catch (err) {
+          console.log('Could not load saved categories:', err);
+        }
+        // Fall back to questions.js categories
+        return typeof categories !== 'undefined' ? [...categories] : [];
+      }
+
+      // Save questions to localStorage
+      function saveQuestions(questions) {
+        try {
+          localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(questions));
+        } catch (err) {
+          console.log('Could not save questions:', err);
+        }
+      }
+
+      // Save categories to localStorage
+      function saveCategories(cats) {
+        try {
+          localStorage.setItem(ADMIN_CATEGORIES_KEY, JSON.stringify(cats));
+        } catch (err) {
+          console.log('Could not save categories:', err);
+        }
+      }
+
+      // Category colors for visual distinction
+      const categoryColors = {
+        'Cooking Temperatures': 'bg-red-100 text-red-800',
+        'Temperature Control': 'bg-orange-100 text-orange-800',
+        'Time-Temperature Control': 'bg-amber-100 text-amber-800',
+        'Food Storage': 'bg-blue-100 text-blue-800',
+        'Cooling': 'bg-cyan-100 text-cyan-800',
+        'Definitions': 'bg-purple-100 text-purple-800',
+        'Sanitation': 'bg-teal-100 text-teal-800',
+        'Foodborne Illness': 'bg-rose-100 text-rose-800',
+        'FAT TOM': 'bg-yellow-100 text-yellow-800',
+        'Chemical Contamination': 'bg-lime-100 text-lime-800',
+        'Food Safety': 'bg-green-100 text-green-800',
+        'Personal Hygiene': 'bg-indigo-100 text-indigo-800',
+        'Seafood Toxins': 'bg-sky-100 text-sky-800',
+        'TCS Foods': 'bg-pink-100 text-pink-800',
+        'Allergens': 'bg-fuchsia-100 text-fuchsia-800',
+        'Food Defense': 'bg-violet-100 text-violet-800'
+      };
+
+      function getCategoryColor(category) {
+        return categoryColors[category] || 'bg-gray-100 text-gray-800';
+      }
+
+      // ============ COMPONENTS ============
+
+      // Header Component
+      function Header(props) {
+        return e('div', null,
+          // Live Changes Banner
+          e('div', { className: 'bg-green-600 text-white text-center py-2 px-4' },
+            e('p', { className: 'text-sm font-medium flex items-center justify-center gap-2' },
+              e('span', { className: 'animate-pulse' }, '🟢'),
+              'LIVE MODE: All changes are saved automatically and appear instantly in the study app!',
+              e('span', { className: 'animate-pulse' }, '🟢')
+            )
+          ),
+          e('header', { className: 'bg-gradient-to-r from-gray-800 to-gray-900 text-white shadow-lg' },
+            e('div', { className: 'max-w-7xl mx-auto px-4 py-4' },
+              e('div', { className: 'flex flex-col md:flex-row md:items-center md:justify-between gap-4' },
+                e('div', null,
+                  e('h1', { className: 'text-2xl font-bold flex items-center gap-2' },
+                    e('span', null, '🔧'),
+                    'Question Manager'
+                  ),
+                  e('p', { className: 'text-gray-400 text-sm' }, "Chef's Kitchen | CUL 104 Admin Panel")
+                ),
+                e('div', { className: 'flex items-center gap-3' },
+                  e('span', { className: 'text-sm text-gray-400' },
+                    props.questionCount + ' questions'
+                  ),
+                  e('a', {
+                    href: 'index.html',
+                    target: '_blank',
+                    className: 'px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm transition-colors'
+                  }, '👀 Preview Study App'),
+                  e('a', {
+                    href: 'index.html',
+                    className: 'px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors'
+                  }, '← Back to App')
+                )
+              )
+            )
+          )
+        );
+      }
+
+      // Stats Bar Component
+      function StatsBar(props) {
+        const questions = props.questions;
+        const examFocusCount = questions.filter(function(q) { return q.examFocus; }).length;
+        const basicCount = questions.length - examFocusCount;
+        const categoryCount = props.categories.length;
+
+        return e('div', { className: 'bg-white border-b shadow-sm' },
+          e('div', { className: 'max-w-7xl mx-auto px-4 py-3' },
+            e('div', { className: 'flex flex-wrap gap-6 text-sm' },
+              e('div', { className: 'flex items-center gap-2' },
+                e('span', { className: 'text-2xl' }, '📊'),
+                e('span', { className: 'text-gray-600' }, 'Total: '),
+                e('span', { className: 'font-semibold' }, questions.length)
+              ),
+              e('div', { className: 'flex items-center gap-2' },
+                e('span', { className: 'text-2xl' }, '⭐'),
+                e('span', { className: 'text-gray-600' }, 'Exam Focus: '),
+                e('span', { className: 'font-semibold text-red-600' }, examFocusCount)
+              ),
+              e('div', { className: 'flex items-center gap-2' },
+                e('span', { className: 'text-2xl' }, '📖'),
+                e('span', { className: 'text-gray-600' }, 'Basic: '),
+                e('span', { className: 'font-semibold text-gray-600' }, basicCount)
+              ),
+              e('div', { className: 'flex items-center gap-2' },
+                e('span', { className: 'text-2xl' }, '📂'),
+                e('span', { className: 'text-gray-600' }, 'Categories: '),
+                e('span', { className: 'font-semibold' }, categoryCount)
+              )
+            )
+          )
+        );
+      }
+
+      // Filter Bar Component
+      function FilterBar(props) {
+        return e('div', { className: 'bg-white border-b shadow-sm sticky top-0 z-10' },
+          e('div', { className: 'max-w-7xl mx-auto px-4 py-4' },
+            e('div', { className: 'flex flex-col md:flex-row gap-4' },
+              // Search
+              e('div', { className: 'flex-1' },
+                e('input', {
+                  type: 'text',
+                  placeholder: 'Search questions, hints, explanations...',
+                  value: props.searchTerm,
+                  onChange: function(ev) { props.onSearchChange(ev.target.value); },
+                  className: 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                })
+              ),
+              // Category Filter
+              e('select', {
+                value: props.categoryFilter,
+                onChange: function(ev) { props.onCategoryChange(ev.target.value); },
+                className: 'px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+              },
+                e('option', { value: '' }, 'All Categories'),
+                props.categories.map(function(cat) {
+                  return e('option', { key: cat, value: cat }, cat);
+                })
+              ),
+              // Exam Focus Filter
+              e('select', {
+                value: props.examFocusFilter,
+                onChange: function(ev) { props.onExamFocusChange(ev.target.value); },
+                className: 'px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+              },
+                e('option', { value: '' }, 'All Questions'),
+                e('option', { value: 'true' }, '⭐ Exam Focus'),
+                e('option', { value: 'false' }, '📖 Basic Knowledge')
+              ),
+              // Add Question Button
+              e('button', {
+                onClick: props.onAddQuestion,
+                className: 'px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2'
+              },
+                e('span', null, '+'),
+                'Add Question'
+              )
+            )
+          )
+        );
+      }
+
+      // Question Row Component
+      function QuestionRow(props) {
+        const q = props.question;
+        const correctLetter = String.fromCharCode(65 + q.correct);
+
+        return e('div', {
+          className: 'question-row bg-white border-b px-4 py-4 hover:bg-gray-50 transition-colors'
+        },
+          e('div', { className: 'flex gap-4' },
+            // ID Column
+            e('div', { className: 'w-12 flex-shrink-0 text-center' },
+              e('span', { className: 'text-gray-400 text-sm' }, '#' + q.id),
+              q.examFocus && e('div', { className: 'text-yellow-500 text-lg mt-1' }, '⭐')
+            ),
+            // Main Content
+            e('div', { className: 'flex-1 min-w-0' },
+              // Question text
+              e('p', { className: 'font-medium text-gray-900 mb-2' }, q.question),
+              // Options
+              e('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-1 mb-2' },
+                q.options.map(function(opt, i) {
+                  const letter = String.fromCharCode(65 + i);
+                  const isCorrect = i === q.correct;
+                  return e('div', {
+                    key: i,
+                    className: 'text-sm ' + (isCorrect ? 'text-green-700 font-medium' : 'text-gray-600')
+                  },
+                    e('span', { className: 'font-mono mr-2' }, letter + ')'),
+                    opt,
+                    isCorrect && e('span', { className: 'ml-2 text-green-600' }, '✓')
+                  );
+                })
+              ),
+              // Metadata row
+              e('div', { className: 'flex flex-wrap items-center gap-2 text-xs' },
+                e('span', { className: 'category-tag ' + getCategoryColor(q.category) }, q.category),
+                e('span', { className: 'text-gray-400' }, '|'),
+                e('span', { className: 'text-gray-500' }, 'Hint: ' + (q.hint.length > 50 ? q.hint.substring(0, 50) + '...' : q.hint))
+              )
+            ),
+            // Actions
+            e('div', { className: 'flex-shrink-0 flex gap-2' },
+              e('button', {
+                onClick: function() { props.onEdit(q); },
+                className: 'px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors',
+                title: 'Edit question'
+              }, '✏️ Edit'),
+              e('button', {
+                onClick: function() { props.onDelete(q.id); },
+                className: 'px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors',
+                title: 'Delete question'
+              }, '🗑️')
+            )
+          )
+        );
+      }
+
+      // Question Editor Modal
+      function QuestionEditor(props) {
+        const question = props.question;
+        const isNew = props.isNew;
+        const categories = props.categories;
+
+        const [formData, setFormData] = useState(question || {
+          id: 0,
+          question: '',
+          options: ['', '', '', ''],
+          correct: 0,
+          hint: '',
+          explanation: '',
+          category: categories[0] || '',
+          examFocus: false
+        });
+
+        function updateField(field, value) {
+          setFormData(function(prev) {
+            return Object.assign({}, prev, { [field]: value });
+          });
+        }
+
+        function updateOption(index, value) {
+          setFormData(function(prev) {
+            var newOptions = prev.options.slice();
+            newOptions[index] = value;
+            return Object.assign({}, prev, { options: newOptions });
+          });
+        }
+
+        function handleSave() {
+          // Validation
+          if (!formData.question.trim()) {
+            alert('Question text is required');
+            return;
+          }
+          if (formData.options.some(function(o) { return !o.trim(); })) {
+            alert('All four options are required');
+            return;
+          }
+          if (!formData.hint.trim()) {
+            alert('Hint is required');
+            return;
+          }
+          if (!formData.explanation.trim()) {
+            alert('Explanation is required');
+            return;
+          }
+          if (!formData.category) {
+            alert('Category is required');
+            return;
+          }
+
+          props.onSave(formData);
+        }
+
+        return e('div', { className: 'modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4' },
+          e('div', { className: 'bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto' },
+            // Header
+            e('div', { className: 'sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between' },
+              e('h2', { className: 'text-xl font-bold' },
+                isNew ? '➕ Add New Question' : '✏️ Edit Question #' + formData.id
+              ),
+              e('button', {
+                onClick: props.onCancel,
+                className: 'text-gray-400 hover:text-gray-600 text-2xl'
+              }, '×')
+            ),
+            // Form
+            e('div', { className: 'p-6 space-y-6' },
+              // Question Text
+              e('div', null,
+                e('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Question *'),
+                e('textarea', {
+                  value: formData.question,
+                  onChange: function(ev) { updateField('question', ev.target.value); },
+                  rows: 3,
+                  className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                })
+              ),
+              // Options
+              e('div', null,
+                e('label', { className: 'block text-sm font-medium text-gray-700 mb-2' }, 'Answer Options *'),
+                e('div', { className: 'space-y-3' },
+                  [0, 1, 2, 3].map(function(i) {
+                    var letter = String.fromCharCode(65 + i);
+                    var isCorrect = formData.correct === i;
+                    return e('div', { key: i, className: 'flex items-center gap-3' },
+                      e('button', {
+                        type: 'button',
+                        onClick: function() { updateField('correct', i); },
+                        className: 'w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold ' +
+                          (isCorrect ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 text-gray-500 hover:border-green-400')
+                      }, letter),
+                      e('input', {
+                        type: 'text',
+                        value: formData.options[i],
+                        onChange: function(ev) { updateOption(i, ev.target.value); },
+                        placeholder: 'Option ' + letter,
+                        className: 'flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ' +
+                          (isCorrect ? 'border-green-400 bg-green-50' : '')
+                      }),
+                      isCorrect && e('span', { className: 'text-green-600 text-sm font-medium' }, '✓ Correct')
+                    );
+                  })
+                ),
+                e('p', { className: 'text-xs text-gray-500 mt-2' }, 'Click a letter button to mark it as the correct answer')
+              ),
+              // Category and Exam Focus
+              e('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+                e('div', null,
+                  e('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Category *'),
+                  e('select', {
+                    value: formData.category,
+                    onChange: function(ev) { updateField('category', ev.target.value); },
+                    className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                  },
+                    e('option', { value: '' }, 'Select a category...'),
+                    categories.map(function(cat) {
+                      return e('option', { key: cat, value: cat }, cat);
+                    })
+                  )
+                ),
+                e('div', { className: 'flex items-center' },
+                  e('label', { className: 'flex items-center gap-3 cursor-pointer' },
+                    e('input', {
+                      type: 'checkbox',
+                      checked: formData.examFocus,
+                      onChange: function(ev) { updateField('examFocus', ev.target.checked); },
+                      className: 'w-5 h-5 text-yellow-500 rounded focus:ring-yellow-500'
+                    }),
+                    e('span', { className: 'text-sm font-medium text-gray-700' },
+                      '⭐ Exam Focus Question'
+                    ),
+                    e('span', { className: 'text-xs text-gray-500' },
+                      '(Professor emphasized for test)'
+                    )
+                  )
+                )
+              ),
+              // Hint
+              e('div', null,
+                e('label', { className: 'block text-sm font-medium text-gray-700 mb-1' },
+                  'Hint * ',
+                  e('span', { className: 'font-normal text-gray-500' }, '(should NOT give away the answer)')
+                ),
+                e('textarea', {
+                  value: formData.hint,
+                  onChange: function(ev) { updateField('hint', ev.target.value); },
+                  rows: 2,
+                  placeholder: 'Provide a helpful hint that guides thinking without revealing the answer...',
+                  className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                })
+              ),
+              // Explanation
+              e('div', null,
+                e('label', { className: 'block text-sm font-medium text-gray-700 mb-1' },
+                  'Explanation * ',
+                  e('span', { className: 'font-normal text-gray-500' }, '(shown after answering)')
+                ),
+                e('textarea', {
+                  value: formData.explanation,
+                  onChange: function(ev) { updateField('explanation', ev.target.value); },
+                  rows: 2,
+                  placeholder: 'Explain why the correct answer is correct...',
+                  className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                })
+              )
+            ),
+            // Footer
+            e('div', { className: 'sticky bottom-0 bg-gray-50 border-t px-6 py-4 flex justify-end gap-3' },
+              e('button', {
+                onClick: props.onCancel,
+                className: 'px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors'
+              }, 'Cancel'),
+              e('button', {
+                onClick: handleSave,
+                className: 'px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors'
+              }, isNew ? 'Add Question' : 'Save Changes')
+            )
+          )
+        );
+      }
+
+      // Category Manager Modal
+      function CategoryManager(props) {
+        const categories = props.categories;
+        const [newCategory, setNewCategory] = useState('');
+
+        function handleAddCategory() {
+          var trimmed = newCategory.trim();
+          if (!trimmed) {
+            alert('Category name is required');
+            return;
+          }
+          if (categories.indexOf(trimmed) !== -1) {
+            alert('Category already exists');
+            return;
+          }
+          props.onAddCategory(trimmed);
+          setNewCategory('');
+        }
+
+        return e('div', { className: 'modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4' },
+          e('div', { className: 'bg-white rounded-xl shadow-2xl max-w-md w-full' },
+            // Header
+            e('div', { className: 'border-b px-6 py-4 flex items-center justify-between' },
+              e('h2', { className: 'text-xl font-bold' }, '📂 Manage Categories'),
+              e('button', {
+                onClick: props.onClose,
+                className: 'text-gray-400 hover:text-gray-600 text-2xl'
+              }, '×')
+            ),
+            // Content
+            e('div', { className: 'p-6' },
+              // Add new category
+              e('div', { className: 'flex gap-2 mb-6' },
+                e('input', {
+                  type: 'text',
+                  value: newCategory,
+                  onChange: function(ev) { setNewCategory(ev.target.value); },
+                  placeholder: 'New category name...',
+                  className: 'flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500',
+                  onKeyPress: function(ev) { if (ev.key === 'Enter') handleAddCategory(); }
+                }),
+                e('button', {
+                  onClick: handleAddCategory,
+                  className: 'px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors'
+                }, 'Add')
+              ),
+              // Existing categories
+              e('div', { className: 'space-y-2 max-h-64 overflow-y-auto' },
+                categories.map(function(cat) {
+                  var count = props.getQuestionCount(cat);
+                  return e('div', {
+                    key: cat,
+                    className: 'flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg'
+                  },
+                    e('div', { className: 'flex items-center gap-2' },
+                      e('span', { className: 'category-tag ' + getCategoryColor(cat) }, cat),
+                      e('span', { className: 'text-xs text-gray-500' }, count + ' questions')
+                    ),
+                    count === 0 && e('button', {
+                      onClick: function() { props.onDeleteCategory(cat); },
+                      className: 'text-red-500 hover:text-red-700 text-sm',
+                      title: 'Delete category (only empty categories can be deleted)'
+                    }, '🗑️')
+                  );
+                })
+              ),
+              e('p', { className: 'text-xs text-gray-500 mt-4' },
+                'Note: Only empty categories (0 questions) can be deleted.'
+              )
+            ),
+            // Footer
+            e('div', { className: 'border-t px-6 py-4' },
+              e('button', {
+                onClick: props.onClose,
+                className: 'w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors'
+              }, 'Done')
+            )
+          )
+        );
+      }
+
+      // Export/Import Panel
+      function ExportImportPanel(props) {
+        const [importText, setImportText] = useState('');
+        const [showImport, setShowImport] = useState(false);
+        const [showAdvanced, setShowAdvanced] = useState(false);
+
+        // Create timestamped backup filename
+        function getTimestamp() {
+          var now = new Date();
+          return now.getFullYear() + '-' +
+            String(now.getMonth() + 1).padStart(2, '0') + '-' +
+            String(now.getDate()).padStart(2, '0') + '_' +
+            String(now.getHours()).padStart(2, '0') + '-' +
+            String(now.getMinutes()).padStart(2, '0');
+        }
+
+        function handleCreateBackup() {
+          var dataStr = JSON.stringify(props.questions, null, 2);
+          var blob = new Blob([dataStr], { type: 'application/json' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'questions-backup-' + getTimestamp() + '.json';
+          a.click();
+          URL.revokeObjectURL(url);
+          alert('Backup saved! Keep this file safe - you can restore from it anytime using the Import feature.');
+        }
+
+        function handleExportJSON() {
+          var dataStr = JSON.stringify(props.questions, null, 2);
+          var blob = new Blob([dataStr], { type: 'application/json' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'servsafe-questions.json';
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+
+        function handleExportJS() {
+          var header = '// ============ CUL 104 SERVSAFE QUESTIONS DATABASE ============\n';
+          header += '// Generated from Admin Panel on ' + new Date().toLocaleDateString() + '\n';
+          header += '// Total questions: ' + props.questions.length + '\n\n';
+          header += 'var questionsDB = ';
+
+          var dataStr = JSON.stringify(props.questions, null, 2);
+
+          var footer = ';\n\n// Get unique categories from questions\n';
+          footer += 'var categories = [];\n';
+          footer += 'questionsDB.forEach(function(q) {\n';
+          footer += '  if (categories.indexOf(q.category) === -1) {\n';
+          footer += '    categories.push(q.category);\n';
+          footer += '  }\n';
+          footer += '});\n';
+          footer += 'categories.sort();\n';
+
+          var fullContent = header + dataStr + footer;
+          var blob = new Blob([fullContent], { type: 'application/javascript' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'questions.js';
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+
+        function handleImport() {
+          try {
+            var parsed = JSON.parse(importText);
+            if (!Array.isArray(parsed)) {
+              throw new Error('Data must be an array of questions');
+            }
+            // Validate structure
+            parsed.forEach(function(q, i) {
+              if (!q.question || !q.options || !q.hint || !q.explanation || !q.category) {
+                throw new Error('Question ' + (i + 1) + ' is missing required fields');
+              }
+              if (!Array.isArray(q.options) || q.options.length !== 4) {
+                throw new Error('Question ' + (i + 1) + ' must have exactly 4 options');
+              }
+            });
+            if (confirm('Import ' + parsed.length + ' questions? This will REPLACE all current questions.\n\nTip: Create a backup first if you haven\'t already!')) {
+              props.onImport(parsed);
+              setShowImport(false);
+              setImportText('');
+            }
+          } catch (err) {
+            alert('Import Error: ' + err.message);
+          }
+        }
+
+        function handleFileUpload(ev) {
+          var file = ev.target.files[0];
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            var content = e.target.result;
+            // Try to extract JSON from .js file
+            if (file.name.endsWith('.js')) {
+              var match = content.match(/var\s+questionsDB\s*=\s*(\[[\s\S]*?\]);/);
+              if (match) {
+                content = match[1];
+              }
+            }
+            setImportText(content);
+          };
+          reader.readAsText(file);
+        }
+
+        function handleResetToOriginal() {
+          var originalCount = loadOriginalQuestions().length;
+          if (confirm('⚠️ RESET TO ORIGINAL ⚠️\n\nThis will restore the original ' + originalCount + ' questions from when the app was first set up.\n\nALL your changes will be lost!\n\nAre you absolutely sure?')) {
+            if (confirm('Last chance! Create a backup first?\n\nClick OK to create a backup before resetting.\nClick Cancel to reset without backup.')) {
+              handleCreateBackup();
+            }
+            props.onResetToOriginal();
+          }
+        }
+
+        return e('div', { className: 'bg-white border rounded-xl shadow-sm' },
+          e('div', { className: 'p-4 border-b bg-gradient-to-r from-blue-50 to-green-50' },
+            e('h3', { className: 'font-bold text-gray-800 flex items-center gap-2' },
+              '💾 Backup & Recovery',
+              e('span', { className: 'text-xs font-normal bg-green-100 text-green-800 px-2 py-0.5 rounded-full' }, 'Recommended')
+            ),
+            e('p', { className: 'text-sm text-gray-600 mt-1' },
+              'Create backups before making big changes. You can always restore from a backup!'
+            )
+          ),
+          e('div', { className: 'p-4 space-y-4' },
+            // Primary action - Create Backup
+            e('div', { className: 'flex flex-wrap gap-3' },
+              e('button', {
+                onClick: handleCreateBackup,
+                className: 'px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2'
+              },
+                e('span', null, '📦'),
+                'Create Backup'
+              ),
+              e('button', {
+                onClick: function() { setShowImport(!showImport); },
+                className: 'px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2'
+              },
+                e('span', null, showImport ? '✕' : '📥'),
+                showImport ? 'Cancel' : 'Restore from Backup'
+              ),
+              e('button', {
+                onClick: handleResetToOriginal,
+                className: 'px-5 py-2.5 border-2 border-red-300 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center gap-2'
+              },
+                e('span', null, '↩️'),
+                'Reset to Original (93 questions)'
+              )
+            ),
+
+            // Import/Restore section
+            showImport && e('div', { className: 'border-t pt-4 space-y-3 bg-blue-50 -mx-4 px-4 pb-4 mt-4' },
+              e('h4', { className: 'font-medium text-gray-800' }, '📥 Restore from a Backup File'),
+              e('div', null,
+                e('label', { className: 'block text-sm font-medium text-gray-700 mb-2' },
+                  'Upload a backup file (.json):'
+                ),
+                e('input', {
+                  type: 'file',
+                  accept: '.json,.js',
+                  onChange: handleFileUpload,
+                  className: 'block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-white file:text-gray-700 hover:file:bg-gray-100 file:cursor-pointer cursor-pointer'
+                })
+              ),
+              e('div', null,
+                e('label', { className: 'block text-sm font-medium text-gray-700 mb-2' },
+                  'Or paste JSON content directly:'
+                ),
+                e('textarea', {
+                  value: importText,
+                  onChange: function(ev) { setImportText(ev.target.value); },
+                  rows: 4,
+                  placeholder: 'Paste JSON content here...',
+                  className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm bg-white'
+                })
+              ),
+              importText && e('button', {
+                onClick: handleImport,
+                className: 'px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium'
+              }, '✓ Restore from This Backup')
+            ),
+
+            // Advanced options toggle
+            e('div', { className: 'border-t pt-4' },
+              e('button', {
+                onClick: function() { setShowAdvanced(!showAdvanced); },
+                className: 'text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1'
+              },
+                e('span', null, showAdvanced ? '▼' : '▶'),
+                'Advanced Export Options (for archiving)'
+              )
+            ),
+
+            // Advanced export options
+            showAdvanced && e('div', { className: 'flex flex-wrap gap-3 pl-4' },
+              e('button', {
+                onClick: handleExportJSON,
+                className: 'px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm'
+              }, '📄 Export JSON'),
+              e('button', {
+                onClick: handleExportJS,
+                className: 'px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm'
+              }, '📜 Export as questions.js')
+            ),
+
+            // Info box
+            e('div', { className: 'bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm' },
+              e('p', { className: 'font-medium text-amber-800 mb-1' }, '💡 How Backups Work:'),
+              e('ul', { className: 'text-amber-700 space-y-1 ml-4 list-disc' },
+                e('li', null, 'Changes you make are saved automatically and appear in the study app immediately'),
+                e('li', null, 'Create backups before making major changes - they download to your computer'),
+                e('li', null, 'If something goes wrong, use "Restore from Backup" to undo changes'),
+                e('li', null, '"Reset to Original" restores the original 93 questions from day one')
+              )
+            )
+          )
+        );
+      }
+
+      // ============ MAIN APP ============
+      function AdminApp() {
+        const [questions, setQuestions] = useState(loadQuestions);
+        const [allCategories, setAllCategories] = useState(loadCategories);
+        const [searchTerm, setSearchTerm] = useState('');
+        const [categoryFilter, setCategoryFilter] = useState('');
+        const [examFocusFilter, setExamFocusFilter] = useState('');
+        const [editingQuestion, setEditingQuestion] = useState(null);
+        const [isAddingQuestion, setIsAddingQuestion] = useState(false);
+        const [showCategoryManager, setShowCategoryManager] = useState(false);
+
+        // Filter questions
+        var filteredQuestions = questions.filter(function(q) {
+          // Search filter
+          if (searchTerm) {
+            var term = searchTerm.toLowerCase();
+            var matches = (
+              q.question.toLowerCase().indexOf(term) !== -1 ||
+              q.hint.toLowerCase().indexOf(term) !== -1 ||
+              q.explanation.toLowerCase().indexOf(term) !== -1 ||
+              q.options.some(function(o) { return o.toLowerCase().indexOf(term) !== -1; })
+            );
+            if (!matches) return false;
+          }
+          // Category filter
+          if (categoryFilter && q.category !== categoryFilter) return false;
+          // Exam focus filter
+          if (examFocusFilter === 'true' && !q.examFocus) return false;
+          if (examFocusFilter === 'false' && q.examFocus) return false;
+          return true;
+        });
+
+        // Sort by ID
+        filteredQuestions.sort(function(a, b) { return a.id - b.id; });
+
+        function handleSaveQuestion(formData) {
+          var updated;
+          if (isAddingQuestion) {
+            // Generate new ID
+            var maxId = questions.reduce(function(max, q) { return Math.max(max, q.id); }, 0);
+            formData.id = maxId + 1;
+            updated = questions.concat([formData]);
+          } else {
+            updated = questions.map(function(q) {
+              return q.id === formData.id ? formData : q;
+            });
+          }
+          setQuestions(updated);
+          saveQuestions(updated);
+          setEditingQuestion(null);
+          setIsAddingQuestion(false);
+        }
+
+        function handleDeleteQuestion(id) {
+          if (!confirm('Are you sure you want to delete question #' + id + '?')) return;
+          var updated = questions.filter(function(q) { return q.id !== id; });
+          setQuestions(updated);
+          saveQuestions(updated);
+        }
+
+        function handleAddCategory(name) {
+          var updated = allCategories.concat([name]).sort();
+          setAllCategories(updated);
+          saveCategories(updated);
+        }
+
+        function handleDeleteCategory(name) {
+          var updated = allCategories.filter(function(c) { return c !== name; });
+          setAllCategories(updated);
+          saveCategories(updated);
+        }
+
+        function getQuestionCountForCategory(cat) {
+          return questions.filter(function(q) { return q.category === cat; }).length;
+        }
+
+        function handleImport(importedQuestions) {
+          // Re-assign IDs to be sequential
+          var withIds = importedQuestions.map(function(q, i) {
+            return Object.assign({}, q, { id: i + 1 });
+          });
+          setQuestions(withIds);
+          saveQuestions(withIds);
+          // Update categories
+          var newCats = [];
+          withIds.forEach(function(q) {
+            if (newCats.indexOf(q.category) === -1) {
+              newCats.push(q.category);
+            }
+          });
+          newCats.sort();
+          setAllCategories(newCats);
+          saveCategories(newCats);
+          alert('Successfully imported ' + withIds.length + ' questions!');
+        }
+
+        function handleResetToOriginal() {
+          // Load from the original backup file (questions-original.js)
+          var originalQuestions = loadOriginalQuestions();
+          var originalCats = loadOriginalCategories();
+
+          setQuestions(originalQuestions);
+          setAllCategories(originalCats);
+          saveQuestions(originalQuestions);
+          saveCategories(originalCats);
+
+          alert('Successfully reset to original ' + originalQuestions.length + ' questions!\n\nThe study app will now show the original questions.');
+        }
+
+        return e('div', { className: 'min-h-screen bg-gray-100' },
+          // Header
+          e(Header, { questionCount: questions.length }),
+          // Stats
+          e(StatsBar, { questions: questions, categories: allCategories }),
+          // Main content
+          e('div', { className: 'max-w-7xl mx-auto p-4 space-y-4' },
+            // Tools row
+            e('div', { className: 'flex flex-col md:flex-row gap-4' },
+              // Export/Import Panel
+              e('div', { className: 'flex-1' },
+                e(ExportImportPanel, {
+                  questions: questions,
+                  onImport: handleImport,
+                  onResetToOriginal: handleResetToOriginal
+                })
+              ),
+              // Category Manager Button
+              e('div', { className: 'md:w-64' },
+                e('div', { className: 'bg-white border rounded-xl shadow-sm p-4' },
+                  e('h3', { className: 'font-bold text-gray-800 mb-3' }, '📂 Categories'),
+                  e('button', {
+                    onClick: function() { setShowCategoryManager(true); },
+                    className: 'w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors text-sm'
+                  }, 'Manage Categories'),
+                  e('p', { className: 'text-xs text-gray-500 mt-2' },
+                    allCategories.length + ' categories'
+                  )
+                )
+              )
+            ),
+            // Filter Bar
+            e(FilterBar, {
+              searchTerm: searchTerm,
+              categoryFilter: categoryFilter,
+              examFocusFilter: examFocusFilter,
+              categories: allCategories,
+              onSearchChange: setSearchTerm,
+              onCategoryChange: setCategoryFilter,
+              onExamFocusChange: setExamFocusFilter,
+              onAddQuestion: function() { setIsAddingQuestion(true); }
+            }),
+            // Results info
+            e('div', { className: 'text-sm text-gray-600' },
+              'Showing ' + filteredQuestions.length + ' of ' + questions.length + ' questions'
+            ),
+            // Questions List
+            e('div', { className: 'bg-white rounded-xl shadow-sm overflow-hidden' },
+              filteredQuestions.length === 0 ?
+                e('div', { className: 'p-12 text-center text-gray-500' },
+                  e('div', { className: 'text-4xl mb-4' }, '🔍'),
+                  e('p', null, 'No questions found matching your filters')
+                ) :
+                filteredQuestions.map(function(q) {
+                  return e(QuestionRow, {
+                    key: q.id,
+                    question: q,
+                    onEdit: function(q) { setEditingQuestion(q); },
+                    onDelete: handleDeleteQuestion
+                  });
+                })
+            )
+          ),
+          // Modals
+          editingQuestion && e(QuestionEditor, {
+            question: editingQuestion,
+            isNew: false,
+            categories: allCategories,
+            onSave: handleSaveQuestion,
+            onCancel: function() { setEditingQuestion(null); }
+          }),
+          isAddingQuestion && e(QuestionEditor, {
+            question: null,
+            isNew: true,
+            categories: allCategories,
+            onSave: handleSaveQuestion,
+            onCancel: function() { setIsAddingQuestion(false); }
+          }),
+          showCategoryManager && e(CategoryManager, {
+            categories: allCategories,
+            getQuestionCount: getQuestionCountForCategory,
+            onAddCategory: handleAddCategory,
+            onDeleteCategory: handleDeleteCategory,
+            onClose: function() { setShowCategoryManager(false); }
+          })
+        );
+      }
+
+      // Render
+      ReactDOM.createRoot(document.getElementById('root')).render(e(AdminApp));
+    })();
+  </script>
+</body>
+</html>
