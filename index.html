@@ -10,6 +10,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Convex Client for cloud database -->
+  <script src="https://unpkg.com/convex@1.17.0/dist/browser.bundle.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
@@ -316,15 +318,24 @@
       const useEffect = React.useEffect;
       const createElement = React.createElement;
 
-      // ============ LIVE QUESTIONS LOADING ============
-      // Check localStorage first for admin edits, fall back to questions.js
-      // This allows professor's edits to be immediately live without file replacement
+      // ============ CONVEX CLOUD DATABASE CONFIGURATION ============
+      // Leland's Convex deployment - DO NOT CHANGE
+      const CONVEX_URL = "https://good-alpaca-167.convex.cloud";
+
+      // Global connection status - updated by Convex sync
+      var convexConnectionStatus = CONVEX_URL ? 'connecting' : 'offline';
+
+      // ============ QUESTIONS LOADING STRATEGY ============
+      // Priority: 1. Convex (if configured) -> 2. localStorage -> 3. questions.js file
+
       const ADMIN_STORAGE_KEY = 'chefKitchenAdminQuestions';
       const ADMIN_CATEGORIES_KEY = 'chefKitchenAdminCategories';
 
-      var liveQuestionsDB;
-      var liveCategories;
+      // Start with questions.js as immediate default (no loading delay)
+      var liveQuestionsDB = questionsDB;
+      var liveCategories = categories;
 
+      // Check localStorage for any cached data (from admin or previous Convex sync)
       try {
         var savedQuestions = localStorage.getItem(ADMIN_STORAGE_KEY);
         var savedCategories = localStorage.getItem(ADMIN_CATEGORIES_KEY);
@@ -333,18 +344,81 @@
           liveCategories = savedCategories ? JSON.parse(savedCategories) : categories;
         }
       } catch (e) {
-        console.log('Could not load from localStorage, using defaults');
-      }
-
-      // Use live data if available, otherwise use questions.js defaults
-      if (!liveQuestionsDB || liveQuestionsDB.length === 0) {
-        liveQuestionsDB = questionsDB;
-        liveCategories = categories;
+        console.log('Could not load from localStorage, using file defaults');
       }
 
       // Replace the global references so the rest of the app uses live data
       questionsDB = liveQuestionsDB;
       categories = liveCategories;
+
+      // ============ CONVEX SYNC (if configured) ============
+      // This will update questions in the background once Convex responds
+      var convexClient = null;
+      var convexStatusListeners = []; // Listeners for status changes
+
+      function updateConvexStatus(status) {
+        convexConnectionStatus = status;
+        convexStatusListeners.forEach(function(listener) {
+          listener(status);
+        });
+      }
+
+      function onConvexStatusChange(listener) {
+        convexStatusListeners.push(listener);
+        return function() {
+          convexStatusListeners = convexStatusListeners.filter(function(l) { return l !== listener; });
+        };
+      }
+
+      if (CONVEX_URL && window.Convex) {
+        try {
+          convexClient = new window.Convex.ConvexHttpClient(CONVEX_URL);
+          // Fetch questions from Convex and update localStorage cache
+          convexClient.query("questions:getAll").then(function(convexQuestions) {
+            if (convexQuestions && convexQuestions.length > 0) {
+              // Convert Convex format to app format
+              var formatted = convexQuestions.map(function(q) {
+                return {
+                  id: q.questionId,
+                  question: q.question,
+                  options: q.options,
+                  correct: q.correct,
+                  hint: q.hint,
+                  explanation: q.explanation,
+                  category: q.category,
+                  examFocus: q.examFocus
+                };
+              });
+              // Cache in localStorage for offline/fast reload
+              localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(formatted));
+              // Update global questions
+              questionsDB = formatted;
+              liveQuestionsDB = formatted;
+              console.log('Synced ' + formatted.length + ' questions from Convex cloud');
+              updateConvexStatus('connected');
+            } else {
+              // Connected but empty - still counts as connected
+              updateConvexStatus('connected');
+            }
+          }).catch(function(err) {
+            console.log('Convex sync failed (using local data):', err.message);
+            updateConvexStatus('offline');
+          });
+
+          convexClient.query("questions:getCategories").then(function(convexCategories) {
+            if (convexCategories && convexCategories.length > 0) {
+              localStorage.setItem(ADMIN_CATEGORIES_KEY, JSON.stringify(convexCategories));
+              categories = convexCategories;
+              liveCategories = convexCategories;
+            }
+          }).catch(function() {});
+        } catch (err) {
+          console.log('Convex client initialization failed:', err.message);
+          updateConvexStatus('offline');
+        }
+      } else {
+        updateConvexStatus('offline');
+      }
 
       /* QUESTIONS DATABASE REMOVED - Now loaded from questions.js with localStorage override
       const questionsDB_original = [
@@ -2180,12 +2254,51 @@
         }
       }
 
+      // Network Status Indicator Component
+      function NetworkStatus(props) {
+        var status = props.status;
+        if (status === 'connected') {
+          return e('div', {
+            className: 'fixed top-0 left-0 right-0 z-50 bg-green-500 text-white text-center py-1 text-xs font-medium flex items-center justify-center gap-2',
+            style: { fontSize: '11px' }
+          },
+            e('span', { className: 'inline-block w-2 h-2 bg-white rounded-full animate-pulse' }),
+            'Live Cloud Data'
+          );
+        } else if (status === 'connecting') {
+          return e('div', {
+            className: 'fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-white text-center py-1 text-xs font-medium flex items-center justify-center gap-2',
+            style: { fontSize: '11px' }
+          },
+            e('span', { className: 'inline-block w-2 h-2 bg-white rounded-full animate-spin' }),
+            'Connecting to cloud...'
+          );
+        } else {
+          return e('div', {
+            className: 'fixed top-0 left-0 right-0 z-50 bg-gray-500 text-white text-center py-1 text-xs font-medium flex items-center justify-center gap-2',
+            style: { fontSize: '11px' }
+          },
+            e('span', { className: 'inline-block w-2 h-2 bg-orange-300 rounded-full' }),
+            'Offline Mode - Using Local Data'
+          );
+        }
+      }
+
       function App() {
         const [screen, setScreen] = useState('home');
         const [progress, setProgress] = useState(loadProgress);
         const [quizQuestions, setQuizQuestions] = useState([]);
         const [modeName, setModeName] = useState('');
         const [theme, setTheme] = useState(getInitialTheme);
+        const [networkStatus, setNetworkStatus] = useState(convexConnectionStatus);
+
+        // Listen for Convex connection status changes
+        useEffect(function() {
+          var unsubscribe = onConvexStatusChange(function(status) {
+            setNetworkStatus(status);
+          });
+          return unsubscribe;
+        }, []);
 
         // Apply theme on mount and when it changes
         useEffect(function() {
@@ -2295,22 +2408,32 @@
         }
 
         if (screen === 'quiz') {
-          return createElement(QuizScreen, {
-            questions: quizQuestions,
-            progress: progress,
-            modeName: modeName,
-            onAnswer: handleAnswer,
-            onBack: handleBack
-          });
+          return createElement('div', null,
+            createElement(NetworkStatus, { status: networkStatus }),
+            createElement('div', { style: { paddingTop: '24px' } },
+              createElement(QuizScreen, {
+                questions: quizQuestions,
+                progress: progress,
+                modeName: modeName,
+                onAnswer: handleAnswer,
+                onBack: handleBack
+              })
+            )
+          );
         }
 
-        return createElement(HomeScreen, {
-          progress: progress,
-          onSelectMode: handleSelectMode,
-          onResetProgress: handleResetProgress,
-          theme: theme,
-          onCycleTheme: cycleTheme
-        });
+        return createElement('div', null,
+          createElement(NetworkStatus, { status: networkStatus }),
+          createElement('div', { style: { paddingTop: '24px' } },
+            createElement(HomeScreen, {
+              progress: progress,
+              onSelectMode: handleSelectMode,
+              onResetProgress: handleResetProgress,
+              theme: theme,
+              onCycleTheme: cycleTheme
+            })
+          )
+        );
       }
 
       // Render

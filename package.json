@@ -1,0 +1,12 @@
+{
+  "name": "servsafe-pwa",
+  "version": "1.0.0",
+  "description": "CUL 104 ServSafe Study Aid PWA",
+  "private": true,
+  "scripts": {
+    "setup": "npx convex deploy"
+  },
+  "devDependencies": {
+    "convex": "^1.17.0"
+  }
+}
