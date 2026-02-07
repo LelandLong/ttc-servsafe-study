@@ -897,7 +897,7 @@
                 className: 'px-5 py-2.5 border-2 border-red-300 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center gap-2'
               },
                 e('span', null, '↩️'),
-                'Reset to Original (93 questions)'
+                'Reset to Original (' + (typeof questionsDB !== 'undefined' ? questionsDB.length : '?') + ' questions)'
               )
             ),
 
@@ -963,7 +963,7 @@
                 e('li', null, 'Changes you make are saved automatically and appear in the study app immediately'),
                 e('li', null, 'Create backups before making major changes - they download to your computer'),
                 e('li', null, 'If something goes wrong, use "Restore from Backup" to undo changes'),
-                e('li', null, '"Reset to Original" restores the original 93 questions from day one')
+                e('li', null, '"Reset to Original" restores the questions from the questions.js file')
               )
             )
           )
