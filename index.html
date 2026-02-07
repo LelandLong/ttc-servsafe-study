@@ -2412,14 +2412,13 @@
                 const stats = progress.categoryStats[cat] || { correct: 0, total: 0 };
                 const count = questionsDB.filter(function(q) { return q.category === cat; }).length;
                 const icon = {
-                  'Cooking Temperatures': '🌡️',
-                  'Temperature Control': '❄️',
-                  'Time-Temperature Control': '⏱️',
+                  'Food Safety Basics': '📖',
+                  'Temperature Control': '🌡️',
+                  'Sanitation & Hygiene': '🧼',
+                  'Foodborne Illness': '🦠',
+                  'Facilities & Operations': '🏢',
                   'Food Storage': '🗄️',
-                  'Cooling': '🧊',
-                  'Definitions': '📖',
-                  'Sanitation': '🧼',
-                  'Foodborne Illness': '🦠'
+                  'Training': '👨‍🏫'
                 }[cat] || '📋';
 
                 return createElement('button', {

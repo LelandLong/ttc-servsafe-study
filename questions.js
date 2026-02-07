@@ -26,7 +26,7 @@ var questionsDB = [
     correct: 2,
     hint: "This factor relates to the pH scale and how it affects bacterial growth.",
     explanation: "A = Acidity. Bacteria grow best in foods with pH between 4.6 and 7.5.",
-    category: "FAT TOM",
+    category: "Food Safety Basics",
     chapter: 1,
     examFocus: true
   },
@@ -42,7 +42,7 @@ var questionsDB = [
     correct: 0,
     hint: "FAT TOM describes what bacteria NEED. Think: what makes microorganisms multiply?",
     explanation: "FAT TOM describes the six conditions bacteria need to grow: Food, Acidity, Time, Temperature, Oxygen, Moisture.",
-    category: "FAT TOM",
+    category: "Food Safety Basics",
     chapter: 1,
     examFocus: true
   },
@@ -69,7 +69,7 @@ var questionsDB = [
     correct: 3,
     hint: "Think about which metals can react with acidic foods. What material is considered food-safe in commercial kitchens?",
     explanation: "Stainless steel is safe. Zinc, enamelware, and pewter can leach chemicals into acidic foods.",
-    category: "Chemical Contamination",
+    category: "Foodborne Illness",
     chapter: 1,
     examFocus: true
   },
@@ -85,7 +85,7 @@ var questionsDB = [
     correct: 1,
     hint: "What truly matters when choosing suppliers - location or certification/reputation?",
     explanation: "Proximity doesn't ensure safety. Use approved, reputable suppliers regardless of distance.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 1,
     examFocus: false
   },
@@ -96,7 +96,7 @@ var questionsDB = [
     correct: 2,
     hint: "The 'A' in FAT TOM refers to this measurement on a scale from 0 to 14.",
     explanation: "pH measures acidity/alkalinity. Bacteria grow best between pH 4.6 and 7.5.",
-    category: "FAT TOM",
+    category: "Food Safety Basics",
     chapter: 1,
     examFocus: true
   },
@@ -128,7 +128,7 @@ var questionsDB = [
     correct: 2,
     hint: "Think about the word 'flow' - what does it suggest about movement and journey through the kitchen?",
     explanation: "Flow of food is the path food takes from receiving through serving and disposal.",
-    category: "Definitions",
+    category: "Food Safety Basics",
     chapter: 1,
     examFocus: false
   },
@@ -139,7 +139,7 @@ var questionsDB = [
     correct: 2,
     hint: "Break down the word: 'patho-' relates to illness/suffering. What do pathogens cause?",
     explanation: "Pathogens are microorganisms that cause disease. Spoilage organisms are different.",
-    category: "Definitions",
+    category: "Food Safety Basics",
     chapter: 1,
     examFocus: false
   },
@@ -150,7 +150,7 @@ var questionsDB = [
     correct: 2,
     hint: "Mold can spread beyond what's visible and produce toxins. What's the safest action?",
     explanation: "Discard food with unnatural mold. Mold roots and toxins spread beyond visible areas.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 1,
     examFocus: false
   },
@@ -188,7 +188,7 @@ var questionsDB = [
     correct: 1,
     hint: "How many people must be affected before it's classified as an outbreak? More than just one.",
     explanation: "An outbreak occurs when two or more people have the same symptoms after eating the same food, confirmed by investigation.",
-    category: "Definitions",
+    category: "Food Safety Basics",
     chapter: 1,
     examFocus: true
   },
@@ -199,7 +199,7 @@ var questionsDB = [
     correct: 1,
     hint: "This FAT TOM factor relates to whether bacteria need air to survive.",
     explanation: "O = Oxygen. Some bacteria need it to grow, while others (anaerobic) grow without it.",
-    category: "FAT TOM",
+    category: "Food Safety Basics",
     chapter: 1,
     examFocus: true
   },
@@ -210,7 +210,7 @@ var questionsDB = [
     correct: 1,
     hint: "This FAT TOM factor relates to water activity - bacteria need this to survive.",
     explanation: "M = Moisture. Bacteria grow well in food with high water activity (aw of 0.85+).",
-    category: "FAT TOM",
+    category: "Food Safety Basics",
     chapter: 1,
     examFocus: true
   },
@@ -226,7 +226,7 @@ var questionsDB = [
     correct: 1,
     hint: "Think about who has weaker immune systems - which age groups and conditions?",
     explanation: "High-risk populations: preschool-age children, elderly people, and those with compromised immune systems.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 1,
     examFocus: true
   },
@@ -242,7 +242,7 @@ var questionsDB = [
     correct: 1,
     hint: "This occurs when harmful things move from one food or surface to another. Think drips, hands, cutting boards.",
     explanation: "Cross-contamination occurs when pathogens transfer from one surface or food to another.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 1,
     examFocus: true
   },
@@ -285,7 +285,7 @@ var questionsDB = [
     correct: 2,
     hint: "Four of these are actual food safety risks. Which one doesn't affect food safety at all?",
     explanation: "The five risk factors are: unsafe sources, failing to cook properly, incorrect temps, contaminated equipment, poor hygiene.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 1,
     examFocus: true
   },
@@ -297,7 +297,7 @@ var questionsDB = [
     correct: 1,
     hint: "This is a seafood toxin associated with tropical reef predators. Is it a parasite, bacteria, virus, or toxin?",
     explanation: "Ciguatera toxin from reef fish CANNOT be destroyed by cooking or freezing.",
-    category: "Seafood Toxins",
+    category: "Foodborne Illness",
     chapter: 2,
     examFocus: false
   },
@@ -324,7 +324,7 @@ var questionsDB = [
     correct: 1,
     hint: "Think about TCS foods and which of these requires careful temperature control. Which could harbor anaerobic bacteria?",
     explanation: "Baked potatoes are TCS foods that can harbor C. botulinum if temperature-abused.",
-    category: "TCS Foods",
+    category: "Temperature Control",
     chapter: 2,
     examFocus: true
   },
@@ -346,7 +346,7 @@ var questionsDB = [
     correct: 2,
     hint: "Think about which of these is commonly used as a garnish with no safety concerns.",
     explanation: "Parsley is safe. Rhubarb leaves (oxalic acid), apricot kernels (cyanide), fava beans contain natural toxins.",
-    category: "Chemical Contamination",
+    category: "Foodborne Illness",
     chapter: 2,
     examFocus: false
   },
@@ -357,7 +357,7 @@ var questionsDB = [
     correct: 2,
     hint: "Think about the Big 8 allergens. Which of these choices is NOT on that list?",
     explanation: "Melons are NOT a Big 8 allergen. The Big 8 are: milk, eggs, fish, shellfish, wheat, soy, peanuts, tree nuts.",
-    category: "Allergens",
+    category: "Foodborne Illness",
     chapter: 2,
     examFocus: true
   },
@@ -401,7 +401,7 @@ var questionsDB = [
     correct: 2,
     hint: "The Big 8 allergens are specific. Which common food item here isn't on that list?",
     explanation: "Corn is NOT a Big 8 allergen. The Big 8 are: milk, eggs, fish, shellfish, wheat, soy, peanuts, tree nuts.",
-    category: "Allergens",
+    category: "Foodborne Illness",
     chapter: 2,
     examFocus: true
   },
@@ -439,7 +439,7 @@ var questionsDB = [
     correct: 1,
     hint: "The letters TCS stand for something about controlling two factors to prevent bacterial growth.",
     explanation: "TCS foods require time and temperature control to prevent bacterial growth.",
-    category: "TCS Foods",
+    category: "Temperature Control",
     chapter: 2,
     examFocus: true
   },
@@ -472,7 +472,7 @@ var questionsDB = [
     correct: 2,
     hint: "Which of these has been processed in a way that exposes interior surfaces to bacteria?",
     explanation: "Sliced melons are TCS foods and require time/temperature control for safety.",
-    category: "TCS Foods",
+    category: "Temperature Control",
     chapter: 2,
     examFocus: true
   },
@@ -483,7 +483,7 @@ var questionsDB = [
     correct: 2,
     hint: "Oil creates an oxygen-free environment. What anaerobic bacteria thrives in such conditions?",
     explanation: "Garlic-and-oil mixtures can support Clostridium botulinum, which grows without oxygen.",
-    category: "TCS Foods",
+    category: "Temperature Control",
     chapter: 2,
     examFocus: true
   },
@@ -553,7 +553,7 @@ var questionsDB = [
     correct: 2,
     hint: "Consider how these diseases actually spread. Are any of them transmitted through food?",
     explanation: "AIDS, TB, and Hep B/C are NOT transmitted through food. Employees with these have ADA protections.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 2,
     examFocus: false
   },
@@ -565,7 +565,7 @@ var questionsDB = [
     correct: 3,
     hint: "Think about contamination sources. Does touching your face, mouth, or having things near your mouth spread germs?",
     explanation: "Wash hands after ALL these activities. Smoking, chewing gum, and touching hair all contaminate hands.",
-    category: "Personal Hygiene",
+    category: "Sanitation & Hygiene",
     chapter: 3,
     examFocus: true
   },
@@ -581,7 +581,7 @@ var questionsDB = [
     correct: 2,
     hint: "This is a food safety course. What's the safety-related reason for clean uniforms?",
     explanation: "Dirty clothes can harbor and transfer pathogens to food, causing contamination.",
-    category: "Personal Hygiene",
+    category: "Sanitation & Hygiene",
     chapter: 3,
     examFocus: false
   },
@@ -592,7 +592,7 @@ var questionsDB = [
     correct: 1,
     hint: "Aprons can carry contaminants. When would wearing one outside the kitchen be a problem?",
     explanation: "Remove aprons when leaving prep areas to prevent cross-contamination.",
-    category: "Personal Hygiene",
+    category: "Sanitation & Hygiene",
     chapter: 3,
     examFocus: true
   },
@@ -603,7 +603,7 @@ var questionsDB = [
     correct: 3,
     hint: "Consider each activity - do any of them NOT involve touching potentially contaminated surfaces?",
     explanation: "Wash hands after ALL these activities - each involves potential contamination.",
-    category: "Personal Hygiene",
+    category: "Sanitation & Hygiene",
     chapter: 3,
     examFocus: true
   },
@@ -619,7 +619,7 @@ var questionsDB = [
     correct: 2,
     hint: "Chef Carmel emphasized: sanitizers never replace handwashing. But when used, what's important about application?",
     explanation: "Sanitizer must dry before touching food. NEVER replaces handwashing or allows glove reuse.",
-    category: "Personal Hygiene",
+    category: "Sanitation & Hygiene",
     chapter: 3,
     examFocus: true
   },
@@ -630,7 +630,7 @@ var questionsDB = [
     correct: 1,
     hint: "Chef Carmel mentioned this directly in class. It's NOT the total time (20 sec) but the scrubbing portion.",
     explanation: "Scrub for 10-15 seconds. Total handwashing takes at least 20 seconds.",
-    category: "Personal Hygiene",
+    category: "Sanitation & Hygiene",
     chapter: 3,
     examFocus: true
   },
@@ -641,7 +641,7 @@ var questionsDB = [
     correct: 2,
     hint: "Chef Carmel asked this directly in class - warm enough to be effective but not scalding hot.",
     explanation: "Hand sink water should be at least 110°F for effective handwashing.",
-    category: "Personal Hygiene",
+    category: "Sanitation & Hygiene",
     chapter: 3,
     examFocus: true
   },
@@ -652,7 +652,7 @@ var questionsDB = [
     correct: 2,
     hint: "This matches the time limit for several other food safety rules. Think about how long is too long.",
     explanation: "Change gloves at least every 4 hours during continuous use, or sooner if contaminated.",
-    category: "Personal Hygiene",
+    category: "Sanitation & Hygiene",
     chapter: 3,
     examFocus: true
   },
@@ -663,7 +663,7 @@ var questionsDB = [
     correct: 2,
     hint: "Think minimal: what's the absolute simplest jewelry that could possibly be allowed?",
     explanation: "Only a plain wedding band is allowed. Remove watches, bracelets (including medical), and rings with stones.",
-    category: "Personal Hygiene",
+    category: "Sanitation & Hygiene",
     chapter: 3,
     examFocus: true
   },
@@ -679,7 +679,7 @@ var questionsDB = [
     correct: 1,
     hint: "Think about the sequence: what must happen BEFORE putting on protection?",
     explanation: "Always wash hands before putting on gloves. Gloves are NOT a substitute for handwashing.",
-    category: "Personal Hygiene",
+    category: "Sanitation & Hygiene",
     chapter: 3,
     examFocus: true
   },
@@ -695,7 +695,7 @@ var questionsDB = [
     correct: 1,
     hint: "Wounds in this location need extra protection. What two layers are required?",
     explanation: "Wounds on hand, finger, or wrist must be covered with an impermeable bandage AND a single-use glove.",
-    category: "Personal Hygiene",
+    category: "Sanitation & Hygiene",
     chapter: 3,
     examFocus: true
   },
@@ -711,7 +711,7 @@ var questionsDB = [
     correct: 1,
     hint: "There's a specific type of sink that must be used - not dish, prep, or mop sinks.",
     explanation: "Hands must be washed in a sink designated ONLY for handwashing.",
-    category: "Personal Hygiene",
+    category: "Sanitation & Hygiene",
     chapter: 3,
     examFocus: true
   },
@@ -727,7 +727,7 @@ var questionsDB = [
     correct: 2,
     hint: "For which group is bare-hand contact with ready-to-eat food absolutely prohibited?",
     explanation: "Never use bare hands on ready-to-eat food when serving high-risk populations.",
-    category: "Personal Hygiene",
+    category: "Sanitation & Hygiene",
     chapter: 3,
     examFocus: true
   },
@@ -743,7 +743,7 @@ var questionsDB = [
     correct: 2,
     hint: "The key term here is 'impermeable' - what does that mean for wound coverage?",
     explanation: "Wounds on hand/finger/wrist need an impermeable (waterproof) cover plus a single-use glove.",
-    category: "Personal Hygiene",
+    category: "Sanitation & Hygiene",
     chapter: 3,
     examFocus: true
   },
@@ -760,7 +760,7 @@ var questionsDB = [
     correct: 1,
     hint: "Each letter represents an action: monitoring sources, security, staff, documentation, and emergency plans.",
     explanation: "ALERT: Assure (safe sources), Look (monitor), Employees (know who), Reports (accessible), Threat (have a plan).",
-    category: "Food Defense",
+    category: "Facilities & Operations",
     chapter: 4,
     examFocus: true
   },
@@ -772,7 +772,7 @@ var questionsDB = [
     correct: 1,
     hint: "This method uses the freezing point of water. What temperature is that?",
     explanation: "Ice Point calibration uses 32°F (ice water). Boiling Point calibration uses 212°F.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 5,
     examFocus: true
   },
@@ -783,7 +783,7 @@ var questionsDB = [
     correct: 1,
     hint: "Food thermometers have stricter accuracy requirements than air thermometers.",
     explanation: "Food thermometers must be accurate within ±2°F (or ±1°C).",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 5,
     examFocus: true
   },
@@ -794,7 +794,7 @@ var questionsDB = [
     correct: 2,
     hint: "Which thermometer can read temperature without breaking the seal on packaging?",
     explanation: "Infrared thermometers check surface temperature of packaged items without breaking the seal.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 5,
     examFocus: true
   },
@@ -810,7 +810,7 @@ var questionsDB = [
     correct: 2,
     hint: "Think about what events might cause a thermometer to become inaccurate.",
     explanation: "Calibrate thermometers before each shift, before deliveries, after being bumped/dropped, and after extreme temperature changes.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 5,
     examFocus: false
   },
@@ -821,7 +821,7 @@ var questionsDB = [
     correct: 2,
     hint: "The thermometer needs enough time to get an accurate reading in the ice water.",
     explanation: "Submerge the thermometer sensing area for 30 seconds before reading during Ice Point calibration.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 5,
     examFocus: false
   },
@@ -832,7 +832,7 @@ var questionsDB = [
     correct: 2,
     hint: "Air temperature thermometers have slightly less strict requirements than food thermometers.",
     explanation: "Storage unit/air thermometers must be accurate within ±3°F (or ±1.5°C).",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 5,
     examFocus: false
   },
@@ -843,7 +843,7 @@ var questionsDB = [
     correct: 2,
     hint: "Look for a small indentation on the stem - that marks where sensing stops.",
     explanation: "The sensing area runs from the tip to the dimple mark on the stem - about 2-3 inches.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 5,
     examFocus: false
   },
@@ -859,7 +859,7 @@ var questionsDB = [
     correct: 1,
     hint: "Think about what could happen if a glass thermometer breaks while measuring food temperature.",
     explanation: "Glass thermometers can shatter and contaminate food with glass - a physical hazard. Only use if in shatterproof casing.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 5,
     examFocus: false
   },
@@ -875,7 +875,7 @@ var questionsDB = [
     correct: 1,
     hint: "Food can have different temperatures in different areas. What ensures you find the coldest/hottest spot?",
     explanation: "Take multiple readings in different spots, especially the thickest part, to ensure accurate temperature assessment.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 5,
     examFocus: false
   },
@@ -887,7 +887,7 @@ var questionsDB = [
     correct: 2,
     hint: "Shellfish tags help trace illness outbreaks. How long must they be retained?",
     explanation: "Shellfish tags must be kept for 90 days to track sources if someone gets sick.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 6,
     examFocus: true
   },
@@ -914,7 +914,7 @@ var questionsDB = [
     correct: 1,
     hint: "What do ice crystals on frozen packaging indicate about the temperature history of the food?",
     explanation: "Ice crystals indicate temperature abuse - the food was thawed and refrozen, allowing bacteria to grow.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 6,
     examFocus: true
   },
@@ -930,7 +930,7 @@ var questionsDB = [
     correct: 2,
     hint: "What's the proper procedure? Vendor may need the product for testing or credit.",
     explanation: "Remove recalled items, separate and label them 'Do Not Use,' then wait for vendor instructions.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 6,
     examFocus: true
   },
@@ -946,7 +946,7 @@ var questionsDB = [
     correct: 1,
     hint: "This type of packaging removes air to extend shelf life - think vacuum-sealed products.",
     explanation: "ROP (Reduced Oxygen Packaging) removes air to extend shelf life, like vacuum-sealed/cryovac packaging.",
-    category: "Definitions",
+    category: "Food Safety Basics",
     chapter: 6,
     examFocus: false
   },
@@ -973,7 +973,7 @@ var questionsDB = [
     correct: 2,
     hint: "Fresh fish has bright features. What indicates spoilage?",
     explanation: "Reject fish with dull gray gills, cloudy or sunken eyes, soft flesh, or strong fishy/ammonia smell.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 6,
     examFocus: false
   },
@@ -1000,7 +1000,7 @@ var questionsDB = [
     correct: 2,
     hint: "What characteristics indicate meat has spoiled?",
     explanation: "Reject meat that is slimy, sticky, or dry; has sour odor; or has broken/dirty packaging.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 6,
     examFocus: false
   },
@@ -1011,7 +1011,7 @@ var questionsDB = [
     correct: 2,
     hint: "Fresh beef has a specific color before oxidation changes it.",
     explanation: "Fresh beef should be bright cherry red. Reject if brown or green.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 6,
     examFocus: false
   },
@@ -1027,7 +1027,7 @@ var questionsDB = [
     correct: 1,
     hint: "Bulging cans may indicate bacterial growth inside. What specific damage is dangerous?",
     explanation: "Reject cans with swollen/bulging ends, severe dents in seams, holes, leaks, or rust.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 6,
     examFocus: false
   },
@@ -1077,7 +1077,7 @@ var questionsDB = [
     correct: 2,
     hint: "Remember the TCS storage rule - the day made counts as day one.",
     explanation: "TCS foods must be used or thrown out within 7 days. Count the day made as Day 1.",
-    category: "TCS Foods",
+    category: "Temperature Control",
     chapter: 7,
     examFocus: true
   },
@@ -1093,7 +1093,7 @@ var questionsDB = [
     correct: 1,
     hint: "When mixing ingredients, safety requires using which date for the discard deadline?",
     explanation: "Always use the OLDEST/EARLIEST ingredient date to determine the discard date.",
-    category: "TCS Foods",
+    category: "Temperature Control",
     chapter: 7,
     examFocus: true
   },
@@ -1186,7 +1186,7 @@ var questionsDB = [
     correct: 2,
     hint: "Poultry requires the highest cooking temp. Is it closest to 145, 155, 165, or 175?",
     explanation: "Poultry must reach 165°F (74°C) to kill Salmonella and other harmful bacteria.",
-    category: "Cooking Temperatures",
+    category: "Temperature Control",
     chapter: 8,
     examFocus: true
   },
@@ -1197,7 +1197,7 @@ var questionsDB = [
     correct: 2,
     hint: "Ground meats require higher temps than whole cuts because grinding spreads bacteria throughout.",
     explanation: "Ground beef requires 155°F (68°C) because grinding spreads bacteria throughout.",
-    category: "Cooking Temperatures",
+    category: "Temperature Control",
     chapter: 8,
     examFocus: true
   },
@@ -1208,7 +1208,7 @@ var questionsDB = [
     correct: 2,
     hint: "Fish and whole cuts of beef share the same minimum temperature. It's less than ground meat.",
     explanation: "Fish must be cooked to 145°F (63°C) for 15 seconds.",
-    category: "Cooking Temperatures",
+    category: "Temperature Control",
     chapter: 8,
     examFocus: true
   },
@@ -1219,7 +1219,7 @@ var questionsDB = [
     correct: 1,
     hint: "Two-stage cooling has different time limits. The first stage is shorter because it's more dangerous.",
     explanation: "Stage 1: 135°F to 70°F within 2 hours. Stage 2: 70°F to 41°F within 4 more hours. Total = 6 hours.",
-    category: "Cooling",
+    category: "Temperature Control",
     chapter: 8,
     examFocus: false
   },
@@ -1230,7 +1230,7 @@ var questionsDB = [
     correct: 2,
     hint: "This matches the time limit for glove changes. What's the maximum time between cleanings?",
     explanation: "Clean and sanitize food contact surfaces every 4 hours during continuous use.",
-    category: "Sanitation",
+    category: "Sanitation & Hygiene",
     chapter: 8,
     examFocus: false
   },
@@ -1241,7 +1241,7 @@ var questionsDB = [
     correct: 3,
     hint: "Reheated food must reach the same temperature as poultry. What is that temp?",
     explanation: "Reheated food must reach 165°F (74°C) within 2 hours.",
-    category: "Cooking Temperatures",
+    category: "Temperature Control",
     chapter: 8,
     examFocus: true
   },
@@ -1279,7 +1279,7 @@ var questionsDB = [
     correct: 1,
     hint: "Fish in ROP packaging can grow anaerobic bacteria. What step prevents this?",
     explanation: "Fish must be frozen before ROP to prevent growth of anaerobic bacteria (which don't need oxygen).",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 8,
     examFocus: true
   },
@@ -1290,7 +1290,7 @@ var questionsDB = [
     correct: 1,
     hint: "Ratites share a cooking temperature with another category of meat. Which category?",
     explanation: "Ratites (ostrich, emu) must be cooked to 155°F, the same as ground meats.",
-    category: "Cooking Temperatures",
+    category: "Temperature Control",
     chapter: 8,
     examFocus: true
   },
@@ -1301,7 +1301,7 @@ var questionsDB = [
     correct: 2,
     hint: "Which egg preparation leaves the yolk runny and undercooked?",
     explanation: "Over easy eggs (runny yolks) should not be served to high-risk populations.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 8,
     examFocus: true
   },
@@ -1312,7 +1312,7 @@ var questionsDB = [
     correct: 1,
     hint: "Stage 1 cooling is faster because the higher temperature range is more dangerous.",
     explanation: "Stage 1: 135°F→70°F in 2 hours. Stage 2: 70°F→41°F in 4 more hours.",
-    category: "Cooling",
+    category: "Temperature Control",
     chapter: 8,
     examFocus: true
   },
@@ -1323,7 +1323,7 @@ var questionsDB = [
     correct: 2,
     hint: "Add up Stage 1 and Stage 2 time limits to get the total cooling time.",
     explanation: "Total cooling time from 135°F to 41°F is 6 hours maximum (2 hours + 4 hours).",
-    category: "Cooling",
+    category: "Temperature Control",
     chapter: 8,
     examFocus: true
   },
@@ -1355,7 +1355,7 @@ var questionsDB = [
     correct: 1,
     hint: "Microwave cooking has special requirements. What extra steps are needed?",
     explanation: "Microwave cooking: 165°F minimum, cover food, rotate/stir halfway, let stand 2 minutes, check temp in 2+ spots.",
-    category: "Cooking Temperatures",
+    category: "Temperature Control",
     chapter: 8,
     examFocus: false
   },
@@ -1366,7 +1366,7 @@ var questionsDB = [
     correct: 1,
     hint: "Eggs for immediate service have a lower cooking requirement than eggs held for service.",
     explanation: "Shell eggs for immediate service: 145°F for 15 seconds. Shell eggs held for service: 155°F for 17 seconds.",
-    category: "Cooking Temperatures",
+    category: "Temperature Control",
     chapter: 8,
     examFocus: false
   },
@@ -1377,7 +1377,7 @@ var questionsDB = [
     correct: 1,
     hint: "Partial cooking has strict time limits. How long is allowed for the first cooking step?",
     explanation: "Initial cooking for partial cooking must NEVER exceed 60 minutes. Food must then be cooled and refrigerated immediately.",
-    category: "Cooking Temperatures",
+    category: "Temperature Control",
     chapter: 8,
     examFocus: false
   },
@@ -1393,7 +1393,7 @@ var questionsDB = [
     correct: 2,
     hint: "Think about what professional kitchens use for rapid cooling.",
     explanation: "Ice-water bath and blast chillers cool food fastest. Other methods: ice paddle, shallow containers, ice as ingredient.",
-    category: "Cooling",
+    category: "Temperature Control",
     chapter: 8,
     examFocus: false
   },
@@ -1404,7 +1404,7 @@ var questionsDB = [
     correct: 1,
     hint: "Roasts have a unique time-temperature relationship. What's the standard?",
     explanation: "Roasts: 145°F (63°C) for 4 minutes OR 130°F (54°C) for 112 minutes - time and temperature work together.",
-    category: "Cooking Temperatures",
+    category: "Temperature Control",
     chapter: 8,
     examFocus: false
   },
@@ -1427,7 +1427,7 @@ var questionsDB = [
     correct: 2,
     hint: "Think about ice cream shops - what keeps the scoops clean between customers?",
     explanation: "Ice cream scoops should be stored in running water between uses to keep them clean.",
-    category: "Sanitation",
+    category: "Sanitation & Hygiene",
     chapter: 9,
     examFocus: true
   },
@@ -1438,7 +1438,7 @@ var questionsDB = [
     correct: 2,
     hint: "Think about cross-contamination. What touches food directly vs. what only touches drinks?",
     explanation: "Guests must get new plates and silverware at buffets. Only cups/glasses may be reused.",
-    category: "Sanitation",
+    category: "Sanitation & Hygiene",
     chapter: 9,
     examFocus: true
   },
@@ -1498,7 +1498,7 @@ var questionsDB = [
     correct: 2,
     hint: "This matches other continuous use cleaning intervals.",
     explanation: "Clean and sanitize serving utensils at least every 4 hours during continuous use.",
-    category: "Sanitation",
+    category: "Sanitation & Hygiene",
     chapter: 9,
     examFocus: false
   },
@@ -1514,7 +1514,7 @@ var questionsDB = [
     correct: 2,
     hint: "Only completely sealed/packaged items can be re-served.",
     explanation: "Only unopened, prepackaged food in good condition can be re-served. Never re-serve bread, uncovered condiments, or garnishes.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 9,
     examFocus: false
   },
@@ -1530,7 +1530,7 @@ var questionsDB = [
     correct: 1,
     hint: "Think about maintaining temperatures and preventing cross-contamination during transport.",
     explanation: "Use insulated, food-grade containers. Keep raw meat/poultry/seafood separate from ready-to-eat. Label with use-by dates.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 9,
     examFocus: false
   },
@@ -1558,7 +1558,7 @@ var questionsDB = [
     correct: 1,
     hint: "This food safety system focuses on identifying dangers and the points where they can be controlled.",
     explanation: "HACCP = Hazard Analysis Critical Control Point - a systematic approach to food safety.",
-    category: "Definitions",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -1569,7 +1569,7 @@ var questionsDB = [
     correct: 2,
     hint: "HACCP has a specific number of guiding principles.",
     explanation: "HACCP has 7 principles: Hazard analysis, CCPs, critical limits, monitoring, corrective actions, verification, record keeping.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: false
   },
@@ -1585,7 +1585,7 @@ var questionsDB = [
     correct: 1,
     hint: "CCPs are specific points in the food flow where you can control hazards.",
     explanation: "A CCP is a point where an identified hazard can be prevented, eliminated, or reduced to safe levels.",
-    category: "Definitions",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: false
   },
@@ -1601,7 +1601,7 @@ var questionsDB = [
     correct: 1,
     hint: "Think about temperature requirements - these are examples of what?",
     explanation: "A critical limit is the minimum or maximum value (like 165°F for poultry) that must be met at a CCP to prevent hazards.",
-    category: "Definitions",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: false
   },
@@ -1612,7 +1612,7 @@ var questionsDB = [
     correct: 1,
     hint: "Hot-holding equipment failure has a time limit for safe food.",
     explanation: "Throw out TCS food held below 135°F for more than 4 hours during a power outage.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: false
   },
@@ -1628,7 +1628,7 @@ var questionsDB = [
     correct: 2,
     hint: "Imminent health hazards are significant threats requiring immediate closure or correction.",
     explanation: "Imminent health hazards include: sewage backup, fire, flood, power outage, pest infestation, contaminated water.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: false
   },
@@ -1644,7 +1644,7 @@ var questionsDB = [
     correct: 2,
     hint: "What's the proper first step when someone reports getting sick from your food?",
     explanation: "Take complaints seriously, express concern (don't admit responsibility), get contact info, complete incident report. If similar complaints occur, contact regulatory authority.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: false
   },
@@ -1660,7 +1660,7 @@ var questionsDB = [
     correct: 2,
     hint: "Public health interventions focus on food safety, not business operations.",
     explanation: "FDA's 5 interventions: demonstration of knowledge, staff health controls, controlling hands as contamination vehicle, time/temp control, consumer advisories.",
-    category: "Food Safety",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: false
   },
@@ -1672,7 +1672,7 @@ var questionsDB = [
     correct: 2,
     hint: "This height allows for cleaning beneath the equipment.",
     explanation: "Floor-mounted equipment must be on legs at least 6 inches (15 cm) high OR sealed to a masonry base.",
-    category: "Facilities",
+    category: "Facilities & Operations",
     chapter: 11,
     examFocus: false
   },
@@ -1683,7 +1683,7 @@ var questionsDB = [
     correct: 1,
     hint: "Tabletop equipment has a different height requirement than floor-mounted equipment.",
     explanation: "Tabletop equipment must be on legs at least 4 inches (10 cm) high OR sealed to the countertop.",
-    category: "Facilities",
+    category: "Facilities & Operations",
     chapter: 11,
     examFocus: false
   },
@@ -1699,7 +1699,7 @@ var questionsDB = [
     correct: 1,
     hint: "This plumbing problem can contaminate clean water with dirty water.",
     explanation: "Backflow is the reverse flow of contaminants through a cross-connection into the drinkable water supply.",
-    category: "Definitions",
+    category: "Food Safety Basics",
     chapter: 11,
     examFocus: false
   },
@@ -1715,7 +1715,7 @@ var questionsDB = [
     correct: 2,
     hint: "Equipment should have specific sanitation certification marks.",
     explanation: "Look for NSF mark, UL EPH classified mark, or ETL sanitation mark on foodservice equipment.",
-    category: "Facilities",
+    category: "Facilities & Operations",
     chapter: 11,
     examFocus: false
   },
@@ -1731,7 +1731,7 @@ var questionsDB = [
     correct: 1,
     hint: "This construction feature eliminates hiding places at the floor-wall junction.",
     explanation: "Coving is the curved junction where floors meet walls - eliminates pest hiding places and reduces moisture damage.",
-    category: "Definitions",
+    category: "Food Safety Basics",
     chapter: 11,
     examFocus: false
   },
@@ -1747,7 +1747,7 @@ var questionsDB = [
     correct: 3,
     hint: "What items must be present at every handwashing station?",
     explanation: "Handwashing stations must have: hot and cold water, soap, signage, and garbage container or dryer. No timer required.",
-    category: "Facilities",
+    category: "Facilities & Operations",
     chapter: 11,
     examFocus: false
   },
@@ -1763,7 +1763,7 @@ var questionsDB = [
     correct: 1,
     hint: "Sewage backup is a serious health hazard requiring specific response.",
     explanation: "Close affected area immediately, correct the problem, clean thoroughly. If significant risk to food safety: stop service and notify regulatory authority.",
-    category: "Facilities",
+    category: "Facilities & Operations",
     chapter: 11,
     examFocus: false
   },
@@ -1779,7 +1779,7 @@ var questionsDB = [
     correct: 1,
     hint: "Think about what properties prevent contamination and pest attraction.",
     explanation: "Indoor garbage containers must be: leakproof, waterproof, pestproof, easy to clean, and covered when not in use.",
-    category: "Facilities",
+    category: "Facilities & Operations",
     chapter: 11,
     examFocus: false
   },
@@ -1791,7 +1791,7 @@ var questionsDB = [
     correct: 2,
     hint: "The wash sink needs water hot enough to clean effectively.",
     explanation: "First sink (wash): detergent and water at least 110°F (43°C). Second sink: clean rinse water. Third sink: sanitizer solution.",
-    category: "Sanitation",
+    category: "Sanitation & Hygiene",
     chapter: 12,
     examFocus: false
   },
@@ -1802,7 +1802,7 @@ var questionsDB = [
     correct: 2,
     hint: "Heat sanitization requires a specific temperature and contact time.",
     explanation: "Heat sanitization by immersion: at least 171°F (77°C) for at least 30 seconds.",
-    category: "Sanitation",
+    category: "Sanitation & Hygiene",
     chapter: 12,
     examFocus: false
   },
@@ -1813,7 +1813,7 @@ var questionsDB = [
     correct: 2,
     hint: "High-temp dishwashers use hot water instead of chemicals for sanitizing.",
     explanation: "High-temperature dishwasher final sanitizing rinse must be at least 180°F (82°C).",
-    category: "Sanitation",
+    category: "Sanitation & Hygiene",
     chapter: 12,
     examFocus: false
   },
@@ -1829,7 +1829,7 @@ var questionsDB = [
     correct: 1,
     hint: "Think about the logical order: remove debris first, then clean, then kill pathogens.",
     explanation: "5 steps: 1) Scrape/remove food bits, 2) Wash, 3) Rinse, 4) Sanitize, 5) Air-dry.",
-    category: "Sanitation",
+    category: "Sanitation & Hygiene",
     chapter: 12,
     examFocus: false
   },
@@ -1845,7 +1845,7 @@ var questionsDB = [
     correct: 1,
     hint: "Wet cloths need to be kept sanitary between uses.",
     explanation: "Wet wiping cloths must be stored in sanitizer solution between uses. Keep cloths for raw meat separate.",
-    category: "Sanitation",
+    category: "Sanitation & Hygiene",
     chapter: 12,
     examFocus: false
   },
@@ -1861,7 +1861,7 @@ var questionsDB = [
     correct: 1,
     hint: "Sanitizer effectiveness depends on proper concentration.",
     explanation: "Change sanitizer solution when: it is dirty OR concentration is too low. Use test kits made for the specific sanitizer.",
-    category: "Sanitation",
+    category: "Sanitation & Hygiene",
     chapter: 12,
     examFocus: false
   },
@@ -1877,7 +1877,7 @@ var questionsDB = [
     correct: 1,
     hint: "Chemical storage must prevent contamination of food.",
     explanation: "Store chemicals in separate area away from food. If in same room, ALWAYS store BELOW food, equipment, utensils, and linens.",
-    category: "Sanitation",
+    category: "Sanitation & Hygiene",
     chapter: 12,
     examFocus: false
   },
@@ -1893,7 +1893,7 @@ var questionsDB = [
     correct: 2,
     hint: "Cleaning tools can contaminate certain sinks.",
     explanation: "NEVER clean tools in sinks used for handwashing, food prep, or dishwashing. Use utility/mop sinks only.",
-    category: "Sanitation",
+    category: "Sanitation & Hygiene",
     chapter: 12,
     examFocus: false
   },
@@ -1909,7 +1909,7 @@ var questionsDB = [
     correct: 0,
     hint: "A complete cleaning schedule answers four basic questions.",
     explanation: "Master cleaning schedule includes: What should be cleaned, Who should clean it, When it should be cleaned, How it should be cleaned.",
-    category: "Sanitation",
+    category: "Sanitation & Hygiene",
     chapter: 12,
     examFocus: false
   },
@@ -1926,7 +1926,7 @@ var questionsDB = [
     correct: 1,
     hint: "This comprehensive approach combines prevention and control measures.",
     explanation: "IPM = Integrated Pest Management - uses prevention measures and control measures with a licensed PCO.",
-    category: "Definitions",
+    category: "Food Safety Basics",
     chapter: 13,
     examFocus: false
   },
@@ -1942,7 +1942,7 @@ var questionsDB = [
     correct: 1,
     hint: "IPM focuses on prevention first, then control.",
     explanation: "Three IPM rules: 1) Deny pests access, 2) Deny pests food, water, and shelter, 3) Work with a licensed PCO.",
-    category: "Pest Management",
+    category: "Facilities & Operations",
     chapter: 13,
     examFocus: false
   },
@@ -1958,7 +1958,7 @@ var questionsDB = [
     correct: 1,
     hint: "Cockroaches leave distinctive signs even when not visible.",
     explanation: "Signs of cockroach infestation: strong oily odor, droppings that look like black pepper, capsule-shaped egg cases.",
-    category: "Pest Management",
+    category: "Facilities & Operations",
     chapter: 13,
     examFocus: false
   },
@@ -1974,7 +1974,7 @@ var questionsDB = [
     correct: 2,
     hint: "Rodents leave multiple types of evidence in an operation.",
     explanation: "Signs of rodents: gnaw marks, droppings (shiny black when fresh, gray when old), urine stains, dirt tracks along walls, nests.",
-    category: "Pest Management",
+    category: "Facilities & Operations",
     chapter: 13,
     examFocus: false
   },
@@ -1990,7 +1990,7 @@ var questionsDB = [
     correct: 2,
     hint: "Pesticide application has safety requirements for timing.",
     explanation: "Apply pesticides when closed and staff are not on-site. Remove or cover food and food-contact surfaces first.",
-    category: "Pest Management",
+    category: "Facilities & Operations",
     chapter: 13,
     examFocus: false
   },
@@ -2006,7 +2006,7 @@ var questionsDB = [
     correct: 1,
     hint: "Professional pest control has advantages for safety and effectiveness.",
     explanation: "Don't apply your own pesticides: may not work/be harmful if incorrect, pests can develop resistance, some aren't approved for foodservice.",
-    category: "Pest Management",
+    category: "Facilities & Operations",
     chapter: 13,
     examFocus: false
   },
@@ -2022,7 +2022,7 @@ var questionsDB = [
     correct: 2,
     hint: "Cockroaches are normally nocturnal. What does daytime activity suggest?",
     explanation: "Cockroaches seen in daylight may indicate a major infestation - they're being pushed out of hiding by overcrowding.",
-    category: "Pest Management",
+    category: "Facilities & Operations",
     chapter: 13,
     examFocus: false
   },
@@ -2039,7 +2039,7 @@ var questionsDB = [
     correct: 1,
     hint: "Regular inspections ensure ongoing food safety compliance.",
     explanation: "Operations should be inspected at least once every six months. May be less frequent with approved HACCP plan or risk-based schedule.",
-    category: "Inspections",
+    category: "Facilities & Operations",
     chapter: 14,
     examFocus: false
   },
@@ -2050,7 +2050,7 @@ var questionsDB = [
     correct: 2,
     hint: "Different agencies have different jurisdictions over food types.",
     explanation: "FDA inspects all food EXCEPT meat, poultry, and eggs (which are USDA). FDA also issues the Food Code.",
-    category: "Inspections",
+    category: "Facilities & Operations",
     chapter: 14,
     examFocus: false
   },
@@ -2061,7 +2061,7 @@ var questionsDB = [
     correct: 2,
     hint: "This agency puts inspection stamps on meat products.",
     explanation: "USDA regulates and inspects meat, poultry, and eggs. They also regulate food crossing state boundaries.",
-    category: "Inspections",
+    category: "Facilities & Operations",
     chapter: 14,
     examFocus: false
   },
@@ -2077,7 +2077,7 @@ var questionsDB = [
     correct: 1,
     hint: "Priority items are the most critical food safety violations.",
     explanation: "Priority items directly prevent, eliminate, or reduce hazards (e.g., handwashing, cooking temps). Require immediate correction.",
-    category: "Inspections",
+    category: "Facilities & Operations",
     chapter: 14,
     examFocus: false
   },
@@ -2093,7 +2093,7 @@ var questionsDB = [
     correct: 2,
     hint: "Only the most serious hazards result in closure.",
     explanation: "Operations may close for: significant refrigeration failure, sewage backup, fire/flood, major pest infestation, long utility interruption, evidence of foodborne illness outbreak.",
-    category: "Inspections",
+    category: "Facilities & Operations",
     chapter: 14,
     examFocus: false
   },
@@ -2109,7 +2109,7 @@ var questionsDB = [
     correct: 1,
     hint: "Professionalism and cooperation help during inspections.",
     explanation: "During inspection: ask for ID, cooperate, take notes, keep relationship professional, provide requested records. NEVER refuse entry.",
-    category: "Inspections",
+    category: "Facilities & Operations",
     chapter: 14,
     examFocus: false
   },
