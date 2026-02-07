@@ -2217,6 +2217,80 @@
               )
             ),
 
+            // Chapter-Based Study Modes
+            createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '📗 Study by Chapter'),
+            createElement('p', { className: 'text-sm text-muted mb-3' }, 'Focus on specific chapters or quiz groups'),
+
+            // Quiz Groups (matches class quiz structure)
+            createElement('div', { className: 'grid grid-cols-2 md:grid-cols-5 gap-3 mb-4' },
+              [
+                { id: '1-4', label: 'Quiz 1', chapters: 'Ch 1-4', count: questionsDB.filter(function(q) { return [1,2,3,4].indexOf(q.chapter) !== -1; }).length },
+                { id: '5-7', label: 'Quiz 2', chapters: 'Ch 5-7', count: questionsDB.filter(function(q) { return [5,6,7].indexOf(q.chapter) !== -1; }).length },
+                { id: '8-10', label: 'Quiz 3', chapters: 'Ch 8-10', count: questionsDB.filter(function(q) { return [8,9,10].indexOf(q.chapter) !== -1; }).length },
+                { id: '11-14', label: 'Quiz 4', chapters: 'Ch 11-14', count: questionsDB.filter(function(q) { return [11,12,13,14].indexOf(q.chapter) !== -1; }).length },
+                { id: '15', label: 'Final', chapters: 'Ch 15', count: questionsDB.filter(function(q) { return q.chapter === 15; }).length }
+              ].map(function(quiz) {
+                return createElement('button', {
+                  key: quiz.id,
+                  onClick: function() { onSelectMode('quizGroup', quiz.id); },
+                  className: 'mode-card card-bg rounded-xl p-3 border-2 border-blue-200 text-left hover:border-blue-400 hover:shadow-md'
+                },
+                  createElement('div', { className: 'text-lg font-bold text-primary' }, quiz.label),
+                  createElement('div', { className: 'text-xs text-blue-600' }, quiz.chapters),
+                  createElement('div', { className: 'text-xs text-muted mt-1' }, quiz.count + ' questions')
+                );
+              })
+            ),
+
+            // Chapter Range Selector (Ch 1 through X)
+            createElement('div', { className: 'card-bg rounded-xl p-4 border-2 border-green-200 mb-4' },
+              createElement('div', { className: 'flex items-center gap-3 mb-3' },
+                createElement('span', { className: 'text-2xl' }, '📚'),
+                createElement('span', { className: 'font-bold text-primary' }, 'Study Through Chapter...')
+              ),
+              createElement('div', { className: 'flex flex-wrap gap-2' },
+                [4, 7, 9, 10, 12, 14, 15].map(function(ch) {
+                  var count = questionsDB.filter(function(q) { return q.chapter >= 1 && q.chapter <= ch; }).length;
+                  return createElement('button', {
+                    key: ch,
+                    onClick: function() { onSelectMode('chapterRange', ch); },
+                    className: 'px-3 py-2 rounded-lg border-2 border-green-300 hover:bg-green-50 hover:border-green-500 transition-colors'
+                  },
+                    createElement('div', { className: 'font-semibold text-sm' }, 'Ch 1-' + ch),
+                    createElement('div', { className: 'text-xs text-muted' }, count + ' Q')
+                  );
+                })
+              )
+            ),
+
+            // Individual Chapter Selection
+            createElement('div', { className: 'card-bg rounded-xl p-4 border-2 border-purple-200 mb-6' },
+              createElement('div', { className: 'flex items-center gap-3 mb-3' },
+                createElement('span', { className: 'text-2xl' }, '📖'),
+                createElement('span', { className: 'font-bold text-primary' }, 'Single Chapter')
+              ),
+              createElement('div', { className: 'grid grid-cols-5 md:grid-cols-8 gap-2' },
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(function(ch) {
+                  var count = questionsDB.filter(function(q) { return q.chapter === ch; }).length;
+                  var chapterNames = {
+                    1: 'Food Safety', 2: 'Pathogens', 3: 'Hygiene', 4: 'Purchasing',
+                    5: 'Thermometers', 6: 'Receiving', 7: 'Storage', 8: 'Prep/Cooking',
+                    9: 'Holding', 10: 'HACCP', 11: 'Facilities', 12: 'Cleaning',
+                    13: 'Pests', 14: 'Inspections', 15: 'Training'
+                  };
+                  return createElement('button', {
+                    key: ch,
+                    onClick: function() { onSelectMode('chapter', ch); },
+                    className: 'p-2 rounded-lg border-2 border-purple-200 hover:bg-purple-50 hover:border-purple-400 transition-colors text-center',
+                    title: 'Chapter ' + ch + ': ' + chapterNames[ch]
+                  },
+                    createElement('div', { className: 'font-bold text-lg text-primary' }, ch),
+                    createElement('div', { className: 'text-xs text-muted truncate' }, count + ' Q')
+                  );
+                })
+              )
+            ),
+
             // Category Selection
             createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '📂 Study by Category'),
             createElement('div', { className: 'grid grid-cols-2 md:grid-cols-3 gap-3 mb-6' },
@@ -2714,6 +2788,32 @@
               return q.category === category;
             });
             name = category;
+          } else if (mode === 'chapter' && category) {
+            // category is actually the chapter number
+            filtered = questionsDB.filter(function(q) {
+              return q.chapter === category;
+            });
+            name = '📗 Chapter ' + category;
+          } else if (mode === 'quizGroup' && category) {
+            // category is the quiz group name like "1-4"
+            var ranges = {
+              '1-4': [1, 2, 3, 4],
+              '5-7': [5, 6, 7],
+              '8-10': [8, 9, 10],
+              '11-14': [11, 12, 13, 14],
+              '15': [15]
+            };
+            var chapterList = ranges[category] || [];
+            filtered = questionsDB.filter(function(q) {
+              return chapterList.indexOf(q.chapter) !== -1;
+            });
+            name = '📝 Quiz ' + (category === '15' ? '(Ch 15)' : '(Ch ' + category + ')');
+          } else if (mode === 'chapterRange' && category) {
+            // category is the end chapter number (start is always 1)
+            filtered = questionsDB.filter(function(q) {
+              return q.chapter >= 1 && q.chapter <= category;
+            });
+            name = '📚 Chapters 1-' + category;
           }
 
           var shuffled = filtered.slice().sort(function() { return Math.random() - 0.5; });

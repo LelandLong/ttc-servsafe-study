@@ -64,6 +64,7 @@ export const addQuestion = mutation({
     explanation: v.string(),
     category: v.string(),
     examFocus: v.boolean(),
+    chapter: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const newId = await ctx.db.insert("questions", args);
@@ -87,6 +88,7 @@ export const updateQuestion = mutation({
     explanation: v.string(),
     category: v.string(),
     examFocus: v.boolean(),
+    chapter: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const { id, ...data } = args;
@@ -163,6 +165,7 @@ export const bulkImport = mutation({
       explanation: v.string(),
       category: v.string(),
       examFocus: v.boolean(),
+      chapter: v.optional(v.number()),
     })),
   },
   handler: async (ctx, args) => {
@@ -209,6 +212,7 @@ export const resetToOriginal = mutation({
       explanation: v.string(),
       category: v.string(),
       examFocus: v.boolean(),
+      chapter: v.optional(v.number()),
     })),
   },
   handler: async (ctx, args) => {
