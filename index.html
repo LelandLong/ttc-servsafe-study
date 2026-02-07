@@ -2198,7 +2198,7 @@
               // Show all badges grid when expanded
               showAllBadges && createElement('div', { className: 'mt-4 border-t border-themed pt-4' },
                 createElement('h4', { className: 'text-sm font-semibold text-muted mb-3' }, 'All Achievements'),
-                ['Streaks', 'Progress', 'No Hints', 'Accuracy', 'Mastery', 'Exam', 'Fun'].map(function(category) {
+                ['Chapters', 'Quizzes', 'Streaks', 'Progress', 'No Hints', 'Accuracy', 'Mastery', 'Exam', 'Fun'].map(function(category) {
                   var categoryBadges = badgeDefinitions.filter(function(b) { return b.category === category; });
                   return createElement('div', { key: category, className: 'mb-4' },
                     createElement('h5', { className: 'text-xs font-medium text-muted uppercase tracking-wide mb-2' }, category),
