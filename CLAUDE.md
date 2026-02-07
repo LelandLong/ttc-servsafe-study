@@ -4,9 +4,12 @@
 
 **IMPORTANT:** After making any changes to files in this project:
 
-1. **Remind the user to commit via VSCode** - Changes are not live until committed
-2. **User publishes to GitHub Pages** - This deploys the changes
-3. **Refresh the browser** - To see the updated app
+1. **UPDATE VERSION NUMBER** - Before user publishes, update `APP_VERSION` in `index.html` (line ~357)
+   - Format: `MM-DD-YYYY-BUILD` (e.g., "02-07-2026-1", "02-07-2026-2" for second build same day)
+   - Increment the build number if same day, otherwise reset to 1
+2. **Remind the user to commit via VSCode** - Changes are not live until committed
+3. **User publishes to GitHub Pages** - This deploys the changes
+4. **Refresh the browser** - To see the updated app
 
 The deployment flow is:
 ```

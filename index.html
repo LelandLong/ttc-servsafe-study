@@ -353,6 +353,9 @@
       const useEffect = React.useEffect;
       const createElement = React.createElement;
 
+      // ============ APP VERSION ============
+      const APP_VERSION = "02-07-2026-10";
+
       // ============ CONVEX CLOUD DATABASE CONFIGURATION ============
       // Leland's Convex PRODUCTION deployment - DO NOT CHANGE
       const CONVEX_URL = "https://cautious-monitor-526.convex.cloud";
@@ -2069,8 +2072,9 @@
           // Header
           createElement('header', { className: 'bg-gradient-to-r from-red-700 via-red-600 to-orange-600 text-white p-6 shadow-lg' },
             createElement('div', { className: 'max-w-4xl mx-auto' },
-              // Theme toggle in top right
-              createElement('div', { className: 'flex justify-end mb-2' },
+              // Version and theme toggle in top right
+              createElement('div', { className: 'flex justify-end items-center gap-3 mb-2' },
+                createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION),
                 createElement('button', {
                   onClick: onCycleTheme,
                   className: 'flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-full text-sm transition-colors',
@@ -2460,7 +2464,8 @@
 
             // Footer
             createElement('footer', { className: 'mt-8 text-center' },
-              createElement('p', { className: 'text-muted text-sm' }, '🏫 CUL 104 • Trident Technical College • Charleston, SC')
+              createElement('p', { className: 'text-muted text-sm' }, '🏫 CUL 104 • Trident Technical College • Charleston, SC'),
+              createElement('p', { className: 'text-muted text-xs mt-1 opacity-60' }, 'v' + APP_VERSION)
             )
           )
         );
