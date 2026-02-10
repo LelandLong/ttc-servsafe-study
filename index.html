@@ -3503,12 +3503,17 @@
             });
         }, [user ? user.userId : null]);
 
-        // Fetch class stats when user is logged in
+        // Poll class stats every 5 seconds when user is logged in
         useEffect(function() {
           if (!user || !CONVEX_URL) return;
-          convexQuery("users:getClassStats")
-            .then(function(stats) { setClassStats(stats); })
-            .catch(function() {});
+          function fetchStats() {
+            convexQuery("users:getClassStats")
+              .then(function(stats) { setClassStats(stats); })
+              .catch(function() {});
+          }
+          fetchStats();
+          var interval = setInterval(fetchStats, 5000);
+          return function() { clearInterval(interval); };
         }, [user ? user.userId : null]);
 
         // Poll for active tests every 3 seconds
