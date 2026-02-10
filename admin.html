@@ -178,6 +178,26 @@
     [data-theme="dark"] .modal-overlay {
       background-color: rgba(0, 0, 0, 0.7) !important;
     }
+    /* Leaderboard row highlights */
+    .leaderboard-row-0 { background-color: #FEFCE8; }
+    .leaderboard-row-1 { background-color: #F0F9FF; }
+    .leaderboard-row-2 { background-color: #FFF7ED; }
+    [data-theme="dark"] .leaderboard-row-0 { background-color: rgba(234, 179, 8, 0.1) !important; }
+    [data-theme="dark"] .leaderboard-row-1 { background-color: rgba(59, 130, 246, 0.1) !important; }
+    [data-theme="dark"] .leaderboard-row-2 { background-color: rgba(249, 115, 22, 0.1) !important; }
+    /* Dark mode: link/action text colors */
+    [data-theme="dark"] .text-blue-600 {
+      color: #60a5fa !important;
+    }
+    [data-theme="dark"] .text-blue-800 {
+      color: #93bbfd !important;
+    }
+    [data-theme="dark"] .text-red-500 {
+      color: #f87171 !important;
+    }
+    [data-theme="dark"] .text-red-700 {
+      color: #fca5a5 !important;
+    }
     /* System dark preference fallback */
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) .bg-white,
@@ -264,6 +284,21 @@
       }
       :root:not([data-theme="light"]) .modal-overlay {
         background-color: rgba(0, 0, 0, 0.7) !important;
+      }
+      :root:not([data-theme="light"]) .leaderboard-row-0 { background-color: rgba(234, 179, 8, 0.1) !important; }
+      :root:not([data-theme="light"]) .leaderboard-row-1 { background-color: rgba(59, 130, 246, 0.1) !important; }
+      :root:not([data-theme="light"]) .leaderboard-row-2 { background-color: rgba(249, 115, 22, 0.1) !important; }
+      :root:not([data-theme="light"]) .text-blue-600 {
+        color: #60a5fa !important;
+      }
+      :root:not([data-theme="light"]) .text-blue-800 {
+        color: #93bbfd !important;
+      }
+      :root:not([data-theme="light"]) .text-red-500 {
+        color: #f87171 !important;
+      }
+      :root:not([data-theme="light"]) .text-red-700 {
+        color: #fca5a5 !important;
       }
     }
   </style>
@@ -1877,8 +1912,7 @@
                     var acc = entry.totalAnswered > 0 ? Math.round(entry.accuracy * 100) : 0;
                     return e('tr', {
                       key: idx,
-                      className: 'border-b',
-                      style: { backgroundColor: idx < 3 ? ['#FEFCE8', '#F0F9FF', '#FFF7ED'][idx] : 'transparent' }
+                      className: 'border-b leaderboard-row-' + (idx < 3 ? idx : 'default')
                     },
                       e('td', { className: 'px-4 py-2 font-bold' }, idx < 3 ? medals[idx] : (idx + 1)),
                       e('td', { className: 'px-4 py-2 font-medium' }, entry.displayName),
@@ -1899,7 +1933,12 @@
             currentTest.status === 'finished' && e('button', {
               onClick: handleNewTest,
               className: 'px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium'
-            }, 'New Test')
+            }, 'New Test'),
+            currentTest.status === 'finished' && e('button', {
+              onClick: function() { setCurrentTest(null); setLeaderboard([]); convexQuery("tests:getTestHistory").then(function(h) { setTestHistory(h || []); }).catch(function() {}); },
+              className: 'px-6 py-2 rounded-lg font-medium',
+              style: { backgroundColor: 'var(--bg-secondary, #F3F4F6)', color: 'var(--text-primary, #1F2937)', border: '1px solid var(--border-color, #D1D5DB)' }
+            }, '\u2190 Back to Tests')
           )
         );
       }
