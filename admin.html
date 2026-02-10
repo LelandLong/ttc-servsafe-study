@@ -1355,10 +1355,11 @@
           return va < vb ? 1 : -1;
         });
 
-        var totalStudents = students.length;
-        var totalAnswered = students.reduce(function(s, st) { return s + st.totalAnswered; }, 0);
+        var studentOnly = students.filter(function(s) { return !s.isProf; });
+        var totalStudents = studentOnly.length;
+        var totalAnswered = studentOnly.reduce(function(s, st) { return s + st.totalAnswered; }, 0);
         var avgAcc = totalStudents > 0
-          ? Math.round(students.reduce(function(s, st) {
+          ? Math.round(studentOnly.reduce(function(s, st) {
               return s + (st.totalAnswered > 0 ? st.totalCorrect / st.totalAnswered : 0);
             }, 0) / totalStudents * 100)
           : 0;
@@ -1446,7 +1447,13 @@
                       key: s.userId,
                       className: 'border-b hover:bg-gray-50'
                     },
-                      e('td', { className: 'px-4 py-3 font-medium text-orange-600' }, s.displayName),
+                      e('td', { className: 'px-4 py-3 font-medium text-orange-600' },
+                        s.displayName,
+                        s.isProf && e('span', {
+                          className: 'ml-1 px-1.5 py-0.5 text-xs font-normal rounded',
+                          style: { backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#a855f7' }
+                        }, 'Prof')
+                      ),
                       e('td', { className: 'px-4 py-3 text-gray-600' }, s.firstName),
                       e('td', { className: 'px-4 py-3' }, s.totalAnswered),
                       e('td', { className: 'px-4 py-3' },
@@ -1488,6 +1495,27 @@
                   onClick: function() { setSelectedStudent(null); },
                   className: 'text-gray-400 hover:text-gray-600 text-2xl'
                 }, '\u00D7')
+              ),
+
+              // Professor toggle
+              e('div', { className: 'mb-4' },
+                e('button', {
+                  onClick: function() {
+                    convexMutation("users:toggleProf", { userId: selectedStudent })
+                      .then(function() {
+                        // Refresh student list and detail
+                        convexQuery("users:getAllStudents").then(function(s) { setStudents(s || []); }).catch(function() {});
+                        convexQuery("users:getStudentDetail", { userId: selectedStudent }).then(function(d) { setStudentDetail(d); }).catch(function() {});
+                      })
+                      .catch(function(err) { alert('Failed: ' + err.message); });
+                  },
+                  className: 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                  style: {
+                    backgroundColor: studentDetail.user.isProf ? 'rgba(168, 85, 247, 0.15)' : 'var(--bg-secondary, #F3F4F6)',
+                    color: studentDetail.user.isProf ? '#a855f7' : 'var(--text-secondary, #6B7280)',
+                    border: '1px solid ' + (studentDetail.user.isProf ? '#a855f7' : 'var(--border-color, #D1D5DB)')
+                  }
+                }, studentDetail.user.isProf ? 'Professor Account (excluded from stats)' : 'Mark as Professor')
               ),
 
               // Overall stats

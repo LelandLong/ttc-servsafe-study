@@ -32,6 +32,7 @@ export default defineSchema({
     gamerName: v.string(),      // Stored LOWERCASE for uniqueness
     firstName: v.string(),      // Stored LOWERCASE for matching
     displayName: v.string(),    // Original casing of gamerName for display
+    isProf: v.optional(v.boolean()), // Professor account — excluded from class stats/leaderboards
     createdAt: v.number(),      // Epoch millis
     lastActiveAt: v.number(),   // Updated on each sync/login
   }).index("by_gamerName", ["gamerName"]),

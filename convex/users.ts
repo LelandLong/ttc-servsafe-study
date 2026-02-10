@@ -32,6 +32,7 @@ export const getAllStudents = query({
         gamerName: user.gamerName,
         displayName: user.displayName,
         firstName: user.firstName,
+        isProf: user.isProf || false,
         totalAnswered: progress?.progress?.totalAnswered || 0,
         totalCorrect: progress?.progress?.totalCorrect || 0,
         badgeCount: progress?.badges?.length || 0,
@@ -82,9 +83,15 @@ export const getClassStats = query({
   handler: async (ctx) => {
     const allProgress = await ctx.db.query("userProgress").collect();
 
-    // Filter to students who have actually answered questions
+    // Get prof user IDs to exclude from stats
+    const allUsers = await ctx.db.query("users").collect();
+    const profUserIds = new Set(
+      allUsers.filter((u) => u.isProf).map((u) => u._id)
+    );
+
+    // Filter to students who have actually answered questions (excluding profs)
     const active = allProgress.filter(
-      (p) => p.progress && p.progress.totalAnswered > 0
+      (p) => p.progress && p.progress.totalAnswered > 0 && !profUserIds.has(p.userId)
     );
 
     if (active.length === 0) {
@@ -390,5 +397,16 @@ export const checkGamerName = query({
       .first();
 
     return { available: !existing };
+  },
+});
+
+// Toggle professor flag on a user account
+export const toggleProf = mutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(user._id, { isProf: !user.isProf });
+    return { isProf: !user.isProf };
   },
 });

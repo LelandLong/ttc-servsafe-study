@@ -34,11 +34,11 @@ export const getTestLeaderboard = query({
       .withIndex("by_testId", (q) => q.eq("testId", args.testId))
       .collect();
 
-    // Get user info for each result
+    // Get user info for each result (exclude prof accounts)
     const leaderboard = [];
     for (const result of results) {
       const user = await ctx.db.get(result.userId);
-      if (user) {
+      if (user && !user.isProf) {
         leaderboard.push({
           userId: user._id,
           displayName: user.displayName,
