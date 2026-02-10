@@ -159,6 +159,25 @@
     [data-theme="dark"] .hover\:bg-red-50:hover {
       background-color: rgba(239, 68, 68, 0.1) !important;
     }
+    /* Dark mode: modal stat cards & badges */
+    [data-theme="dark"] .bg-orange-50 {
+      background-color: rgba(249, 115, 22, 0.1) !important;
+    }
+    [data-theme="dark"] .bg-purple-50 {
+      background-color: rgba(168, 85, 247, 0.1) !important;
+    }
+    [data-theme="dark"] .bg-yellow-50 {
+      background-color: rgba(234, 179, 8, 0.12) !important;
+    }
+    [data-theme="dark"] .border-yellow-200 {
+      border-color: rgba(234, 179, 8, 0.3) !important;
+    }
+    [data-theme="dark"] .bg-gray-200 {
+      background-color: #374151 !important;
+    }
+    [data-theme="dark"] .modal-overlay {
+      background-color: rgba(0, 0, 0, 0.7) !important;
+    }
     /* System dark preference fallback */
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) .bg-white,
@@ -227,6 +246,24 @@
       }
       :root:not([data-theme="light"]) .hover\:bg-red-50:hover {
         background-color: rgba(239, 68, 68, 0.1) !important;
+      }
+      :root:not([data-theme="light"]) .bg-orange-50 {
+        background-color: rgba(249, 115, 22, 0.1) !important;
+      }
+      :root:not([data-theme="light"]) .bg-purple-50 {
+        background-color: rgba(168, 85, 247, 0.1) !important;
+      }
+      :root:not([data-theme="light"]) .bg-yellow-50 {
+        background-color: rgba(234, 179, 8, 0.12) !important;
+      }
+      :root:not([data-theme="light"]) .border-yellow-200 {
+        border-color: rgba(234, 179, 8, 0.3) !important;
+      }
+      :root:not([data-theme="light"]) .bg-gray-200 {
+        background-color: #374151 !important;
+      }
+      :root:not([data-theme="light"]) .modal-overlay {
+        background-color: rgba(0, 0, 0, 0.7) !important;
       }
     }
   </style>
