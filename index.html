@@ -354,7 +354,7 @@
       const createElement = React.createElement;
 
       // ============ APP VERSION ============
-      const APP_VERSION = "02-07-2026-10";
+      const APP_VERSION = "02-09-2026-1";
 
       // ============ CONVEX CLOUD DATABASE CONFIGURATION ============
       // Leland's Convex PRODUCTION deployment - DO NOT CHANGE
@@ -407,7 +407,7 @@
         };
       }
 
-      // Direct HTTP API call to Convex (no SDK needed)
+      // Direct HTTP API calls to Convex (no SDK needed)
       function convexQuery(functionName, args) {
         return fetch(CONVEX_URL + '/api/query', {
           method: 'POST',
@@ -419,6 +419,128 @@
           if (data.status === 'success') return data.value;
           throw new Error(data.errorMessage || 'Query failed');
         });
+      }
+
+      function convexMutation(functionName, args) {
+        return fetch(CONVEX_URL + '/api/mutation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: functionName, args: args || {} })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.status === 'success') return data.value;
+          throw new Error(data.errorMessage || 'Mutation failed');
+        });
+      }
+
+      // ============ USER SESSION MANAGEMENT ============
+      var USER_KEY = 'chefKitchenUser';
+      var USER_LAST_ACTIVE = 'chefKitchenLastActive';
+      var PERSONAL_DEVICE = 'chefKitchenPersonalDevice';
+      var IDLE_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+
+      function loadUser() {
+        try {
+          var saved = localStorage.getItem(USER_KEY);
+          if (saved) return JSON.parse(saved);
+        } catch (e) {}
+        return null;
+      }
+
+      function saveUser(user) {
+        try {
+          localStorage.setItem(USER_KEY, JSON.stringify(user));
+          localStorage.setItem(USER_LAST_ACTIVE, Date.now().toString());
+        } catch (e) {}
+      }
+
+      function clearUser() {
+        try {
+          localStorage.removeItem(USER_KEY);
+          localStorage.removeItem(USER_LAST_ACTIVE);
+        } catch (e) {}
+      }
+
+      function updateLastActive() {
+        try {
+          localStorage.setItem(USER_LAST_ACTIVE, Date.now().toString());
+        } catch (e) {}
+      }
+
+      function isPersonalDevice() {
+        try {
+          return localStorage.getItem(PERSONAL_DEVICE) === 'true';
+        } catch (e) {}
+        return false;
+      }
+
+      function setPersonalDevice(val) {
+        try {
+          localStorage.setItem(PERSONAL_DEVICE, val ? 'true' : 'false');
+        } catch (e) {}
+      }
+
+      function needsIdentityCheck() {
+        if (isPersonalDevice()) return false;
+        try {
+          var lastActive = parseInt(localStorage.getItem(USER_LAST_ACTIVE) || '0');
+          return (Date.now() - lastActive) > IDLE_TIMEOUT;
+        } catch (e) {}
+        return true;
+      }
+
+      // ============ CLOUD SYNC (DEBOUNCED) ============
+      var syncTimeout = null;
+
+      function syncProgressToCloud(userId, progress, badges) {
+        if (!userId || !CONVEX_URL) return;
+        clearTimeout(syncTimeout);
+        syncTimeout = setTimeout(function() {
+          convexMutation("users:syncProgress", {
+            userId: userId,
+            progress: progress,
+            badges: badges
+          }).then(function() {
+            console.log('Progress synced to cloud');
+          }).catch(function(err) {
+            console.log('Cloud sync failed (saved locally):', err.message);
+          });
+        }, 2000);
+      }
+
+      function mergeProgressFromCloud(localProgress, cloudData, localBadges) {
+        if (!cloudData || !cloudData.progress || cloudData.progress.totalAnswered === 0) {
+          // Cloud is empty — use local
+          return { progress: localProgress, badges: localBadges };
+        }
+        var cloud = cloudData.progress;
+        var cloudBadges = cloudData.badges || [];
+
+        // Use whichever has more answers (more recent data)
+        var merged;
+        if (localProgress.totalAnswered > cloud.totalAnswered) {
+          merged = JSON.parse(JSON.stringify(localProgress));
+        } else {
+          merged = JSON.parse(JSON.stringify(cloud));
+        }
+
+        // Always take the max of best-of fields
+        merged.bestStreak = Math.max(merged.bestStreak || 0, localProgress.bestStreak || 0, cloud.bestStreak || 0);
+        merged.bestNoHintStreak = Math.max(merged.bestNoHintStreak || 0, localProgress.bestNoHintStreak || 0, cloud.bestNoHintStreak || 0);
+
+        // Boolean OR for time-based flags
+        merged.studiedEarly = (localProgress.studiedEarly || cloud.studiedEarly) || false;
+        merged.studiedLate = (localProgress.studiedLate || cloud.studiedLate) || false;
+        merged.studiedWeekend = (localProgress.studiedWeekend || cloud.studiedWeekend) || false;
+
+        // Union badges (never lose a badge)
+        var badgeSet = {};
+        (localBadges.earned || []).forEach(function(b) { badgeSet[b] = true; });
+        cloudBadges.forEach(function(b) { badgeSet[b] = true; });
+        var mergedBadges = { earned: Object.keys(badgeSet), newlyEarned: [] };
+
+        return { progress: merged, badges: mergedBadges };
       }
 
       if (CONVEX_URL) {
@@ -2042,6 +2164,501 @@
         );
       }
 
+      // ============ IDENTITY CHECK SCREEN ============
+      function IdentityCheckScreen(props) {
+        var displayName = props.displayName;
+        return createElement('div', {
+          className: 'min-h-screen flex items-center justify-center p-4',
+          style: { backgroundColor: 'var(--bg-primary)' }
+        },
+          createElement('div', {
+            className: 'max-w-sm w-full text-center p-8 rounded-2xl shadow-lg',
+            style: { backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }
+          },
+            createElement('img', {
+              src: 'assets/chef-greeting.jpg',
+              alt: 'Chef Whiskers',
+              className: 'w-24 h-24 mx-auto mb-4 rounded-xl object-cover'
+            }),
+            createElement('h2', {
+              className: 'text-xl font-bold mb-2',
+              style: { fontFamily: 'Fredoka, sans-serif', color: 'var(--text-primary)' }
+            }, 'Welcome back!'),
+            createElement('p', {
+              className: 'text-lg mb-6',
+              style: { color: 'var(--text-secondary)' }
+            }, 'Are you still ', createElement('strong', {
+              style: { color: '#F97316' }
+            }, displayName), '?'),
+            createElement('div', { className: 'flex gap-3 justify-center' },
+              createElement('button', {
+                onClick: props.onYes,
+                className: 'px-6 py-3 rounded-xl font-bold text-white transition-all',
+                style: { background: 'linear-gradient(135deg, #F97316, #EA580C)' }
+              }, 'Yes, that\'s me!'),
+              createElement('button', {
+                onClick: props.onNo,
+                className: 'px-6 py-3 rounded-xl font-bold transition-all',
+                style: { backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }
+              }, 'No, switch user')
+            )
+          )
+        );
+      }
+
+      // ============ AUTH SCREEN ============
+      function AuthScreen(props) {
+        var mode = props.mode || 'choose';
+        var setMode = props.setMode;
+        var onAuth = props.onAuth;
+
+        var gamerNameState = useState('');
+        var gamerName = gamerNameState[0];
+        var setGamerName = gamerNameState[1];
+
+        var firstNameState = useState('');
+        var firstName = firstNameState[0];
+        var setFirstName = firstNameState[1];
+
+        var errorState = useState('');
+        var error = errorState[0];
+        var setError = errorState[1];
+
+        var loadingState = useState(false);
+        var loading = loadingState[0];
+        var setLoading = loadingState[1];
+
+        var nameAvailableState = useState(null);
+        var nameAvailable = nameAvailableState[0];
+        var setNameAvailable = nameAvailableState[1];
+
+        var checkTimeoutState = useState(null);
+        var checkTimeoutRef = checkTimeoutState[0];
+        var setCheckTimeoutRef = checkTimeoutState[1];
+
+        function checkNameAvailability(name) {
+          if (checkTimeoutRef) clearTimeout(checkTimeoutRef);
+          if (name.trim().length < 2) {
+            setNameAvailable(null);
+            return;
+          }
+          var timeout = setTimeout(function() {
+            convexQuery("users:checkGamerName", { gamerName: name.trim() })
+              .then(function(result) { setNameAvailable(result.available); })
+              .catch(function() { setNameAvailable(null); });
+          }, 500);
+          setCheckTimeoutRef(timeout);
+        }
+
+        function handleGamerNameChange(e) {
+          var val = e.target.value;
+          setGamerName(val);
+          setError('');
+          if (mode === 'signup') checkNameAvailability(val);
+        }
+
+        function handleSignup() {
+          if (!gamerName.trim() || !firstName.trim()) {
+            setError('Please fill in both fields');
+            return;
+          }
+          if (gamerName.trim().length < 2 || gamerName.trim().length > 20) {
+            setError('Gamer name must be 2-20 characters');
+            return;
+          }
+          setLoading(true);
+          setError('');
+          convexMutation("users:register", {
+            gamerName: gamerName.trim(),
+            firstName: firstName.trim()
+          }).then(function(result) {
+            onAuth({
+              userId: result.userId,
+              displayName: result.displayName,
+              gamerName: gamerName.trim().toLowerCase(),
+              firstName: firstName.trim().toLowerCase()
+            });
+          }).catch(function(err) {
+            setError(err.message || 'Registration failed');
+            setLoading(false);
+          });
+        }
+
+        function handleLogin() {
+          if (!gamerName.trim() || !firstName.trim()) {
+            setError('Please fill in both fields');
+            return;
+          }
+          setLoading(true);
+          setError('');
+          convexMutation("users:login", {
+            gamerName: gamerName.trim(),
+            firstName: firstName.trim()
+          }).then(function(result) {
+            onAuth({
+              userId: result.userId,
+              displayName: result.displayName,
+              gamerName: gamerName.trim().toLowerCase(),
+              firstName: firstName.trim().toLowerCase()
+            });
+          }).catch(function(err) {
+            setError(err.message || 'Login failed');
+            setLoading(false);
+          });
+        }
+
+        function handleKeyPress(e, action) {
+          if (e.key === 'Enter') action();
+        }
+
+        if (mode === 'choose') {
+          return createElement('div', {
+            className: 'min-h-screen flex items-center justify-center p-4',
+            style: { backgroundColor: 'var(--bg-primary)' }
+          },
+            createElement('div', {
+              className: 'max-w-md w-full text-center p-8 rounded-2xl shadow-lg',
+              style: { backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }
+            },
+              createElement('img', {
+                src: 'assets/chef-greeting.jpg',
+                alt: 'Chef Whiskers',
+                className: 'w-32 h-32 mx-auto mb-4 rounded-xl object-cover',
+                style: { animation: 'gentleFloat 4s ease-in-out infinite' }
+              }),
+              createElement('h1', {
+                className: 'text-3xl font-bold mb-2',
+                style: { fontFamily: 'Fredoka, sans-serif', color: '#F97316' }
+              }, 'Chef\'s Kitchen'),
+              createElement('p', {
+                className: 'text-sm mb-1',
+                style: { color: 'var(--text-secondary)' }
+              }, 'CUL 104 ServSafe Study Aid'),
+              createElement('p', {
+                className: 'text-xs mb-6',
+                style: { color: 'var(--text-muted)' }
+              }, 'Trident Technical College'),
+              createElement('div', { className: 'space-y-3' },
+                createElement('button', {
+                  onClick: function() { setMode('signup'); },
+                  className: 'w-full py-4 rounded-xl font-bold text-white text-lg transition-all hover:scale-105',
+                  style: { background: 'linear-gradient(135deg, #F97316, #EA580C)' }
+                }, 'New Chef? Create Account'),
+                createElement('button', {
+                  onClick: function() { setMode('login'); },
+                  className: 'w-full py-4 rounded-xl font-bold text-lg transition-all hover:scale-105',
+                  style: { backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '2px solid #F97316' }
+                }, 'Returning Chef? Sign In')
+              )
+            )
+          );
+        }
+
+        // Signup or Login form
+        var isSignup = mode === 'signup';
+        return createElement('div', {
+          className: 'min-h-screen flex items-center justify-center p-4',
+          style: { backgroundColor: 'var(--bg-primary)' }
+        },
+          createElement('div', {
+            className: 'max-w-md w-full p-8 rounded-2xl shadow-lg',
+            style: { backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }
+          },
+            createElement('button', {
+              onClick: function() { setMode('choose'); setError(''); setNameAvailable(null); },
+              className: 'text-sm mb-4 flex items-center gap-1',
+              style: { color: 'var(--text-muted)' }
+            }, '\u2190 Back'),
+            createElement('h2', {
+              className: 'text-2xl font-bold mb-6 text-center',
+              style: { fontFamily: 'Fredoka, sans-serif', color: '#F97316' }
+            }, isSignup ? 'Create Your Account' : 'Welcome Back, Chef!'),
+
+            // Gamer Name field
+            createElement('div', { className: 'mb-4' },
+              createElement('label', {
+                className: 'block text-sm font-medium mb-1',
+                style: { color: 'var(--text-secondary)' }
+              }, 'Gamer Name'),
+              createElement('input', {
+                type: 'text',
+                value: gamerName,
+                onChange: handleGamerNameChange,
+                onKeyPress: function(e) { handleKeyPress(e, isSignup ? handleSignup : handleLogin); },
+                placeholder: 'e.g. ChefBob123',
+                maxLength: 20,
+                className: 'w-full px-4 py-3 rounded-xl text-lg',
+                style: {
+                  backgroundColor: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  border: '2px solid ' + (isSignup && nameAvailable === true ? '#22C55E' : isSignup && nameAvailable === false ? '#EF4444' : 'var(--border-color)'),
+                  outline: 'none'
+                }
+              }),
+              isSignup && nameAvailable === true && createElement('p', {
+                className: 'text-xs mt-1', style: { color: '#22C55E' }
+              }, 'Name is available!'),
+              isSignup && nameAvailable === false && createElement('p', {
+                className: 'text-xs mt-1', style: { color: '#EF4444' }
+              }, 'Name is already taken')
+            ),
+
+            // First Name field
+            createElement('div', { className: 'mb-6' },
+              createElement('label', {
+                className: 'block text-sm font-medium mb-1',
+                style: { color: 'var(--text-secondary)' }
+              }, 'First Name'),
+              createElement('input', {
+                type: 'text',
+                value: firstName,
+                onChange: function(e) { setFirstName(e.target.value); setError(''); },
+                onKeyPress: function(e) { handleKeyPress(e, isSignup ? handleSignup : handleLogin); },
+                placeholder: 'Your real first name',
+                maxLength: 30,
+                className: 'w-full px-4 py-3 rounded-xl text-lg',
+                style: {
+                  backgroundColor: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  border: '2px solid var(--border-color)',
+                  outline: 'none'
+                }
+              })
+            ),
+
+            // Error message
+            error && createElement('p', {
+              className: 'text-sm mb-4 text-center p-2 rounded-lg',
+              style: { backgroundColor: '#FEE2E2', color: '#DC2626' }
+            }, error),
+
+            // Submit button
+            createElement('button', {
+              onClick: isSignup ? handleSignup : handleLogin,
+              disabled: loading,
+              className: 'w-full py-4 rounded-xl font-bold text-white text-lg transition-all',
+              style: {
+                background: loading ? '#9CA3AF' : 'linear-gradient(135deg, #F97316, #EA580C)',
+                cursor: loading ? 'not-allowed' : 'pointer'
+              }
+            }, loading ? 'Please wait...' : (isSignup ? 'Create Account' : 'Sign In')),
+
+            !isSignup && createElement('p', {
+              className: 'text-xs text-center mt-4',
+              style: { color: 'var(--text-muted)' }
+            }, 'Enter the same gamer name and first name you used to sign up. Case doesn\'t matter!')
+          )
+        );
+      }
+
+      // ============ ACCOUNT MENU ============
+      function AccountMenu(props) {
+        var user = props.user;
+        var theme = props.theme;
+        var onCycleTheme = props.onCycleTheme;
+        var onResetProgress = props.onResetProgress;
+        var onLogout = props.onLogout;
+        var personalDevice = props.personalDevice;
+        var onTogglePersonalDevice = props.onTogglePersonalDevice;
+
+        var openState = useState(false);
+        var open = openState[0];
+        var setOpen = openState[1];
+
+        // Close menu when clicking outside
+        useEffect(function() {
+          if (!open) return;
+          function handleClick(e) {
+            if (!e.target.closest('.account-menu-container')) setOpen(false);
+          }
+          document.addEventListener('click', handleClick);
+          return function() { document.removeEventListener('click', handleClick); };
+        }, [open]);
+
+        var themeLabel = theme === 'system' ? 'System' : theme === 'light' ? 'Light' : 'Dark';
+        var themeIcon = theme === 'system' ? '\uD83D\uDDA5\uFE0F' : theme === 'light' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+        var initial = (user.displayName || '?')[0].toUpperCase();
+
+        return createElement('div', {
+          className: 'account-menu-container',
+          style: { position: 'relative', zIndex: 100 }
+        },
+          // Avatar button
+          createElement('button', {
+            onClick: function(e) { e.stopPropagation(); setOpen(!open); },
+            className: 'flex items-center justify-center rounded-full font-bold text-white transition-all hover:scale-110',
+            style: {
+              width: '36px', height: '36px',
+              background: 'linear-gradient(135deg, #F97316, #EA580C)',
+              fontSize: '16px',
+              cursor: 'pointer',
+              border: 'none'
+            },
+            title: user.displayName
+          }, initial),
+
+          // Dropdown menu
+          open && createElement('div', {
+            className: 'absolute right-0 mt-2 w-64 rounded-xl shadow-xl overflow-hidden',
+            style: {
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-color)',
+              zIndex: 101
+            }
+          },
+            // User header
+            createElement('div', {
+              className: 'px-4 py-3',
+              style: { borderBottom: '1px solid var(--border-color)' }
+            },
+              createElement('p', {
+                className: 'font-bold text-sm',
+                style: { color: '#F97316' }
+              }, user.displayName),
+              createElement('p', {
+                className: 'text-xs',
+                style: { color: 'var(--text-muted)' }
+              }, 'Signed in')
+            ),
+
+            // Theme toggle
+            createElement('button', {
+              onClick: function(e) { e.stopPropagation(); onCycleTheme(); },
+              className: 'w-full text-left px-4 py-3 text-sm flex items-center gap-3 transition-colors',
+              style: { color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)' }
+            },
+              createElement('span', null, themeIcon),
+              createElement('span', null, 'Theme: ' + themeLabel)
+            ),
+
+            // Personal device toggle
+            createElement('button', {
+              onClick: function(e) { e.stopPropagation(); onTogglePersonalDevice(); },
+              className: 'w-full text-left px-4 py-3 text-sm flex items-center gap-3 transition-colors',
+              style: { color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)' }
+            },
+              createElement('span', null, personalDevice ? '\u2705' : '\u2B1C'),
+              createElement('span', null, 'My personal device')
+            ),
+
+            // Reset progress
+            createElement('button', {
+              onClick: function(e) { e.stopPropagation(); setOpen(false); onResetProgress(); },
+              className: 'w-full text-left px-4 py-3 text-sm flex items-center gap-3 transition-colors',
+              style: { color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)' }
+            },
+              createElement('span', null, '\uD83D\uDD04'),
+              createElement('span', null, 'Reset Progress')
+            ),
+
+            // Sign out
+            createElement('button', {
+              onClick: function(e) { e.stopPropagation(); setOpen(false); onLogout(); },
+              className: 'w-full text-left px-4 py-3 text-sm flex items-center gap-3 transition-colors',
+              style: { color: '#EF4444' }
+            },
+              createElement('span', null, '\uD83D\uDEAA'),
+              createElement('span', null, 'Sign Out')
+            )
+          )
+        );
+      }
+
+      // ============ CLASS STATS CARD ============
+      function ClassStatsCard(props) {
+        var classStats = props.classStats;
+        var userProgress = props.userProgress;
+
+        var expandedState = useState(false);
+        var expanded = expandedState[0];
+        var setExpanded = expandedState[1];
+
+        if (!classStats || classStats.studentCount === 0) return null;
+
+        var userAcc = userProgress.totalAnswered > 0
+          ? Math.round((userProgress.totalCorrect / userProgress.totalAnswered) * 100)
+          : 0;
+        var classAcc = Math.round(classStats.avgAccuracy * 100);
+        var aboveAvg = userAcc >= classAcc;
+
+        return createElement('div', {
+          className: 'p-4 rounded-xl mb-4',
+          style: {
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            boxShadow: '0 2px 8px var(--shadow-color)'
+          }
+        },
+          createElement('div', {
+            className: 'flex items-center justify-between mb-3 cursor-pointer',
+            onClick: function() { setExpanded(!expanded); }
+          },
+            createElement('h3', {
+              className: 'font-bold text-sm',
+              style: { fontFamily: 'Fredoka, sans-serif', color: 'var(--text-primary)' }
+            }, '\uD83C\uDFEB Class Overview'),
+            createElement('span', {
+              className: 'text-xs',
+              style: { color: 'var(--text-muted)' }
+            }, expanded ? '\u25B2' : '\u25BC')
+          ),
+
+          // Summary row
+          createElement('div', { className: 'flex items-center gap-4 text-xs' },
+            createElement('span', { style: { color: 'var(--text-muted)' } },
+              classStats.studentCount + ' student' + (classStats.studentCount !== 1 ? 's' : '') + ' studying'
+            ),
+            createElement('span', { style: { color: 'var(--text-muted)' } },
+              'Class avg: ' + classAcc + '%'
+            ),
+            createElement('span', {
+              className: 'font-bold',
+              style: { color: aboveAvg ? '#22C55E' : '#F97316' }
+            }, 'You: ' + userAcc + '%' + (aboveAvg ? ' \u25B2' : ' \u25BC'))
+          ),
+
+          // Comparison bar
+          createElement('div', {
+            className: 'mt-2 h-2 rounded-full overflow-hidden flex',
+            style: { backgroundColor: 'var(--border-color)' }
+          },
+            createElement('div', {
+              style: {
+                width: Math.min(userAcc, 100) + '%',
+                background: aboveAvg ? 'linear-gradient(90deg, #22C55E, #16A34A)' : 'linear-gradient(90deg, #F97316, #EA580C)',
+                borderRadius: '9999px',
+                transition: 'width 0.5s ease'
+              }
+            })
+          ),
+
+          // Expanded per-category stats
+          expanded && classStats.categoryAverages && createElement('div', { className: 'mt-3 space-y-2' },
+            Object.keys(classStats.categoryAverages).sort().map(function(cat) {
+              var catData = classStats.categoryAverages[cat];
+              var catClassAcc = Math.round(catData.avgAccuracy * 100);
+              var userCatStats = userProgress.categoryStats && userProgress.categoryStats[cat];
+              var userCatAcc = userCatStats && userCatStats.total > 0
+                ? Math.round((userCatStats.correct / userCatStats.total) * 100) : null;
+
+              return createElement('div', { key: cat, className: 'flex items-center justify-between text-xs' },
+                createElement('span', {
+                  className: 'truncate',
+                  style: { color: 'var(--text-secondary)', maxWidth: '50%' }
+                }, cat),
+                createElement('div', { className: 'flex gap-3' },
+                  createElement('span', { style: { color: 'var(--text-muted)' } }, 'Class: ' + catClassAcc + '%'),
+                  userCatAcc !== null && createElement('span', {
+                    className: 'font-bold',
+                    style: { color: userCatAcc >= catClassAcc ? '#22C55E' : '#F97316' }
+                  }, 'You: ' + userCatAcc + '%')
+                )
+              );
+            })
+          )
+        );
+      }
+
       // ============ SCREENS ============
 
       // Home/Study Mode Selection Screen
@@ -2072,17 +2689,9 @@
           // Header
           createElement('header', { className: 'bg-gradient-to-r from-red-700 via-red-600 to-orange-600 text-white p-6 shadow-lg' },
             createElement('div', { className: 'max-w-4xl mx-auto' },
-              // Version and theme toggle in top right
+              // Version in top right (theme toggle moved to Account Menu)
               createElement('div', { className: 'flex justify-end items-center gap-3 mb-2' },
-                createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION),
-                createElement('button', {
-                  onClick: onCycleTheme,
-                  className: 'flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-full text-sm transition-colors',
-                  title: 'Toggle theme: ' + themeLabel
-                },
-                  createElement('span', null, themeIcon),
-                  createElement('span', { className: 'hidden sm:inline' }, themeLabel)
-                )
+                createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION)
               ),
               createElement('div', { className: 'text-center' },
                 createElement('div', { className: 'text-5xl mb-2' }, '🍳'),
@@ -2101,7 +2710,9 @@
                   createElement(HeroChef, null)
                 ),
                 createElement('div', { className: 'flex-1 text-center md:text-left' },
-                  createElement('h2', { className: 'text-2xl font-bold text-primary' }, 'Welcome back, Chef!'),
+                  createElement('h2', { className: 'text-2xl font-bold text-primary' },
+                    props.user ? 'Welcome back, ' + props.user.displayName + '!' : 'Welcome back, Chef!'
+                  ),
                   createElement('p', { className: 'text-secondary mt-1' },
                     progress.totalAnswered === 0
                       ? "Ready to start your food safety training?"
@@ -2162,6 +2773,12 @@
                     : createElement('span', { className: 'text-secondary' }, '💪 Hints help you learn - try answering without them to test yourself!')
               )
             ),
+
+            // Class Stats Card
+            props.classStats && createElement(ClassStatsCard, {
+              classStats: props.classStats,
+              userProgress: progress
+            }),
 
             // Badges Section
             createElement('div', { className: 'card-bg rounded-2xl shadow-lg p-5 mb-6 border-2 border-purple-200' },
@@ -2452,14 +3069,6 @@
                   });
                 })
               )
-            ),
-
-            // Reset Button
-            progress.totalAnswered > 0 && createElement('div', { className: 'text-center' },
-              createElement('button', {
-                onClick: onResetProgress,
-                className: 'text-muted hover:text-red-600 text-sm underline'
-              }, '🗑️ Reset All Progress')
             ),
 
             // Footer
@@ -2844,6 +3453,128 @@
         const [theme, setTheme] = useState(getInitialTheme);
         const [networkStatus, setNetworkStatus] = useState(convexConnectionStatus);
 
+        // User auth state
+        const [user, setUser] = useState(loadUser);
+        const [authMode, setAuthMode] = useState('choose');
+        const [showIdentityCheck, setShowIdentityCheck] = useState(false);
+        const [personalDevice, setPersonalDeviceState] = useState(isPersonalDevice);
+        const [classStats, setClassStats] = useState(null);
+
+        // Live test polling state
+        const [activeTest, setActiveTest] = useState(null);
+        const [testScreen, setTestScreen] = useState(null); // null | 'waiting' | 'active' | 'finished'
+        const [testQuestions, setTestQuestions] = useState([]);
+        const [testIndex, setTestIndex] = useState(0);
+        const [testScore, setTestScore] = useState(0);
+        const [testAnswered, setTestAnswered] = useState(0);
+        const [testTimeLeft, setTestTimeLeft] = useState(0);
+        const [testLeaderboard, setTestLeaderboard] = useState([]);
+        const [testAnsweredIds, setTestAnsweredIds] = useState({});
+
+        // Check if identity check is needed on mount
+        useEffect(function() {
+          if (user && needsIdentityCheck()) {
+            setShowIdentityCheck(true);
+          } else if (user) {
+            updateLastActive();
+          }
+        }, []);
+
+        // Fetch cloud progress on login
+        useEffect(function() {
+          if (!user || !CONVEX_URL) return;
+          convexQuery("users:getProgress", { userId: user.userId })
+            .then(function(cloudData) {
+              if (cloudData) {
+                var merged = mergeProgressFromCloud(progress, cloudData, badges);
+                setProgress(merged.progress);
+                saveProgress(merged.progress);
+                setBadges(merged.badges);
+                saveBadges(merged.badges);
+              }
+            })
+            .catch(function(err) {
+              console.log('Could not fetch cloud progress:', err.message);
+            });
+        }, [user ? user.userId : null]);
+
+        // Fetch class stats when user is logged in
+        useEffect(function() {
+          if (!user || !CONVEX_URL) return;
+          convexQuery("users:getClassStats")
+            .then(function(stats) { setClassStats(stats); })
+            .catch(function() {});
+        }, [user ? user.userId : null]);
+
+        // Poll for active tests every 3 seconds
+        useEffect(function() {
+          if (!user || !CONVEX_URL) return;
+          var interval = setInterval(function() {
+            if (testScreen === 'active') return; // Don't poll while actively testing
+            convexQuery("tests:getActiveTest")
+              .then(function(test) {
+                if (test && test.status === 'waiting') {
+                  setActiveTest(test);
+                  setTestScreen('waiting');
+                  // Prepare test questions from our local questionsDB
+                  var tqs = [];
+                  test.questionIds.forEach(function(qid) {
+                    var q = questionsDB.find(function(qq) { return qq.id === qid; });
+                    if (q) tqs.push(q);
+                  });
+                  // Shuffle them
+                  tqs.sort(function() { return Math.random() - 0.5; });
+                  setTestQuestions(tqs);
+                  setTestIndex(0);
+                  setTestScore(0);
+                  setTestAnswered(0);
+                  setTestAnsweredIds({});
+                } else if (test && test.status === 'active') {
+                  setActiveTest(test);
+                  if (testScreen !== 'active' && testScreen !== 'finished') {
+                    setTestScreen('active');
+                    // Prepare questions if not already prepared
+                    if (testQuestions.length === 0) {
+                      var tqs2 = [];
+                      test.questionIds.forEach(function(qid) {
+                        var q = questionsDB.find(function(qq) { return qq.id === qid; });
+                        if (q) tqs2.push(q);
+                      });
+                      tqs2.sort(function() { return Math.random() - 0.5; });
+                      setTestQuestions(tqs2);
+                    }
+                  }
+                } else if (!test && testScreen === 'waiting') {
+                  // Test was cancelled
+                  setTestScreen(null);
+                  setActiveTest(null);
+                }
+              })
+              .catch(function() {});
+          }, 3000);
+          return function() { clearInterval(interval); };
+        }, [user ? user.userId : null, testScreen]);
+
+        // Test countdown timer
+        useEffect(function() {
+          if (testScreen !== 'active' || !activeTest || !activeTest.endedAt) return;
+          var interval = setInterval(function() {
+            var remaining = Math.max(0, activeTest.endedAt - Date.now());
+            setTestTimeLeft(remaining);
+            if (remaining <= 0) {
+              setTestScreen('finished');
+              clearInterval(interval);
+              // Fetch final leaderboard
+              if (activeTest) {
+                convexQuery("tests:getTestLeaderboard", { testId: activeTest.testId })
+                  .then(function(lb) { setTestLeaderboard(lb); })
+                  .catch(function() {});
+              }
+            }
+          }, 1000);
+          return function() { clearInterval(interval); };
+        }, [testScreen, activeTest ? activeTest.testId : null]);
+
         // Listen for Convex connection status changes
         useEffect(function() {
           var unsubscribe = onConvexStatusChange(function(status) {
@@ -2886,6 +3617,87 @@
           });
         }
 
+        // ============ AUTH HANDLERS ============
+        function handleAuth(userData) {
+          saveUser(userData);
+          setUser(userData);
+          updateLastActive();
+          setAuthMode('choose');
+        }
+
+        function handleLogout() {
+          clearUser();
+          setUser(null);
+          setAuthMode('choose');
+          setClassStats(null);
+        }
+
+        function handleIdentityYes() {
+          setShowIdentityCheck(false);
+          updateLastActive();
+        }
+
+        function handleIdentityNo() {
+          setShowIdentityCheck(false);
+          clearUser();
+          setUser(null);
+          setAuthMode('choose');
+        }
+
+        function handleTogglePersonalDevice() {
+          var newVal = !personalDevice;
+          setPersonalDeviceState(newVal);
+          setPersonalDevice(newVal);
+        }
+
+        // ============ TEST HANDLERS ============
+        function handleTestAnswer(question, selectedAnswer) {
+          if (!activeTest || !user) return;
+          var correct = selectedAnswer === question.correct;
+          var newScore = testScore + (correct ? 1 : 0);
+          var newAnswered = testAnswered + 1;
+          setTestScore(newScore);
+          setTestAnswered(newAnswered);
+
+          var newAnsweredIds = Object.assign({}, testAnsweredIds);
+          newAnsweredIds[question.id] = { selectedAnswer: selectedAnswer, correct: correct };
+          setTestAnsweredIds(newAnsweredIds);
+
+          // Submit to cloud immediately
+          convexMutation("tests:submitAnswer", {
+            testId: activeTest.testId,
+            userId: user.userId,
+            questionId: question.id,
+            selectedAnswer: selectedAnswer,
+            correct: correct
+          }).catch(function(err) {
+            console.log('Test answer sync failed:', err.message);
+          });
+
+          // Auto-advance after brief delay
+          setTimeout(function() {
+            if (testIndex < testQuestions.length - 1) {
+              setTestIndex(testIndex + 1);
+            } else {
+              setTestScreen('finished');
+              convexQuery("tests:getTestLeaderboard", { testId: activeTest.testId })
+                .then(function(lb) { setTestLeaderboard(lb); })
+                .catch(function() {});
+            }
+          }, 800);
+        }
+
+        function handleExitTest() {
+          setTestScreen(null);
+          setActiveTest(null);
+          setTestQuestions([]);
+          setTestIndex(0);
+          setTestScore(0);
+          setTestAnswered(0);
+          setTestLeaderboard([]);
+          setTestAnsweredIds({});
+        }
+
         function handleSelectMode(mode, category) {
           var filtered = questionsDB;
           var name = 'Full Coverage';
@@ -2894,12 +3706,12 @@
             filtered = questionsDB.filter(function(q) {
               return q.examFocus === true;
             });
-            name = '⭐ Exam Focus';
+            name = '\u2B50 Exam Focus';
           } else if (mode === 'basicOnly') {
             filtered = questionsDB.filter(function(q) {
               return q.examFocus === false;
             });
-            name = '📖 Basic Knowledge';
+            name = '\uD83D\uDCD6 Basic Knowledge';
           } else if (mode === 'weak') {
             var weakCats = categories.filter(function(cat) {
               var stats = progress.categoryStats[cat];
@@ -2909,20 +3721,18 @@
             filtered = questionsDB.filter(function(q) {
               return weakCats.indexOf(q.category) !== -1;
             });
-            name = '🔥 Weak Areas';
+            name = '\uD83D\uDD25 Weak Areas';
           } else if (mode === 'category' && category) {
             filtered = questionsDB.filter(function(q) {
               return q.category === category;
             });
             name = category;
           } else if (mode === 'chapter' && category) {
-            // category is actually the chapter number
             filtered = questionsDB.filter(function(q) {
               return q.chapter === category;
             });
-            name = '📗 Chapter ' + category;
+            name = '\uD83D\uDCD7 Chapter ' + category;
           } else if (mode === 'quizGroup' && category) {
-            // category is the quiz group name like "1-4"
             var ranges = {
               '1-4': [1, 2, 3, 4],
               '5-7': [5, 6, 7],
@@ -2934,13 +3744,12 @@
             filtered = questionsDB.filter(function(q) {
               return chapterList.indexOf(q.chapter) !== -1;
             });
-            name = '📝 Quiz ' + (category === '15' ? '(Ch 15)' : '(Ch ' + category + ')');
+            name = '\uD83D\uDCDD Quiz ' + (category === '15' ? '(Ch 15)' : '(Ch ' + category + ')');
           } else if (mode === 'chapterRange' && category) {
-            // category is the end chapter number (start is always 1)
             filtered = questionsDB.filter(function(q) {
               return q.chapter >= 1 && q.chapter <= category;
             });
-            name = '📚 Chapters 1-' + category;
+            name = '\uD83D\uDCDA Chapters 1-' + category;
           }
 
           var shuffled = filtered.slice().sort(function() { return Math.random() - 0.5; });
@@ -2965,18 +3774,14 @@
               correctWithoutHint: prev.correctWithoutHint + (isCorrect && !usedHint ? 1 : 0),
               currentNoHintStreak: (isCorrect && !usedHint) ? prev.currentNoHintStreak + 1 : 0,
               bestNoHintStreak: prev.bestNoHintStreak,
-              // Add streak tracking
               currentStreak: isCorrect ? (prev.currentStreak || 0) + 1 : 0,
               bestStreak: prev.bestStreak || 0,
-              // Add exam focus tracking
               examFocusCorrect: (prev.examFocusCorrect || 0) + (isCorrect && question.examFocus ? 1 : 0),
-              // Add time-based flags
               studiedEarly: prev.studiedEarly || (hour < 7),
               studiedLate: prev.studiedLate || (hour >= 22),
               studiedWeekend: prev.studiedWeekend || (day === 0 || day === 6)
             };
 
-            // Update best streaks if current beats them
             if (newProgress.currentNoHintStreak > newProgress.bestNoHintStreak) {
               newProgress.bestNoHintStreak = newProgress.currentNoHintStreak;
             }
@@ -2984,7 +3789,6 @@
               newProgress.bestStreak = newProgress.currentStreak;
             }
 
-            // Update category stats
             if (!newProgress.categoryStats[question.category]) {
               newProgress.categoryStats[question.category] = { correct: 0, total: 0 };
             }
@@ -2993,7 +3797,6 @@
               newProgress.categoryStats[question.category].correct += 1;
             }
 
-            // Update chapter stats
             var chapter = question.chapter || 1;
             if (!newProgress.chapterStats[chapter]) {
               newProgress.chapterStats[chapter] = { correct: 0, answered: 0 };
@@ -3003,8 +3806,8 @@
               newProgress.chapterStats[chapter].correct += 1;
             }
 
-            // Save to localStorage
             saveProgress(newProgress);
+            updateLastActive();
 
             // Check for new badges
             var badgeResult = checkForNewBadges(newProgress, badges);
@@ -3015,8 +3818,15 @@
                   newlyEarned: prevBadges.newlyEarned.concat(badgeResult.newBadges)
                 };
                 saveBadges(updated);
+                // Sync badges to cloud too
+                if (user) {
+                  syncProgressToCloud(user.userId, newProgress, updated.earned);
+                }
                 return updated;
               });
+            } else if (user) {
+              // Sync progress to cloud (debounced)
+              syncProgressToCloud(user.userId, newProgress, badges.earned);
             }
 
             return newProgress;
@@ -3046,10 +3856,18 @@
             saveProgress(emptyProgress);
 
             // Also ask about resetting badges
-            if (badges.earned.length > 0 && confirm('Also reset your ' + badges.earned.length + ' earned badges?')) {
+            var resetBadges = badges.earned.length > 0 && confirm('Also reset your ' + badges.earned.length + ' earned badges?');
+            if (resetBadges) {
               var emptyBadges = { earned: [], newlyEarned: [] };
               setBadges(emptyBadges);
               saveBadges(emptyBadges);
+            }
+
+            // Archive and reset on cloud
+            if (user && CONVEX_URL) {
+              convexMutation("users:resetProgress", { userId: user.userId })
+                .then(function() { console.log('Progress archived and reset on cloud'); })
+                .catch(function(err) { console.log('Cloud reset failed:', err.message); });
             }
           }
         }
@@ -3058,8 +3876,238 @@
           setScreen('home');
         }
 
+        // ============ RENDER ============
+
+        // Identity check screen (idle timeout on shared computers)
+        if (user && showIdentityCheck) {
+          return createElement(IdentityCheckScreen, {
+            displayName: user.displayName,
+            onYes: handleIdentityYes,
+            onNo: handleIdentityNo
+          });
+        }
+
+        // Auth screen (no user logged in)
+        if (!user) {
+          return createElement('div', null,
+            createElement(NetworkStatus, { status: networkStatus }),
+            createElement(AuthScreen, {
+              mode: authMode,
+              setMode: setAuthMode,
+              onAuth: handleAuth
+            })
+          );
+        }
+
+        // Live test screen (takes over the entire app)
+        if (testScreen === 'waiting' && activeTest) {
+          return createElement('div', {
+            className: 'min-h-screen flex items-center justify-center p-4',
+            style: { backgroundColor: 'var(--bg-primary)' }
+          },
+            createElement(NetworkStatus, { status: networkStatus }),
+            createElement('div', {
+              className: 'max-w-md w-full text-center p-8 rounded-2xl shadow-lg',
+              style: { backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }
+            },
+              createElement('div', {
+                className: 'text-4xl mb-4',
+                style: { animation: 'gentlePulse 2s ease-in-out infinite' }
+              }, '\uD83D\uDCDD'),
+              createElement('h2', {
+                className: 'text-2xl font-bold mb-2',
+                style: { fontFamily: 'Fredoka, sans-serif', color: '#F97316' }
+              }, 'Prepare for Test'),
+              createElement('p', {
+                className: 'text-lg font-medium mb-2',
+                style: { color: 'var(--text-primary)' }
+              }, activeTest.name),
+              createElement('p', {
+                className: 'text-sm mb-1',
+                style: { color: 'var(--text-secondary)' }
+              }, testQuestions.length + ' questions \u2022 ' + activeTest.timerMinutes + ' minutes'),
+              createElement('p', {
+                className: 'text-sm mt-4',
+                style: { color: 'var(--text-muted)' }
+              }, 'Waiting for professor to start'),
+              createElement('div', {
+                className: 'flex justify-center gap-1 mt-2'
+              },
+                [0,1,2].map(function(i) {
+                  return createElement('div', {
+                    key: i,
+                    className: 'w-2 h-2 rounded-full',
+                    style: {
+                      backgroundColor: '#F97316',
+                      animation: 'gentlePulse 1.5s ease-in-out infinite',
+                      animationDelay: (i * 0.3) + 's'
+                    }
+                  });
+                })
+              )
+            )
+          );
+        }
+
+        if (testScreen === 'active' && activeTest && testQuestions.length > 0) {
+          var currentTestQ = testQuestions[testIndex];
+          var timeLeftSec = Math.ceil(testTimeLeft / 1000);
+          var timeMin = Math.floor(timeLeftSec / 60);
+          var timeSec = timeLeftSec % 60;
+          var currentAnswerState = testAnsweredIds[currentTestQ.id];
+          var isTestQAnswered = !!currentAnswerState;
+
+          return createElement('div', {
+            className: 'min-h-screen',
+            style: { backgroundColor: 'var(--bg-primary)' }
+          },
+            createElement(NetworkStatus, { status: networkStatus }),
+            // Timer bar
+            createElement('div', {
+              className: 'fixed top-6 left-0 right-0 z-40 flex items-center justify-center gap-4 px-4 py-2',
+              style: {
+                backgroundColor: timeLeftSec < 60 ? '#DC2626' : '#F97316',
+                color: 'white'
+              }
+            },
+              createElement('span', { className: 'font-bold text-lg' },
+                '\u23F0 ' + timeMin + ':' + (timeSec < 10 ? '0' : '') + timeSec
+              ),
+              createElement('span', { className: 'text-sm' },
+                'Q ' + (testIndex + 1) + '/' + testQuestions.length
+              ),
+              createElement('span', { className: 'text-sm font-bold' },
+                'Score: ' + testScore + '/' + testAnswered
+              )
+            ),
+            // Question area
+            createElement('div', {
+              className: 'max-w-2xl mx-auto pt-20 p-4'
+            },
+              createElement('div', {
+                className: 'p-6 rounded-xl mb-4',
+                style: { backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }
+              },
+                createElement('p', {
+                  className: 'text-xs font-medium mb-2 px-2 py-1 rounded-full inline-block',
+                  style: { backgroundColor: '#FFF7ED', color: '#EA580C' }
+                }, currentTestQ.category),
+                createElement('h3', {
+                  className: 'text-lg font-bold mb-4',
+                  style: { color: 'var(--text-primary)' }
+                }, currentTestQ.question),
+                createElement('div', { className: 'space-y-2' },
+                  currentTestQ.options.map(function(opt, idx) {
+                    var letter = ['A', 'B', 'C', 'D'][idx];
+                    var isSelected = isTestQAnswered && currentAnswerState.selectedAnswer === idx;
+                    var isCorrectAnswer = idx === currentTestQ.correct;
+                    var btnStyle = {};
+                    if (isTestQAnswered) {
+                      if (isCorrectAnswer) {
+                        btnStyle = { backgroundColor: '#DCFCE7', borderColor: '#22C55E', color: '#166534' };
+                      } else if (isSelected && !currentAnswerState.correct) {
+                        btnStyle = { backgroundColor: '#FEE2E2', borderColor: '#EF4444', color: '#991B1B' };
+                      } else {
+                        btnStyle = { backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-muted)', opacity: 0.5 };
+                      }
+                    } else {
+                      btnStyle = { backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' };
+                    }
+                    return createElement('button', {
+                      key: idx,
+                      onClick: function() { if (!isTestQAnswered) handleTestAnswer(currentTestQ, idx); },
+                      disabled: isTestQAnswered,
+                      className: 'w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 transition-all',
+                      style: Object.assign({ border: '2px solid', cursor: isTestQAnswered ? 'default' : 'pointer' }, btnStyle)
+                    },
+                      createElement('span', {
+                        className: 'w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0',
+                        style: { backgroundColor: isSelected ? (currentAnswerState.correct ? '#22C55E' : '#EF4444') : '#F97316', color: 'white' }
+                      }, letter),
+                      createElement('span', { className: 'text-sm' }, opt)
+                    );
+                  })
+                )
+              )
+            )
+          );
+        }
+
+        if (testScreen === 'finished') {
+          return createElement('div', {
+            className: 'min-h-screen flex items-center justify-center p-4',
+            style: { backgroundColor: 'var(--bg-primary)' }
+          },
+            createElement(NetworkStatus, { status: networkStatus }),
+            createElement('div', {
+              className: 'max-w-md w-full text-center p-8 rounded-2xl shadow-lg',
+              style: { backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }
+            },
+              createElement('div', { className: 'text-4xl mb-4' }, '\uD83C\uDFC6'),
+              createElement('h2', {
+                className: 'text-2xl font-bold mb-2',
+                style: { fontFamily: 'Fredoka, sans-serif', color: '#F97316' }
+              }, 'Test Complete!'),
+              createElement('p', {
+                className: 'text-3xl font-bold mb-1',
+                style: { color: testScore > 0 && testAnswered > 0 && (testScore/testAnswered) >= 0.7 ? '#22C55E' : '#F97316' }
+              }, testScore + '/' + testAnswered),
+              createElement('p', {
+                className: 'text-sm mb-6',
+                style: { color: 'var(--text-muted)' }
+              }, testAnswered > 0 ? Math.round((testScore / testAnswered) * 100) + '% accuracy' : ''),
+
+              // Mini leaderboard
+              testLeaderboard.length > 0 && createElement('div', { className: 'mb-6 text-left' },
+                createElement('h3', {
+                  className: 'font-bold text-sm mb-2',
+                  style: { color: 'var(--text-primary)' }
+                }, 'Leaderboard'),
+                testLeaderboard.slice(0, 5).map(function(entry, idx) {
+                  var medals = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49'];
+                  var isMe = user && entry.userId === user.userId;
+                  return createElement('div', {
+                    key: idx,
+                    className: 'flex items-center justify-between py-1 px-2 rounded text-sm',
+                    style: {
+                      backgroundColor: isMe ? '#FFF7ED' : 'transparent',
+                      fontWeight: isMe ? 'bold' : 'normal',
+                      color: 'var(--text-primary)'
+                    }
+                  },
+                    createElement('span', null, (idx < 3 ? medals[idx] : (idx + 1) + '.') + ' ' + entry.displayName),
+                    createElement('span', null, entry.score + '/' + entry.totalAnswered)
+                  );
+                })
+              ),
+
+              createElement('button', {
+                onClick: handleExitTest,
+                className: 'px-6 py-3 rounded-xl font-bold text-white transition-all',
+                style: { background: 'linear-gradient(135deg, #F97316, #EA580C)' }
+              }, 'Return to Study')
+            )
+          );
+        }
+
+        // Account menu (shown in top-right corner of both screens)
+        var accountMenuEl = createElement('div', {
+          style: { position: 'fixed', top: '32px', right: '16px', zIndex: 100 }
+        },
+          createElement(AccountMenu, {
+            user: user,
+            theme: theme,
+            onCycleTheme: cycleTheme,
+            onResetProgress: handleResetProgress,
+            onLogout: handleLogout,
+            personalDevice: personalDevice,
+            onTogglePersonalDevice: handleTogglePersonalDevice
+          })
+        );
+
         if (screen === 'quiz') {
           return createElement('div', null,
+            accountMenuEl,
             newBadgeToShow && createElement(BadgeNotification, {
               badge: newBadgeToShow,
               onClose: dismissBadgeNotification
@@ -3078,6 +4126,7 @@
         }
 
         return createElement('div', null,
+          accountMenuEl,
           newBadgeToShow && createElement(BadgeNotification, {
             badge: newBadgeToShow,
             onClose: dismissBadgeNotification
@@ -3090,7 +4139,9 @@
               onSelectMode: handleSelectMode,
               onResetProgress: handleResetProgress,
               theme: theme,
-              onCycleTheme: cycleTheme
+              onCycleTheme: cycleTheme,
+              user: user,
+              classStats: classStats
             })
           )
         );
