@@ -2481,19 +2481,53 @@
           className: 'account-menu-container',
           style: { position: 'relative', zIndex: 100 }
         },
-          // Avatar button
+          // Chef rat avatar button
           createElement('button', {
             onClick: function(e) { e.stopPropagation(); setOpen(!open); },
-            className: 'flex items-center justify-center rounded-full font-bold text-white transition-all hover:scale-110',
+            className: 'flex items-center justify-center rounded-full transition-all hover:scale-110',
             style: {
-              width: '36px', height: '36px',
+              width: '40px', height: '40px',
               background: 'linear-gradient(135deg, #F97316, #EA580C)',
-              fontSize: '16px',
               cursor: 'pointer',
-              border: 'none'
+              border: '2px solid rgba(255,255,255,0.3)',
+              padding: '0',
+              overflow: 'hidden'
             },
-            title: user.displayName
-          }, initial),
+            title: user.displayName,
+            dangerouslySetInnerHTML: {
+              __html: '<svg viewBox="0 0 100 100" width="36" height="36" xmlns="http://www.w3.org/2000/svg">' +
+                '<!-- Ears -->' +
+                '<ellipse cx="30" cy="25" rx="14" ry="16" fill="#D4A574"/>' +
+                '<ellipse cx="30" cy="25" rx="9" ry="11" fill="#F5C6A0"/>' +
+                '<ellipse cx="70" cy="25" rx="14" ry="16" fill="#D4A574"/>' +
+                '<ellipse cx="70" cy="25" rx="9" ry="11" fill="#F5C6A0"/>' +
+                '<!-- Chef hat -->' +
+                '<ellipse cx="50" cy="15" rx="20" ry="12" fill="white"/>' +
+                '<rect x="35" y="12" width="30" height="14" rx="2" fill="white"/>' +
+                '<ellipse cx="42" cy="13" rx="8" ry="9" fill="white"/>' +
+                '<ellipse cx="58" cy="13" rx="8" ry="9" fill="white"/>' +
+                '<ellipse cx="50" cy="10" rx="7" ry="8" fill="white"/>' +
+                '<!-- Head -->' +
+                '<ellipse cx="50" cy="52" rx="24" ry="22" fill="#D4A574"/>' +
+                '<!-- Face -->' +
+                '<ellipse cx="50" cy="56" rx="18" ry="16" fill="#E8C9A0"/>' +
+                '<!-- Eyes -->' +
+                '<ellipse cx="42" cy="48" rx="4" ry="4.5" fill="#2D1B0E"/>' +
+                '<ellipse cx="43" cy="47" rx="1.5" ry="1.5" fill="white"/>' +
+                '<ellipse cx="58" cy="48" rx="4" ry="4.5" fill="#2D1B0E"/>' +
+                '<ellipse cx="59" cy="47" rx="1.5" ry="1.5" fill="white"/>' +
+                '<!-- Nose -->' +
+                '<ellipse cx="50" cy="56" rx="4" ry="3" fill="#FF8FA0"/>' +
+                '<!-- Whiskers -->' +
+                '<line x1="30" y1="54" x2="43" y2="56" stroke="#8B7355" stroke-width="0.8"/>' +
+                '<line x1="28" y1="58" x2="43" y2="58" stroke="#8B7355" stroke-width="0.8"/>' +
+                '<line x1="57" y1="56" x2="70" y2="54" stroke="#8B7355" stroke-width="0.8"/>' +
+                '<line x1="57" y1="58" x2="72" y2="58" stroke="#8B7355" stroke-width="0.8"/>' +
+                '<!-- Smile -->' +
+                '<path d="M 44 62 Q 50 67 56 62" fill="none" stroke="#8B7355" stroke-width="1.2" stroke-linecap="round"/>' +
+                '</svg>'
+            }
+          }),
 
           // Dropdown menu
           open && createElement('div', {
