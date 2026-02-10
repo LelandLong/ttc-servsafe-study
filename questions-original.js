@@ -6,7 +6,7 @@
 // This file is loaded by both the study app (index.html) and the admin interface (admin.html)
 // Questions can be edited via the admin interface and exported as an updated questions.js file
 
-var questionsDB = [
+var originalQuestionsDB = [
   // ========== CHAPTER 1: KEEPING FOOD SAFE ==========
   {
     id: 1,
@@ -2730,20 +2730,4 @@ var questionsDB = [
   }
 ];
 
-// Get unique categories from questions
-var categories = [];
-questionsDB.forEach(function(q) {
-  if (categories.indexOf(q.category) === -1) {
-    categories.push(q.category);
-  }
-});
-categories.sort();
-
-// Get unique chapters from questions
-var chapters = [];
-questionsDB.forEach(function(q) {
-  if (chapters.indexOf(q.chapter) === -1) {
-    chapters.push(q.chapter);
-  }
-});
-chapters.sort(function(a, b) { return a - b; });
+// Note: categories and chapters are derived from questionsDB in questions.js
