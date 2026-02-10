@@ -133,6 +133,32 @@
     [data-theme="dark"] .question-row:hover {
       background-color: var(--bg-hover) !important;
     }
+    /* Dark mode: colored backgrounds & gradients */
+    [data-theme="dark"] .from-blue-50,
+    [data-theme="dark"] .to-green-50,
+    [data-theme="dark"] .bg-blue-50,
+    [data-theme="dark"] .bg-green-50,
+    [data-theme="dark"] .bg-red-50 {
+      background: var(--bg-hover) !important;
+    }
+    [data-theme="dark"] .bg-gradient-to-r.from-blue-50.to-green-50 {
+      background: var(--bg-hover) !important;
+    }
+    [data-theme="dark"] .bg-green-100 {
+      background-color: rgba(34, 197, 94, 0.15) !important;
+    }
+    [data-theme="dark"] .text-green-800 {
+      color: #4ade80 !important;
+    }
+    [data-theme="dark"] .border-red-300 {
+      border-color: #f87171 !important;
+    }
+    [data-theme="dark"] .text-red-600 {
+      color: #f87171 !important;
+    }
+    [data-theme="dark"] .hover\:bg-red-50:hover {
+      background-color: rgba(239, 68, 68, 0.1) !important;
+    }
     /* System dark preference fallback */
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) .bg-white,
@@ -176,6 +202,31 @@
       }
       :root:not([data-theme="light"]) .question-row:hover {
         background-color: var(--bg-hover) !important;
+      }
+      :root:not([data-theme="light"]) .from-blue-50,
+      :root:not([data-theme="light"]) .to-green-50,
+      :root:not([data-theme="light"]) .bg-blue-50,
+      :root:not([data-theme="light"]) .bg-green-50,
+      :root:not([data-theme="light"]) .bg-red-50 {
+        background: var(--bg-hover) !important;
+      }
+      :root:not([data-theme="light"]) .bg-gradient-to-r.from-blue-50.to-green-50 {
+        background: var(--bg-hover) !important;
+      }
+      :root:not([data-theme="light"]) .bg-green-100 {
+        background-color: rgba(34, 197, 94, 0.15) !important;
+      }
+      :root:not([data-theme="light"]) .text-green-800 {
+        color: #4ade80 !important;
+      }
+      :root:not([data-theme="light"]) .border-red-300 {
+        border-color: #f87171 !important;
+      }
+      :root:not([data-theme="light"]) .text-red-600 {
+        color: #f87171 !important;
+      }
+      :root:not([data-theme="light"]) .hover\:bg-red-50:hover {
+        background-color: rgba(239, 68, 68, 0.1) !important;
       }
     }
   </style>
