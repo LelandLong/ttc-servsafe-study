@@ -11,12 +11,78 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; }
+    :root {
+      --bg-primary: #F3F4F6;
+      --bg-secondary: #FFFFFF;
+      --bg-card: #FFFFFF;
+      --text-primary: #1F2937;
+      --text-secondary: #4B5563;
+      --text-muted: #6B7280;
+      --border-color: #E5E7EB;
+      --shadow-color: rgba(0,0,0,0.1);
+      --bg-hover: #f8fafc;
+      --bg-input: #FFFFFF;
+      --header-from: #1f2937;
+      --header-to: #111827;
+      --tab-bg: #FFFFFF;
+      --tab-active-text: #EA580C;
+      --tab-active-border: #F97316;
+      --tab-text: #6B7280;
+      --tab-hover-text: #374151;
+      --stats-bg: #FFFFFF;
+    }
+    [data-theme="dark"] {
+      --bg-primary: #111827;
+      --bg-secondary: #1F2937;
+      --bg-card: #1F2937;
+      --text-primary: #F3F4F6;
+      --text-secondary: #D1D5DB;
+      --text-muted: #9CA3AF;
+      --border-color: #374151;
+      --shadow-color: rgba(0,0,0,0.4);
+      --bg-hover: #374151;
+      --bg-input: #374151;
+      --header-from: #0f172a;
+      --header-to: #020617;
+      --tab-bg: #1F2937;
+      --tab-active-text: #FB923C;
+      --tab-active-border: #FB923C;
+      --tab-text: #9CA3AF;
+      --tab-hover-text: #D1D5DB;
+      --stats-bg: #1F2937;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg-primary: #111827;
+        --bg-secondary: #1F2937;
+        --bg-card: #1F2937;
+        --text-primary: #F3F4F6;
+        --text-secondary: #D1D5DB;
+        --text-muted: #9CA3AF;
+        --border-color: #374151;
+        --shadow-color: rgba(0,0,0,0.4);
+        --bg-hover: #374151;
+        --bg-input: #374151;
+        --header-from: #0f172a;
+        --header-to: #020617;
+        --tab-bg: #1F2937;
+        --tab-active-text: #FB923C;
+        --tab-active-border: #FB923C;
+        --tab-text: #9CA3AF;
+        --tab-hover-text: #D1D5DB;
+        --stats-bg: #1F2937;
+      }
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+    }
     .modal-overlay {
       background-color: rgba(0, 0, 0, 0.5);
       backdrop-filter: blur(4px);
     }
-    .question-row:hover { background-color: #f8fafc; }
+    .question-row:hover { background-color: var(--bg-hover); }
     .category-tag {
       display: inline-block;
       padding: 2px 8px;
@@ -24,9 +90,97 @@
       font-size: 0.75rem;
       font-weight: 500;
     }
+    /* Dark mode overrides for Tailwind utility classes */
+    [data-theme="dark"] .bg-white,
+    [data-theme="dark"] .bg-gray-100 {
+      background-color: var(--bg-card) !important;
+    }
+    [data-theme="dark"] .bg-gray-50 {
+      background-color: var(--bg-hover) !important;
+    }
+    [data-theme="dark"] .text-gray-900,
+    [data-theme="dark"] .text-gray-800,
+    [data-theme="dark"] .text-gray-700 {
+      color: var(--text-primary) !important;
+    }
+    [data-theme="dark"] .text-gray-600,
+    [data-theme="dark"] .text-gray-500 {
+      color: var(--text-secondary) !important;
+    }
+    [data-theme="dark"] .text-gray-400 {
+      color: var(--text-muted) !important;
+    }
+    [data-theme="dark"] .border-gray-300,
+    [data-theme="dark"] .border-gray-200,
+    [data-theme="dark"] .border-b,
+    [data-theme="dark"] .border {
+      border-color: var(--border-color) !important;
+    }
+    [data-theme="dark"] input,
+    [data-theme="dark"] select,
+    [data-theme="dark"] textarea {
+      background-color: var(--bg-input) !important;
+      color: var(--text-primary) !important;
+      border-color: var(--border-color) !important;
+    }
+    [data-theme="dark"] .shadow-sm,
+    [data-theme="dark"] .shadow-2xl {
+      box-shadow: 0 1px 3px var(--shadow-color) !important;
+    }
+    [data-theme="dark"] .hover\:bg-gray-50:hover {
+      background-color: var(--bg-hover) !important;
+    }
+    [data-theme="dark"] .question-row:hover {
+      background-color: var(--bg-hover) !important;
+    }
+    /* System dark preference fallback */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .bg-white,
+      :root:not([data-theme="light"]) .bg-gray-100 {
+        background-color: var(--bg-card) !important;
+      }
+      :root:not([data-theme="light"]) .bg-gray-50 {
+        background-color: var(--bg-hover) !important;
+      }
+      :root:not([data-theme="light"]) .text-gray-900,
+      :root:not([data-theme="light"]) .text-gray-800,
+      :root:not([data-theme="light"]) .text-gray-700 {
+        color: var(--text-primary) !important;
+      }
+      :root:not([data-theme="light"]) .text-gray-600,
+      :root:not([data-theme="light"]) .text-gray-500 {
+        color: var(--text-secondary) !important;
+      }
+      :root:not([data-theme="light"]) .text-gray-400 {
+        color: var(--text-muted) !important;
+      }
+      :root:not([data-theme="light"]) .border-gray-300,
+      :root:not([data-theme="light"]) .border-gray-200,
+      :root:not([data-theme="light"]) .border-b,
+      :root:not([data-theme="light"]) .border {
+        border-color: var(--border-color) !important;
+      }
+      :root:not([data-theme="light"]) input,
+      :root:not([data-theme="light"]) select,
+      :root:not([data-theme="light"]) textarea {
+        background-color: var(--bg-input) !important;
+        color: var(--text-primary) !important;
+        border-color: var(--border-color) !important;
+      }
+      :root:not([data-theme="light"]) .shadow-sm,
+      :root:not([data-theme="light"]) .shadow-2xl {
+        box-shadow: 0 1px 3px var(--shadow-color) !important;
+      }
+      :root:not([data-theme="light"]) .hover\:bg-gray-50:hover {
+        background-color: var(--bg-hover) !important;
+      }
+      :root:not([data-theme="light"]) .question-row:hover {
+        background-color: var(--bg-hover) !important;
+      }
+    }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="min-h-screen" style="background-color: var(--bg-primary); color: var(--text-primary)">
   <div id="root"></div>
 
   <!-- Load questions database and original backup for reset functionality -->
@@ -40,6 +194,26 @@
       const useEffect = React.useEffect;
       const createElement = React.createElement;
       const e = createElement;
+
+      // ============ THEME MANAGEMENT ============
+      const ADMIN_THEME_KEY = 'chefKitchenAdminTheme';
+      function getInitialTheme() {
+        try {
+          var saved = localStorage.getItem(ADMIN_THEME_KEY);
+          if (saved) return saved;
+        } catch (e) {}
+        return 'system';
+      }
+      function applyTheme(theme) {
+        var root = document.documentElement;
+        if (theme === 'system') {
+          root.removeAttribute('data-theme');
+        } else {
+          root.setAttribute('data-theme', theme);
+        }
+      }
+      // Apply theme immediately to prevent flash
+      applyTheme(getInitialTheme());
 
       // ============ CONVEX CLOUD DATABASE CONFIGURATION ============
       // Leland's Convex PRODUCTION deployment - DO NOT CHANGE
@@ -245,6 +419,9 @@
       // Header Component
       function Header(props) {
         var convexStatus = props.convexStatus || 'not-configured';
+        var theme = props.theme || 'system';
+        var themeIcon = theme === 'system' ? '\uD83D\uDDA5\uFE0F' : theme === 'light' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+        var themeLabel = theme === 'system' ? 'System' : theme === 'light' ? 'Light' : 'Dark';
         var statusBanner;
 
         if (convexStatus === 'connected') {
@@ -283,7 +460,7 @@
         return e('div', null,
           // Status Banner (dynamic based on Convex connection)
           statusBanner,
-          e('header', { className: 'bg-gradient-to-r from-gray-800 to-gray-900 text-white shadow-lg' },
+          e('header', { className: 'text-white shadow-lg', style: { background: 'linear-gradient(to right, var(--header-from), var(--header-to))' } },
             e('div', { className: 'max-w-7xl mx-auto px-4 py-4' },
               e('div', { className: 'flex flex-col md:flex-row md:items-center md:justify-between gap-4' },
                 e('div', null,
@@ -298,6 +475,12 @@
                     props.questionCount + ' questions'
                   ),
                   e('span', { className: 'text-xs text-gray-500' }, 'v' + APP_VERSION),
+                  e('button', {
+                    onClick: props.onCycleTheme,
+                    className: 'px-3 py-2 rounded-lg text-sm transition-colors hover:bg-white/10',
+                    style: { border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', background: 'transparent', color: 'white' },
+                    title: 'Theme: ' + themeLabel
+                  }, themeIcon + ' ' + themeLabel),
                   e('a', {
                     href: 'index.html',
                     target: '_blank',
@@ -1635,6 +1818,7 @@
 
       // ============ MAIN APP ============
       function AdminApp() {
+        const [theme, setTheme] = useState(getInitialTheme);
         const [activeTab, setActiveTab] = useState('questions');
         const [questions, setQuestions] = useState(loadQuestions);
         const [allCategories, setAllCategories] = useState(loadCategories);
@@ -1791,12 +1975,19 @@
           alert('Successfully reset to original ' + originalQuestions.length + ' questions!\n\nThe study app will now show the original questions.');
         }
 
-        return e('div', { className: 'min-h-screen bg-gray-100' },
+        function cycleTheme() {
+          var next = theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system';
+          setTheme(next);
+          applyTheme(next);
+          try { localStorage.setItem(ADMIN_THEME_KEY, next); } catch (e) {}
+        }
+
+        return e('div', { className: 'min-h-screen', style: { backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' } },
           // Header
-          e(Header, { questionCount: questions.length, convexStatus: convexStatus }),
+          e(Header, { questionCount: questions.length, convexStatus: convexStatus, theme: theme, onCycleTheme: cycleTheme }),
 
           // Tab Navigation
-          e('div', { className: 'bg-white border-b shadow-sm' },
+          e('div', { style: { backgroundColor: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' } },
             e('div', { className: 'max-w-7xl mx-auto flex' },
               [
                 { key: 'questions', label: 'Questions', icon: '\uD83D\uDCDD' },
@@ -1807,10 +1998,10 @@
                 return e('button', {
                   key: tab.key,
                   onClick: function() { setActiveTab(tab.key); },
-                  className: 'px-6 py-3 text-sm font-medium transition-colors border-b-2 ' +
-                    (isActive
-                      ? 'border-orange-500 text-orange-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700')
+                  className: 'px-6 py-3 text-sm font-medium transition-colors border-b-2',
+                  style: isActive
+                    ? { borderColor: 'var(--tab-active-border)', color: 'var(--tab-active-text)' }
+                    : { borderColor: 'transparent', color: 'var(--tab-text)' }
                 }, tab.icon + ' ' + tab.label);
               })
             )
