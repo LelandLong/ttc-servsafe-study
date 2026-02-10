@@ -32,6 +32,7 @@
   <!-- Load questions database and original backup for reset functionality -->
   <script src="questions.js"></script>
   <script src="questions-original.js"></script>
+  <script src="version.js"></script>
 
   <script>
     (function() {
@@ -296,15 +297,12 @@
                   e('span', { className: 'text-sm text-gray-400' },
                     props.questionCount + ' questions'
                   ),
+                  e('span', { className: 'text-xs text-gray-500' }, 'v' + APP_VERSION),
                   e('a', {
                     href: 'index.html',
                     target: '_blank',
                     className: 'px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm transition-colors'
-                  }, '👀 Preview Study App'),
-                  e('a', {
-                    href: 'index.html',
-                    className: 'px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors'
-                  }, '← Back to App')
+                  }, '👀 Preview Study App')
                 )
               )
             )
