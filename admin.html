@@ -994,11 +994,17 @@
         var search = searchState[0];
         var setSearch = searchState[1];
 
+        // Load students on mount and poll every 3 seconds
         useEffect(function() {
-          convexQuery("users:getAllStudents").then(function(data) {
-            setStudents(data || []);
-            setLoading(false);
-          }).catch(function() { setLoading(false); });
+          function fetchStudents() {
+            convexQuery("users:getAllStudents").then(function(data) {
+              setStudents(data || []);
+              setLoading(false);
+            }).catch(function() { setLoading(false); });
+          }
+          fetchStudents();
+          var interval = setInterval(fetchStudents, 3000);
+          return function() { clearInterval(interval); };
         }, []);
 
         useEffect(function() {
