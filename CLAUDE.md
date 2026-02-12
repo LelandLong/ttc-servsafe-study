@@ -2,6 +2,12 @@
 
 This file provides context and rules for Claude Code when working on the ServSafe study app project.
 
+> **Always read these files at session start:**
+> - [README.md](./README.md) — Project overview, features, deployment
+> - [ARCHITECTURE.md](./ARCHITECTURE.md) — Technical deep dive (data flow, components, theming)
+> - [CHANGELOG.md](./CHANGELOG.md) — Version history
+> - [plan.md](./plan.md) — Current development roadmap and status
+
 ---
 
 ## Business Context
@@ -342,6 +348,26 @@ The developer may work from multiple devices using VSCode with Claude extension.
 | `convex/tests.ts` | Live test functions (8 functions) |
 | `convex/questions.ts` | Question CRUD (7 functions) |
 | `manifest.json` | PWA manifest |
+
+---
+
+## Documentation Standards
+
+This project follows a standardized documentation structure:
+
+| File | Purpose | Update Frequency |
+|------|---------|-----------------|
+| **CLAUDE.md** | AI assistant project guide — primary context | Every session with changes |
+| **README.md** | Project overview, features, deployment | When features/setup changes |
+| **CHANGELOG.md** | Version history (reverse chronological) | Every version bump |
+| **ARCHITECTURE.md** | Technical deep dive (data flow, components, theming) | When architecture changes |
+| **plan.md** | Development roadmap and status | Before every commit |
+
+**Rules:**
+- `version.js` and `CHANGELOG.md` MUST be updated on every version bump
+- `plan.md` MUST be updated before every commit
+- `CLAUDE.md` should be updated when project context changes (new features, patterns, decisions)
+- All docs must contain enough context for a fresh AI session on a different device to pick up where you left off
 
 ---
 
