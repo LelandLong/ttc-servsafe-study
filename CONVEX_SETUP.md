@@ -18,17 +18,20 @@ npm install
 
 ### Step 3: Deploy to Convex
 ```bash
-npx convex deploy
+npx convex deploy --yes
 ```
 
-You may be asked to log in to Convex - use the same account where you created the `good-alpaca-167` project.
+You may be asked to log in to Convex. The `--yes` flag auto-confirms prompts (required for non-interactive deployments).
 
 ### Step 4: Seed the Database
-After deploying, open the admin page in your browser. It will detect an empty database and offer to upload the 93 questions. Click "Yes".
+After deploying, open the admin page in your browser:
+1. Go to the "Backup & Recovery" section
+2. Click "Reset to Original" button
+3. This pushes 195 questions from `questions-original.js` to Convex
 
 ### That's It!
 The app is now connected to your Convex cloud database. The URL is already configured in the code:
-- `https://good-alpaca-167.convex.cloud`
+- `https://cautious-monitor-526.convex.cloud`
 
 ---
 
