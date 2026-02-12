@@ -2,7 +2,7 @@
 
 A Progressive Web App (PWA) for CUL 104 ServSafe exam preparation at Trident Technical College. Features a Ratatouille-inspired rat chef theme with gamified learning, cloud sync, live tests, and professor dashboard.
 
-**Version:** 02-12-2026-1
+**Version:** 02-12-2026-2
 **Deployment:** GitHub Pages
 **Backend:** Convex Cloud (`https://cautious-monitor-526.convex.cloud`)
 
@@ -132,7 +132,8 @@ ServSafePWA/
 │   ├── users.ts            # User queries/mutations (10 functions)
 │   ├── tests.ts            # Live test functions (8 functions)
 │   └── questions.ts        # Question CRUD (7 functions)
-├── CLAUDE.md               # Development instructions for AI
+├── CLAUDE.md               # Project guide for Claude Code
+├── plan.md                 # Development roadmap and status
 ├── CHANGELOG.md            # Detailed version history
 ├── ARCHITECTURE.md         # Technical deep dive
 └── README.md               # This file
@@ -277,11 +278,10 @@ npx convex deploy --yes
 
 See [CHANGELOG.md](./CHANGELOG.md) for detailed version history.
 
-**Latest:** 02-12-2026-1
-- Added comprehensive documentation (README.md, CHANGELOG.md, ARCHITECTURE.md)
-- Updated all docs with current project state (195 questions, all features)
-- Cross-referenced documentation for easy navigation
-- Enables multiple AI tools and devices to understand full project context
+**Latest:** 02-12-2026-2
+- Rewrote CLAUDE.md to match FlooringXP documentation standards
+- Created plan.md with development roadmap, progress tracking, and goals
+- Full documentation suite now consistent across projects
 
 ---
 
