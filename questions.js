@@ -2241,7 +2241,7 @@ var questionsDB = [
     correct: 2,
     hint: "Damaged packaging is a serious concern regardless of what's inside.",
     explanation: "Torn packaging should always be rejected because it may have been contaminated. Live oysters at 50°F are acceptable (max is 50°F), and milk at 41°F is fine.",
-    category: "Receiving & Purchasing",
+    category: "Food Storage",
     chapter: 6,
     examFocus: true
   },
@@ -2257,7 +2257,7 @@ var questionsDB = [
     correct: 0,
     hint: "Think about what's normal for fresh shellfish straight from the ocean.",
     explanation: "A slight seaweed or ocean smell is NORMAL for fresh shellfish. They should smell like the sea. Reject only if they have a strong fishy or ammonia odor.",
-    category: "Receiving & Purchasing",
+    category: "Food Storage",
     chapter: 6,
     examFocus: true
   },
@@ -2273,7 +2273,7 @@ var questionsDB = [
     correct: 0,
     hint: "Before you even look at the food itself, what should you check?",
     explanation: "The FIRST step is to inspect the delivery vehicle for signs of contamination, pests, or improper conditions. Then inspect the food itself.",
-    category: "Receiving & Purchasing",
+    category: "Food Storage",
     chapter: 6,
     examFocus: true
   },
@@ -2289,7 +2289,7 @@ var questionsDB = [
     correct: 3,
     hint: "Raw fish must go through a specific process to kill parasites before serving.",
     explanation: "Fish served raw or undercooked must have documentation stating it was correctly frozen to destroy parasites. This is a food safety requirement.",
-    category: "Receiving & Purchasing",
+    category: "Food Storage",
     chapter: 6,
     examFocus: true
   },
@@ -2305,7 +2305,7 @@ var questionsDB = [
     correct: 2,
     hint: "If you transfer food to a new container, what's the minimum labeling needed?",
     explanation: "When food is removed from its original container, the new container must be labeled with the food's common name so it can be properly identified.",
-    category: "Storage",
+    category: "Food Storage",
     chapter: 7,
     examFocus: true
   },
@@ -2321,7 +2321,7 @@ var questionsDB = [
     correct: 0,
     hint: "Key drop means food is delivered when the operation is closed. What's the first priority?",
     explanation: "After a key drop delivery (delivered when no one is present), the delivery must be inspected as soon as possible to verify quality and safety.",
-    category: "Receiving & Purchasing",
+    category: "Food Storage",
     chapter: 6,
     examFocus: true
   },
@@ -2337,7 +2337,7 @@ var questionsDB = [
     correct: 2,
     hint: "Discoloration in poultry is a sign of poor quality or mishandling.",
     explanation: "Dark wing tips and purple discoloration around the neck indicate the poultry has been improperly handled or is past quality. Reject the entire shipment.",
-    category: "Receiving & Purchasing",
+    category: "Food Storage",
     chapter: 6,
     examFocus: true
   },
@@ -2353,7 +2353,7 @@ var questionsDB = [
     correct: 1,
     hint: "What's the baseline legal requirement that matters most?",
     explanation: "The most important factor is that the supplier has been inspected and complies with all applicable laws. Proximity, HACCP programs, and documentation are valuable but secondary.",
-    category: "Receiving & Purchasing",
+    category: "Food Storage",
     chapter: 6,
     examFocus: true
   },
@@ -2369,7 +2369,7 @@ var questionsDB = [
     correct: 3,
     hint: "Don't put anything away until you've verified it meets your standards.",
     explanation: "ALL food deliveries must be inspected immediately before being stored. Don't store first and inspect later — problems must be caught right away.",
-    category: "Receiving & Purchasing",
+    category: "Food Storage",
     chapter: 6,
     examFocus: true
   },
@@ -2385,7 +2385,7 @@ var questionsDB = [
     correct: 3,
     hint: "This agency oversees food safety standards for seafood and most food products.",
     explanation: "The FDA (Food and Drug Administration) sets and enforces standards for farm-raised fish, including aquaculture operations.",
-    category: "Receiving & Purchasing",
+    category: "Food Storage",
     chapter: 6,
     examFocus: true
   },
@@ -2401,7 +2401,7 @@ var questionsDB = [
     correct: 1,
     hint: "Pests in the vehicle mean the entire load is potentially compromised.",
     explanation: "If pests are spotted in a delivery vehicle, reject the ENTIRE delivery. There is no way to know which products may have been contaminated.",
-    category: "Receiving & Purchasing",
+    category: "Food Storage",
     chapter: 6,
     examFocus: true
   },
@@ -2417,7 +2417,7 @@ var questionsDB = [
     correct: 3,
     hint: "Separating by TIME is key when you can't separate by space.",
     explanation: "When using the same prep table, prep raw and ready-to-eat foods at DIFFERENT times, cleaning and sanitizing between each type.",
-    category: "Cross-Contamination",
+    category: "Sanitation & Hygiene",
     chapter: 7,
     examFocus: true
   },
@@ -2433,7 +2433,7 @@ var questionsDB = [
     correct: 0,
     hint: "Expired dates mean the food is past its guaranteed safe period.",
     explanation: "Any food received with an expired use-by date must be rejected. It cannot be accepted regardless of its appearance.",
-    category: "Receiving & Purchasing",
+    category: "Food Storage",
     chapter: 6,
     examFocus: true
   },
@@ -2449,7 +2449,7 @@ var questionsDB = [
     correct: 1,
     hint: "This is the same as the hot holding minimum temperature.",
     explanation: "Hot TCS food must be received at 135°F (57°C) or higher — the same minimum required for hot holding.",
-    category: "Receiving & Purchasing",
+    category: "Food Storage",
     chapter: 6,
     examFocus: true
   },
@@ -2465,7 +2465,7 @@ var questionsDB = [
     correct: 0,
     hint: "What prevents pathogens from one task from transferring to the next?",
     explanation: "After each prep task, all food-contact surfaces must be cleaned and sanitized before starting the next task to prevent cross-contamination.",
-    category: "Cross-Contamination",
+    category: "Sanitation & Hygiene",
     chapter: 7,
     examFocus: true
   },
@@ -2497,7 +2497,7 @@ var questionsDB = [
     correct: 3,
     hint: "When combining ingredients, the clock is set by the ingredient that expires first.",
     explanation: "When combining foods with different use-by dates, the discard date is based on the EARLIEST use-by date — in this case, September 1.",
-    category: "Storage",
+    category: "Food Storage",
     chapter: 7,
     examFocus: true
   },
@@ -2516,7 +2516,7 @@ var questionsDB = [
     correct: 1,
     hint: "Think about what a manager does when they find a burger only cooked to 130°F.",
     explanation: "A corrective action is when a manager identifies that a critical limit was not met (e.g., food undercooked) and takes steps to fix it and retrain the employee.",
-    category: "HACCP",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -2532,7 +2532,7 @@ var questionsDB = [
     correct: 1,
     hint: "This is needed when your operation does something beyond standard cooking like smoking or curing.",
     explanation: "A variance is permission from the Board of Health/regulatory authority to perform specialized food preparation (smoking, curing, sous vide, etc.) that requires a HACCP plan.",
-    category: "HACCP",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -2548,7 +2548,7 @@ var questionsDB = [
     correct: 2,
     hint: "Think about cooking methods that involve low temperatures or modified atmospheres.",
     explanation: "Smoking meats requires a variance and HACCP plan because it involves low-temperature cooking. Other activities requiring variances include curing, sous vide, canning, sprouting seeds, and live shellfish tanks.",
-    category: "HACCP",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -2564,7 +2564,7 @@ var questionsDB = [
     correct: 2,
     hint: "It's measured in weeks, not months or years.",
     explanation: "HACCP records must be maintained for 16 weeks. These include temperature logs, corrective actions, calibration records, and training sign-offs.",
-    category: "HACCP",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -2580,7 +2580,7 @@ var questionsDB = [
     correct: 1,
     hint: "Think about what you do BEFORE, DURING, and AFTER a crisis like a hurricane.",
     explanation: "The three phases are: (1) Prepare for the crisis, (2) Respond to the crisis, and (3) Recover from the crisis.",
-    category: "HACCP",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -2596,7 +2596,7 @@ var questionsDB = [
     correct: 2,
     hint: "This pathogen causes severe stomach cramps and is specifically linked to starchy foods.",
     explanation: "Bacillus cereus is associated with improperly cooled rice and grains. If not cooled below 41°F within 6 hours, it can cause severe stomach cramps.",
-    category: "HACCP",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -2612,7 +2612,7 @@ var questionsDB = [
     correct: 1,
     hint: "Think about where melons grow and what they might contact in the field.",
     explanation: "Cantaloupe rind can harbor Salmonella from manure/feces in the growing field. Always wash, scrub, and dry melons before cutting, and sanitize the cutting board after removing rind.",
-    category: "HACCP",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -2628,7 +2628,7 @@ var questionsDB = [
     correct: 1,
     hint: "This is why experienced chefs pull meat from the oven BEFORE it reaches target temperature.",
     explanation: "Carryover cooking means food continues to cook after removal from heat, rising 5-15°F depending on size. A roast pulled at 125°F will reach 135°F (medium rare).",
-    category: "HACCP",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -2644,7 +2644,7 @@ var questionsDB = [
     correct: 2,
     hint: "The regulatory authority won't come fix your plumbing for you.",
     explanation: "The first step is to get a certified plumber to fix the problem. The Board of Health will not fix it for you — they'll tell you to get a plumber.",
-    category: "HACCP",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -2660,7 +2660,7 @@ var questionsDB = [
     correct: 2,
     hint: "AMC is about people, processes, and systems — not about spending money on equipment.",
     explanation: "Active Managerial Control is achieved through training programs, manager supervision, SOPs, and HACCP plans. Equipment cost is not a factor in AMC.",
-    category: "HACCP",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -2676,7 +2676,7 @@ var questionsDB = [
     correct: 2,
     hint: "The professor stressed this on the first day of class — think about who handles food the most.",
     explanation: "Humans are the #1 cause of pathogen transfer. Poor personal hygiene, improper handwashing, and bare-hand contact with ready-to-eat food are the biggest risks.",
-    category: "HACCP",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -2692,7 +2692,7 @@ var questionsDB = [
     correct: 1,
     hint: "These are broad categories — one covers living organisms, one covers substances, one covers objects.",
     explanation: "HACCP identifies three types of hazards: Biological (bacteria, viruses, parasites), Chemical (cleaning agents, pesticides), and Physical (glass, metal, hair).",
-    category: "HACCP",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -2708,7 +2708,7 @@ var questionsDB = [
     correct: 2,
     hint: "Think about operations that involve keeping live animals or processing food in non-standard ways.",
     explanation: "Operating live shellfish tanks requires a variance. Other activities requiring variances include smoking/curing, sous vide, canning, sprouting seeds, and using food additives.",
-    category: "HACCP",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -2724,7 +2724,7 @@ var questionsDB = [
     correct: 2,
     hint: "The rind may have contaminated the board. Simply rinsing isn't enough.",
     explanation: "After removing cantaloupe rind, the cutting board must be cleaned AND sanitized before cutting the clean fruit. The rind may harbor Salmonella that can transfer to the fruit.",
-    category: "HACCP",
+    category: "Food Safety Basics",
     chapter: 10,
     examFocus: true
   },
@@ -2996,27 +2996,7 @@ var questionsDB = [
     category: "Facilities & Operations",
     chapter: 14,
     examFocus: false
-  }
-];
-
-// Get unique categories from questions
-var categories = [];
-questionsDB.forEach(function(q) {
-  if (categories.indexOf(q.category) === -1) {
-    categories.push(q.category);
-  }
-});
-categories.sort();
-
-// Get unique chapters from questions
-var chapters = [];
-questionsDB.forEach(function(q) {
-  if (chapters.indexOf(q.chapter) === -1) {
-    chapters.push(q.chapter);
-  }
-});
-chapters.sort(function(a, b) { return a - b; });
-,
+  },
   // ========== QUIZ #3 & #4 ADDITIONS (Chapters 8-14) ==========
   {
     id: 220,
@@ -3369,4 +3349,23 @@ chapters.sort(function(a, b) { return a - b; });
     category: "Facilities & Operations",
     chapter: 14,
     examFocus: true
+  },
+// Get unique categories from questions
+];
+
+var categories = [];
+questionsDB.forEach(function(q) {
+  if (categories.indexOf(q.category) === -1) {
+    categories.push(q.category);
   }
+});
+categories.sort();
+
+// Get unique chapters from questions
+var chapters = [];
+questionsDB.forEach(function(q) {
+  if (chapters.indexOf(q.chapter) === -1) {
+    chapters.push(q.chapter);
+  }
+});
+chapters.sort(function(a, b) { return a - b; });
