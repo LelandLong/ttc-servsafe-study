@@ -6,6 +6,20 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [02-15-2026-2] - February 15, 2026
+
+### Added
+- **32 new questions from Quiz #3 (Ch 8-10) and Quiz #4 (Ch 11-14)**
+  - Chapter 8: 6 questions (sneeze guards, ice handling, protein salad TCS limits, additives, reconditioning, hot-hold timing)
+  - Chapter 9: 3 questions (pork roast temp, partial cooking time, raw/undercooked menu advisory)
+  - Chapter 10: 4 questions (outbreak response, imminent health hazards, HACCP monitoring, pest control as food safety program)
+  - Chapter 12: 7 questions (post-pesticide cleanup, pest reporting, PCO selection, pesticide storage, roach signs, recyclables, three pest rules)
+  - Chapter 13: 1 question (FDA issues Food Code)
+  - Chapter 14: 11 questions (core items, inspection intervals, training approach/frequency/timing, staff knowledge, priority items, violation deadlines, inspection purpose)
+- **Total questions now: 251** (up from 219)
+
+---
+
 ## [02-15-2026-1] - February 15, 2026
 
 ### Added
