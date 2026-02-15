@@ -2727,27 +2727,7 @@ var questionsDB = [
     category: "HACCP",
     chapter: 10,
     examFocus: true
-  }
-];
-
-// Get unique categories from questions
-var categories = [];
-questionsDB.forEach(function(q) {
-  if (categories.indexOf(q.category) === -1) {
-    categories.push(q.category);
-  }
-});
-categories.sort();
-
-// Get unique chapters from questions
-var chapters = [];
-questionsDB.forEach(function(q) {
-  if (chapters.indexOf(q.chapter) === -1) {
-    chapters.push(q.chapter);
-  }
-});
-chapters.sort(function(a, b) { return a - b; });
-,
+  },
   // ========== CLASS 8 & 9 ADDITIONS (Week 5 Lectures) ==========
   // Chapter 10: HACCP & Food Safety Management (from Class 8)
   {
@@ -3017,3 +2997,22 @@ chapters.sort(function(a, b) { return a - b; });
     chapter: 14,
     examFocus: false
   }
+];
+
+// Get unique categories from questions
+var categories = [];
+questionsDB.forEach(function(q) {
+  if (categories.indexOf(q.category) === -1) {
+    categories.push(q.category);
+  }
+});
+categories.sort();
+
+// Get unique chapters from questions
+var chapters = [];
+questionsDB.forEach(function(q) {
+  if (chapters.indexOf(q.chapter) === -1) {
+    chapters.push(q.chapter);
+  }
+});
+chapters.sort(function(a, b) { return a - b; });

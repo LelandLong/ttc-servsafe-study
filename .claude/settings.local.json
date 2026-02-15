@@ -8,7 +8,10 @@
       "Bash(git -C /Users/admin/Claude/ttc-servsafe-study-main checkout -b main)",
       "Bash(git -C /Users/admin/Claude/ttc-servsafe-study-main remote add origin https://github.com/LelandLong/ttc-servsafe-study.git)",
       "Bash(git -C /Users/admin/Claude/ttc-servsafe-study-main fetch origin)",
-      "Bash(git -C /Users/admin/Claude/ttc-servsafe-study-main status)"
+      "Bash(git -C /Users/admin/Claude/ttc-servsafe-study-main status)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(node -c:*)"
     ]
   }
 }
