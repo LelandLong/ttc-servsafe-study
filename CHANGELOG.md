@@ -6,6 +6,30 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [02-15-2026-1] - February 15, 2026
+
+### Added
+- **24 new questions from Week 5 class recordings** (Class 8 & Class 9)
+  - Chapter 10: 3 questions (Bacillus cereus, HACCP hazard types, critical limits)
+  - Chapter 11: 10 questions (cleaning order, D-Limer, PPM, hard water, sanitizer types, 3-compartment sink, chemical labeling, degreasers)
+  - Chapter 12: 3 questions (PCO, damaged packages, air curtains)
+  - Chapters 13-14: 8 questions (FDA/USDA/CDC roles, local enforcement, USDA stamps, SC Dept of Agriculture)
+- **Total questions now: 219** (up from 195)
+
+### Changed
+- **Consolidated 19 categories into 7** balanced categories:
+  - Food Safety Basics (46 Q), Temperature Control (34 Q), Sanitation & Hygiene (27 Q+), Foodborne Illness (22 Q+), Facilities & Operations (19 Q+), Food Storage (9 Q), Training (6 Q)
+- Updated category icons for new consolidated names
+- Fixed badge catalog to show Chapters and Quizzes badge categories (were missing from display)
+
+### Fixed
+- **Exam Focus button invisible in dark mode** — text color changed from theme-dependent to fixed dark color
+- **Badge notification not dismissing on tap inside badge** — removed stopPropagation that blocked clicks
+- **Chapter stats not tracking** — added chapterStats to handleAnswer and reset functions
+- **Progress section showing mismatched data** — old 19 categories had many with 0-2 questions
+
+---
+
 ## [02-12-2026-1] - February 12, 2026
 
 ### Added

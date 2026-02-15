@@ -2747,3 +2747,273 @@ questionsDB.forEach(function(q) {
   }
 });
 chapters.sort(function(a, b) { return a - b; });
+,
+  // ========== CLASS 8 & 9 ADDITIONS (Week 5 Lectures) ==========
+  // Chapter 10: HACCP & Food Safety Management (from Class 8)
+  {
+    id: 196,
+    question: "Which pathogen is specifically associated with improperly cooled rice and grains?",
+    options: ["E. coli", "Salmonella", "Bacillus cereus", "Listeria"],
+    correct: 2,
+    hint: "Chef Carmel mentioned this causes severe stomach cramps from starchy foods.",
+    explanation: "Bacillus cereus causes severe stomach cramps and is specifically associated with rice, grains, and starchy foods not cooled properly.",
+    category: "Foodborne Illness",
+    chapter: 10,
+    examFocus: true
+  },
+  {
+    id: 197,
+    question: "According to HACCP, what are the three types of hazards in food preparation?",
+    options: ["Physical, chemical, biological", "Temperature, time, contamination", "Internal, external, environmental", "Acute, chronic, dormant"],
+    correct: 0,
+    hint: "Think about things that could end up in food: living organisms, substances, and objects.",
+    explanation: "The three hazard types are: Biological (bacteria, viruses, parasites), Chemical (cleaning agents, pesticides), and Physical (glass, metal, hair).",
+    category: "Food Safety Basics",
+    chapter: 10,
+    examFocus: true
+  },
+  {
+    id: 198,
+    question: "Which HACCP principle involves setting minimum and maximum standards such as temperatures and times?",
+    options: ["Conduct hazard analysis", "Determine critical control points", "Establish critical limits", "Establish monitoring procedures"],
+    correct: 2,
+    hint: "This principle defines the boundaries — the numbers that must be met at each CCP.",
+    explanation: "Principle 3, Establish Critical Limits, sets the minimum/maximum standards (like temperatures and times) that must be met at each critical control point.",
+    category: "Food Safety Basics",
+    chapter: 10,
+    examFocus: true
+  },
+  // Chapter 11: Cleaning & Sanitizing (from Class 9)
+  {
+    id: 199,
+    question: "In South Carolina, who now handles food safety regulation that was formerly under DHEC?",
+    options: ["The FDA", "The USDA", "The SC Department of Agriculture", "The CDC"],
+    correct: 2,
+    hint: "This is a state-level change — the responsibilities moved to a different SC department.",
+    explanation: "In South Carolina, the Department of Agriculture absorbed the former DHEC (Department of Health and Environmental Control) food safety responsibilities.",
+    category: "Facilities & Operations",
+    chapter: 14,
+    examFocus: false
+  },
+  {
+    id: 200,
+    question: "What is the correct order for cleaning and sanitizing food contact surfaces?",
+    options: ["Wash, rinse, sanitize, scrape, air dry", "Scrape, wash, rinse, sanitize, air dry", "Rinse, wash, scrape, sanitize, air dry", "Sanitize, wash, rinse, scrape, air dry"],
+    correct: 1,
+    hint: "You need to remove food debris first before you can effectively wash.",
+    explanation: "The correct order is: 1) Scrape food off, 2) Wash, 3) Rinse, 4) Sanitize, 5) Air dry. Know this order — the exam asks what comes first, third, fourth, etc.",
+    category: "Sanitation & Hygiene",
+    chapter: 11,
+    examFocus: true
+  },
+  {
+    id: 201,
+    question: "What removes mineral deposits from dishwashers and equipment?",
+    options: ["Degreasers", "Detergent", "D-Limer", "Abrasive cleaners"],
+    correct: 2,
+    hint: "The name of this product literally references what it removes — lime.",
+    explanation: "A D-Limer (de-limer) specifically removes mineral deposits (lime scale) from dishwashers and other equipment.",
+    category: "Sanitation & Hygiene",
+    chapter: 11,
+    examFocus: true
+  },
+  {
+    id: 202,
+    question: "How is sanitizer concentration measured?",
+    options: ["Degrees Fahrenheit", "Percentage by volume", "Parts per million (PPM)", "Fluid ounces per gallon"],
+    correct: 2,
+    hint: "This measurement uses test strips or tape kept near the dishwasher and 3-compartment sink.",
+    explanation: "Sanitizer concentration is measured in PPM (parts per million) using pH test strips or tape.",
+    category: "Sanitation & Hygiene",
+    chapter: 11,
+    examFocus: true
+  },
+  {
+    id: 203,
+    question: "What should you do if hard water is reducing sanitizer effectiveness?",
+    options: ["Use hotter water instead", "Add more sanitizer", "Switch to soap", "Reduce the rinse cycle time"],
+    correct: 1,
+    hint: "Hard water dilutes the sanitizer\'s power, so you need to compensate.",
+    explanation: "Hard water reduces sanitizer effectiveness. The solution is to add more sanitizer to compensate for the mineral content in the water.",
+    category: "Sanitation & Hygiene",
+    chapter: 11,
+    examFocus: true
+  },
+  {
+    id: 204,
+    question: "How often must food contact surfaces be cleaned and sanitized?",
+    options: ["Every 2 hours", "Every 4 hours", "Every 6 hours", "Once per shift"],
+    correct: 1,
+    hint: "Think about the time limit before bacteria can reach dangerous levels.",
+    explanation: "Food contact surfaces must be cleaned and sanitized every 4 hours to prevent bacterial buildup.",
+    category: "Sanitation & Hygiene",
+    chapter: 11,
+    examFocus: true
+  },
+  {
+    id: 205,
+    question: "What are the three types of chemical sanitizers approved for food service?",
+    options: ["Bleach, ammonia, and vinegar", "Chlorine, iodine, and quaternary ammonium", "Hydrogen peroxide, alcohol, and chlorine", "Soap, detergent, and bleach"],
+    correct: 1,
+    hint: "One is in bleach, one is brown-colored, and the third is often called \'quat.\'",
+    explanation: "The three approved chemical sanitizers are chlorine, iodine, and quaternary ammonium (quat). Their concentrations are measured in PPM.",
+    category: "Sanitation & Hygiene",
+    chapter: 11,
+    examFocus: true
+  },
+  {
+    id: 206,
+    question: "Why should hot water NOT be used in the sanitizer compartment of a three-compartment sink?",
+    options: ["It wastes energy", "Hot water kills or limits sanitizer effectiveness", "It causes dangerous chemical fumes", "It damages the sink basin"],
+    correct: 1,
+    hint: "Heat and chemical sanitizers don\'t work well together.",
+    explanation: "Hot water kills or limits the effectiveness of chemical sanitizers. The sanitizer water should be cold or lukewarm for maximum effectiveness.",
+    category: "Sanitation & Hygiene",
+    chapter: 11,
+    examFocus: true
+  },
+  {
+    id: 207,
+    question: "Why should sanitizer buckets NEVER be placed on food prep tables?",
+    options: ["They take up workspace", "Risk of chemical contamination of food", "They attract pests", "Health code requires floor placement"],
+    correct: 1,
+    hint: "Think about what could happen if the bucket tips over near food.",
+    explanation: "Sanitizer buckets on work tables risk chemical contamination if they spill into food. Always keep buckets below or beside the table.",
+    category: "Sanitation & Hygiene",
+    chapter: 11,
+    examFocus: true
+  },
+  {
+    id: 208,
+    question: "What is required on ALL chemical spray bottles in a kitchen?",
+    options: ["Date of purchase", "The original product label", "Manager\'s initials", "Expiration date only"],
+    correct: 1,
+    hint: "This ensures anyone can identify what chemical is in the bottle.",
+    explanation: "All chemical spray bottles MUST have the original product label so anyone can identify the contents and proper usage. This will be on the exam.",
+    category: "Sanitation & Hygiene",
+    chapter: 11,
+    examFocus: true
+  },
+  {
+    id: 209,
+    question: "What type of cleaner removes carbon buildup from kitchen equipment?",
+    options: ["D-Limer", "Detergent", "Degreaser", "Abrasive cleaner"],
+    correct: 2,
+    hint: "Carbon buildup is essentially baked-on grease and oil residue.",
+    explanation: "Degreasers (grease cutters) remove carbon buildup from equipment. Dip tanks with degreasing solution can soak items for 24 hours to dissolve carbon.",
+    category: "Sanitation & Hygiene",
+    chapter: 11,
+    examFocus: false
+  },
+  // Chapter 12: Pest Management (from Class 9)
+  {
+    id: 210,
+    question: "Who should you call when you have a pest problem in a food establishment?",
+    options: ["The USDA", "The FDA", "A Pest Control Operator (PCO)", "The Board of Health"],
+    correct: 2,
+    hint: "This is a licensed professional — not a government agency.",
+    explanation: "Call a Pest Control Operator (PCO). PCOs are licensed to use chemicals not available to the public and develop integrated pest management plans. Only the PCO can use pesticides in the kitchen.",
+    category: "Facilities & Operations",
+    chapter: 12,
+    examFocus: true
+  },
+  {
+    id: 211,
+    question: "What do damaged or ripped packages in a food delivery indicate?",
+    options: ["Normal shipping wear", "Possible pest infestation", "The food is past expiration", "Improper temperature during transport"],
+    correct: 1,
+    hint: "Something had to cause the damage — and it might still be inside.",
+    explanation: "Damaged or ripped packaging indicates possible pest activity (bugs or rodents). Always inspect deliveries and refuse damaged shipments.",
+    category: "Facilities & Operations",
+    chapter: 12,
+    examFocus: true
+  },
+  {
+    id: 212,
+    question: "What can be installed at doorways to keep flying insects out of a kitchen?",
+    options: ["Screen doors only", "Air curtains (wind curtains)", "UV light traps", "Hanging pest strips"],
+    correct: 1,
+    hint: "This creates a barrier of moving air that insects cannot fly through.",
+    explanation: "Air curtains (wind curtains) create a stream of air at doorways that prevents flying insects from entering the kitchen.",
+    category: "Facilities & Operations",
+    chapter: 12,
+    examFocus: false
+  },
+  // Chapters 13-14: Regulatory Agencies & Inspections (from Class 9)
+  {
+    id: 213,
+    question: "The FDA inspects and regulates all food EXCEPT which of the following?",
+    options: ["Seafood", "Produce", "Meat, poultry, and eggs", "Canned goods"],
+    correct: 2,
+    hint: "A different federal agency handles these specific animal products.",
+    explanation: "The FDA inspects all food EXCEPT meat, poultry, and eggs — those are regulated and inspected by the USDA.",
+    category: "Facilities & Operations",
+    chapter: 13,
+    examFocus: true
+  },
+  {
+    id: 214,
+    question: "Which federal agency is responsible for inspecting meat, poultry, and eggs?",
+    options: ["FDA", "USDA", "CDC", "EPA"],
+    correct: 1,
+    hint: "This department has \'Agriculture\' in its name.",
+    explanation: "The USDA (United States Department of Agriculture) regulates and inspects meat, poultry, and eggs. A USDA stamp means the meat is healthy and safe to eat.",
+    category: "Facilities & Operations",
+    chapter: 13,
+    examFocus: true
+  },
+  {
+    id: 215,
+    question: "Which agency investigates outbreaks of foodborne illness?",
+    options: ["FDA", "USDA", "CDC", "Local Board of Health"],
+    correct: 2,
+    hint: "This agency is headquartered in Atlanta and tracks diseases nationwide.",
+    explanation: "The CDC (Centers for Disease Control and Prevention) investigates outbreaks of foodborne illness, working with FDA, USDA, and local authorities.",
+    category: "Facilities & Operations",
+    chapter: 13,
+    examFocus: true
+  },
+  {
+    id: 216,
+    question: "Who enforces food safety regulations at local restaurants?",
+    options: ["The FDA", "The USDA", "The local regulatory authority", "The CDC"],
+    correct: 2,
+    hint: "Enforcement starts at the local level, not federal.",
+    explanation: "Local regulatory authorities (like SC Dept. of Agriculture) enforce regulations at local restaurants. Federal agencies handle interstate and national issues.",
+    category: "Facilities & Operations",
+    chapter: 14,
+    examFocus: true
+  },
+  {
+    id: 217,
+    question: "What does a USDA stamp on meat indicate?",
+    options: ["The meat is graded as prime quality", "The meat is organic", "The meat is healthy and safe to eat", "The meat was raised locally"],
+    correct: 2,
+    hint: "The stamp is about safety inspection, not quality grading — grading is a separate paid service.",
+    explanation: "A USDA stamp indicates the meat has been inspected and is healthy and safe to eat. USDA does NOT grade meat (prime, choice, etc.) — that is a separate paid service.",
+    category: "Facilities & Operations",
+    chapter: 13,
+    examFocus: true
+  },
+  {
+    id: 218,
+    question: "When a food safety issue spreads from local to multiple states, what happens?",
+    options: ["The local authority continues handling it alone", "Federal agencies like FDA and USDA get involved", "The restaurant is permanently closed", "Each state handles its own cases separately"],
+    correct: 1,
+    hint: "Think about how the response escalates as the problem grows beyond one location.",
+    explanation: "Food safety issues start with local authorities but escalate to federal agencies (FDA, USDA, Dept. of Health) when they spread across state lines.",
+    category: "Facilities & Operations",
+    chapter: 13,
+    examFocus: false
+  },
+  {
+    id: 219,
+    question: "What should a food establishment always have posted and visible for inspectors?",
+    options: ["Menu prices", "Employee schedule", "Food safety certifications", "Supplier contracts"],
+    correct: 2,
+    hint: "Inspectors check for these credentials when they visit.",
+    explanation: "Food safety certifications should always be posted and visible. Inspectors also check proper food labeling, dating, and overall sanitation.",
+    category: "Facilities & Operations",
+    chapter: 14,
+    examFocus: false
+  }
