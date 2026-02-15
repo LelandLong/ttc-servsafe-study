@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh repo list:*)",
+      "Bash(git --version)",
+      "Bash(git -C /Users/admin/Claude/ttc-servsafe-study-main init -b main)",
+      "Bash(git -C /Users/admin/Claude/ttc-servsafe-study-main init)",
+      "Bash(git -C /Users/admin/Claude/ttc-servsafe-study-main checkout -b main)",
+      "Bash(git -C /Users/admin/Claude/ttc-servsafe-study-main remote add origin https://github.com/LelandLong/ttc-servsafe-study.git)",
+      "Bash(git -C /Users/admin/Claude/ttc-servsafe-study-main fetch origin)",
+      "Bash(git -C /Users/admin/Claude/ttc-servsafe-study-main status)"
+    ]
+  }
+}
