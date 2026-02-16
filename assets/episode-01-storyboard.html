@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Episode 1: "Pickle Gate" - Complete Storyboard</title>
+<style>
+body { 
+  margin: 0; 
+  font-family: 'Arial', sans-serif; 
+  background: linear-gradient(135deg, #1a1a2e, #16213e); 
+  color: white; 
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+.title { 
+  font-size: 42px; 
+  color: #ffd700; 
+  font-weight: bold; 
+  text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.5);
+  padding: 20px 30px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+  text-align: center;
+}
+.subtitle {
+  font-size: 18px;
+  color: #98fb98;
+  text-align: center;
+  margin: -10px 0 40px 0;
+}
+.production-status {
+  background: rgba(0,255,0,0.1);
+  border: 2px solid #00ff00;
+  padding: 15px;
+  border-radius: 10px;
+  margin: 20px 0;
+  text-align: center;
+  font-weight: bold;
+  color: #00ff00;
+}
+.scene-section {
+  background: rgba(0,0,0,0.4);
+  border-left: 4px solid #ffd700;
+  margin: 30px 0;
+  border-radius: 0 10px 10px 0;
+  padding: 0;
+  overflow: hidden;
+}
+.scene-header {
+  background: rgba(255,215,0,0.15);
+  padding: 15px 20px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffd700;
+  border-bottom: 1px solid rgba(255,215,0,0.3);
+}
+.scene-content {
+  padding: 20px;
+}
+.scene-box {
+  background: linear-gradient(145deg, #16213e, #0f3460);
+  border: 2px solid #0f3460;
+  border-radius: 12px;
+  margin: 20px 0;
+  padding: 20px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+.scene-title {
+  color: #ff6b6b;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.timing {
+  background: rgba(255,107,107,0.2);
+  color: #ff6b6b;
+  padding: 3px 8px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: bold;
+}
+.character-name {
+  color: #1da1f2;
+  font-weight: bold;
+}
+.runway-section {
+  background: rgba(255,0,255,0.1);
+  border: 1px solid rgba(255,0,255,0.3);
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 8px;
+}
+.runway-title {
+  color: #ff69b4;
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+.prompt-box {
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #333;
+  padding: 12px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 13px;
+  color: #98fb98;
+  margin: 8px 0;
+}
+.audio-section {
+  background: rgba(0,255,255,0.1);
+  border: 1px solid rgba(0,255,255,0.3);
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 8px;
+}
+.audio-title {
+  color: #00ffff;
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+.dialogue {
+  background: rgba(255,255,0,0.1);
+  border-left: 3px solid #ffff00;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 0 6px 6px 0;
+}
+.dialogue-label {
+  color: #ffff00;
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.effects-list {
+  background: rgba(255,165,0,0.1);
+  border: 1px solid rgba(255,165,0,0.3);
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 8px;
+}
+.effects-title {
+  color: #ffa500;
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+.spec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin: 15px 0;
+}
+.spec-item {
+  background: rgba(255,255,255,0.05);
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 3px solid #ffd700;
+}
+.spec-label {
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.episode-info {
+  background: rgba(0,0,0,0.6);
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+.info-item {
+  text-align: center;
+  padding: 10px;
+}
+.info-label {
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 12px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.info-value {
+  color: white;
+  font-size: 16px;
+}
+.navigation {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0,0,0,0.9);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  max-width: 200px;
+  z-index: 1000;
+}
+.nav-title {
+  color: #ffd700;
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+.nav-item {
+  color: #1da1f2;
+  font-size: 12px;
+  margin: 5px 0;
+  cursor: pointer;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.nav-item:hover {
+  color: #ff6b6b;
+}
+
+@media (max-width: 768px) {
+  .title { font-size: 28px; padding: 15px; }
+  .navigation { display: none; }
+  .spec-grid { grid-template-columns: 1fr; }
+  .episode-info { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="title">📺 EPISODE 1: "PICKLE GATE"</div>
+  <div class="subtitle">Complete Production-Ready Storyboard</div>
+  
+  <div class="production-status">
+    ✅ PRODUCTION STATUS: READY FOR FILMING
+  </div>
+  
+  <div class="episode-info">
+    <div class="info-item">
+      <div class="info-label">Runtime</div>
+      <div class="info-value">8-10 minutes</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Main Content</div>
+      <div class="info-value">6:40</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Credits</div>
+      <div class="info-value">2:20</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Characters</div>
+      <div class="info-value">Derek, Sunny, Karen, Holly</div>
+    </div>
+  </div>
+
+  <div class="navigation">
+    <div class="nav-title">📍 JUMP TO SCENE</div>
+    <div class="nav-item" onclick="location.href='#opening'">Opening Sequence</div>
+    <div class="nav-item" onclick="location.href='#scene1'">Derek's Monologue</div>
+    <div class="nav-item" onclick="location.href='#scene2'">Sunny Joins</div>
+    <div class="nav-item" onclick="location.href='#scene3'">The Email</div>
+    <div class="nav-item" onclick="location.href='#scene4'">Karen's Fury</div>
+    <div class="nav-item" onclick="location.href='#scene5'">Sunny's Logic</div>
+    <div class="nav-item" onclick="location.href='#scene6'">Derek's Crisis</div>
+    <div class="nav-item" onclick="location.href='#scene7'">Holly's Stats</div>
+    <div class="nav-item" onclick="location.href='#scene8'">Manager Demanded</div>
+    <div class="nav-item" onclick="location.href='#credits'">Epic Credits</div>
+  </div>
+
+  <div class="scene-section" id="opening">
+    <div class="scene-header">🎬 STANDARD OPENING SEQUENCE (0:00-0:15)</div>
+    <div class="scene-content">
+      <em>Reusable for ALL episodes</em>
+      
+      <div class="scene-box">
+        <div class="scene-title">
+          🎭 SCENE O-1: Network Ident
+          <span class="timing">0:00-0:03</span>
+        </div>
+        <div class="runway-section">
+          <div class="runway-title">🎥 RUNWAY GENERATION</div>
+          <div class="prompt-box">
+            "Futuristic news logo 'SNARKY AI NEWS' in neon blue and electric pink, glitch digital effects, holographic style, dark background, 3 seconds"
+          </div>
+        </div>
+        <div class="audio-section">
+          <div class="audio-title">🔊 AUDIO</div>
+          Network ident jingle (upbeat, slightly chaotic)
+        </div>
+      </div>
+
+      <div class="scene-box">
+        <div class="scene-title">
+          🎭 SCENE O-2: Show Title Card
+          <span class="timing">0:03-0:08</span>
+        </div>
+        <div class="runway-section">
+          <div class="runway-title">🎥 RUNWAY GENERATION</div>
+          <div class="prompt-box">
+            "Professional news show title card 'UNCOMFORTABLE TRUTHS with Derek Deadpan', bold typography, dark newsroom background, dramatic lighting, camera slowly zooms in"
+          </div>
+        </div>
+        <div class="effects-list">
+          <div class="effects-title">📝 GRAPHICS</div>
+          Subtitle: "Today's Crisis: Pickle Pizza Controversy"
+        </div>
+      </div>
+
+      <div class="scene-box">
+        <div class="scene-title">
+          🎭 SCENE O-3: Studio Establishing
+          <span class="timing">0:08-0:15</span>
+        </div>
+        <div class="runway-section">
+          <div class="runway-title">🎥 RUNWAY GENERATION</div>
+          <div class="prompt-box">
+            "Modern news studio set, curved desk, multiple monitors, moody lighting, professional but slightly chaotic, Derek Deadpan in black clothing and sunglasses looking utterly bored"
+          </div>
+        </div>
+        <div class="effects-list">
+          <div class="effects-title">📝 GRAPHICS</div>
+          Lower third: "DEREK DEADPAN - HOST & VICTIM"
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene-section" id="scene1">
+    <div class="scene-header">🎭 SCENE 1: Derek's Opening Monologue (0:15-0:45)</div>
+    <div class="scene-content">
+      <div class="scene-box">
+        <div class="runway-section">
+          <div class="runway-title">🎥 RUNWAY GENERATION</div>
+          <div class="prompt-box">
+            "Professional news anchor Derek Deadpan, middle-aged man in dark sunglasses and black button-up shirt, sitting behind curved news desk, hands clasped on desk surface, completely emotionless facial expression, slight downward head tilt, indoor studio lighting, speaking to camera with zero enthusiasm, 30 seconds duration"
+          </div>
+          <div class="spec-grid">
+            <div class="spec-item">
+              <div class="spec-label">Shot Type</div>
+              Medium shot (waist up)
+            </div>
+            <div class="spec-item">
+              <div class="spec-label">Framing</div>
+              Center-left positioning
+            </div>
+            <div class="spec-item">
+              <div class="spec-label">Movement</div>
+              Completely static camera
+            </div>
+          </div>
+        </div>
+
+        <div class="audio-section">
+          <div class="audio-title">🔊 ELEVENLABS VOICE GENERATION</div>
+          <div class="dialogue">
+            <div class="dialogue-label">DEREK (monotone, defeated):</div>
+            "Good evening. I'm Derek Deadpan, and welcome to another episode of 'Why Are We Like This?' Today's manufactured crisis involves a pizza restaurant in Ohio that dared to put pickles on pizza. The internet is, predictably, losing its collective mind. Let's watch civilization crumble over condiment placement."
+          </div>
+        </div>
+
+        <div class="effects-list">
+          <div class="effects-title">📱 VISUAL EFFECTS</div>
+          <ul>
+            <li><strong>Popup (0:35):</strong> "DEREK.EXE HAS STOPPED WORKING" appears above Derek's head</li>
+            <li><strong>Lower Third Update:</strong> Changes to "DEREK DEADPAN - PROFESSIONAL PESSIMIST"</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene-section" id="scene2">
+    <div class="scene-header">🎭 SCENE 2: Sunny Joins the Discussion (0:45-1:15)</div>
+    <div class="scene-content">
+      <div class="scene-box">
+        <div class="runway-section">
+          <div class="runway-title">🎥 RUNWAY GENERATION</div>
+          <div class="prompt-box">
+            "Split screen news studio setup: Derek Deadpan (left, still emotionless) and Sunny Sparkles (right, energetic blonde woman in bright yellow blazer, huge smile, animated hand gestures), both sitting at curved news desks, professional studio lighting, 30 seconds duration"
+          </div>
+        </div>
+
+        <div class="audio-section">
+          <div class="audio-title">🔊 ELEVENLABS VOICE GENERATION</div>
+          <div class="dialogue">
+            <div class="dialogue-label">SUNNY (bursting with enthusiasm):</div>
+            "Derek! Oh my goodness, isn't this EXCITING? People are being creative with food combinations! Maybe this could bring pickle-lovers and pizza-lovers together in beautiful harmony! Think about it - this could be the start of a condiment revolution!"
+          </div>
+          <div class="dialogue">
+            <div class="dialogue-label">DEREK (pause, then deadpan):</div>
+            "Sunny... it's pickles. On pizza. Not world peace."
+          </div>
+        </div>
+
+        <div class="effects-list">
+          <div class="effects-title">✨ VISUAL EFFECTS</div>
+          <ul>
+            <li><strong>Sparkle Effects:</strong> ✨⭐💫 floating around Sunny's side of screen</li>
+            <li><strong>Lower Third:</strong> "SUNNY SPARKLES - PROFESSIONAL OPTIMIST"</li>
+            <li><strong>Popup (1:10):</strong> "SILVER LINING DETECTED" appears near Sunny</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene-section" id="scene3">
+    <div class="scene-header">🎭 SCENE 3: The Inciting Email (1:15-2:00)</div>
+    <div class="scene-content">
+      <div class="scene-box">
+        <div class="runway-section">
+          <div class="runway-title">🎥 RUNWAY GENERATION</div>
+          <div class="prompt-box">
+            "Close-up of computer screen showing email inbox, then zoom out to reveal Derek reading from monitor, expression of growing disbelief and resignation, studio lighting, 45 seconds duration"
+          </div>
+        </div>
+
+        <div class="audio-section">
+          <div class="audio-title">🔊 ELEVENLABS VOICE GENERATION</div>
+          <div class="dialogue">
+            <div class="dialogue-label">DEREK (reading email, incredulous):</div>
+            "I'm now getting real-time updates from our producers. Apparently someone has started a Change.org petition calling for 'Justice for Pickle-Americans.' I... what does that even mean? Are pickles now an ethnicity? Have I missed a demographic revolution?"
+          </div>
+        </div>
+
+        <div class="effects-list">
+          <div class="effects-title">📧 VISUAL EFFECTS</div>
+          <ul>
+            <li><strong>Email Overlay:</strong> Fake email interface showing "URGENT: PICKLE-AMERICAN RIGHTS PETITION REACHES 50K SIGNATURES!"</li>
+            <li><strong>Popup (1:45):</strong> "LOGIC.EXE NOT FOUND" appears above Derek</li>
+            <li><strong>Counter Animation:</strong> Petition signature counter rapidly climbing</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene-section" id="scene4">
+    <div class="scene-header">🎭 SCENE 4: Karen's Explosive Entrance (2:00-3:00)</div>
+    <div class="scene-content">
+      <div class="scene-box">
+        <div class="runway-section">
+          <div class="runway-title">🎥 RUNWAY GENERATION</div>
+          <div class="prompt-box">
+            "Three-way split screen: Derek (left, resigned), Sunny (middle, trying to mediate), Karen Klaxon (right, middle-aged woman with aggressive bob haircut, pointing dramatically at camera, red-faced with anger), news studio setting, 60 seconds duration"
+          </div>
+        </div>
+
+        <div class="audio-section">
+          <div class="audio-title">🔊 ELEVENLABS VOICE GENERATION</div>
+          <div class="dialogue">
+            <div class="dialogue-label">KAREN (absolutely livid):</div>
+            "This is EXACTLY what's wrong with society today! These food establishments think they can just DO WHATEVER THEY WANT! I have been a loyal customer of traditional pizza for THIRTY-SEVEN YEARS, and now they're corrupting it with... with... PICKLE NONSENSE! Where does it end? Sauerkraut sushi? Relish ice cream? I DEMAND TO SPEAK TO THE MANAGER OF PIZZA!"
+          </div>
+        </div>
+
+        <div class="effects-list">
+          <div class="effects-title">🔥 VISUAL EFFECTS</div>
+          <ul>
+            <li><strong>Anger Meter:</strong> Red gauge filling up behind Karen's name</li>
+            <li><strong>Steam Effects:</strong> Animated steam coming from Karen's head</li>
+            <li><strong>Popup (2:30):</strong> "MANAGER REQUESTED" flashing red alert</li>
+            <li><strong>Receipt Highlight:</strong> Pulsing red box around invisible pizza receipt</li>
+            <li><strong>Lower Third:</strong> "KAREN KLAXON - PROFESSIONAL COMPLAINER"</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene-section" id="scene5">
+    <div class="scene-header">🎭 SCENE 5: Sunny's Logical Counterpoint (3:00-3:45)</div>
+    <div class="scene-content">
+      <div class="scene-box">
+        <div class="runway-section">
+          <div class="runway-title">🎥 RUNWAY GENERATION</div>
+          <div class="prompt-box">
+            "Focus on Sunny Sparkles, leaning forward earnestly, hands gesturing in calming motions, bright smile never wavering despite chaos, studio lighting emphasizing her yellow blazer, 45 seconds duration"
+          </div>
+        </div>
+
+        <div class="audio-section">
+          <div class="audio-title">🔊 ELEVENLABS VOICE GENERATION</div>
+          <div class="dialogue">
+            <div class="dialogue-label">SUNNY (earnestly optimistic):</div>
+            "But Karen, think about all the wonderful possibilities! Maybe this pickle pizza could bridge cultural divides! Italians and Germans, united by tangy goodness! Plus, pickles have probiotics - this could be the healthiest pizza innovation since... well, since pizza salad! We should celebrate culinary creativity, not fear it!"
+          </div>
+        </div>
+
+        <div class="effects-list">
+          <div class="effects-title">🌈 VISUAL EFFECTS</div>
+          <ul>
+            <li><strong>Rainbow Bridge:</strong> Animated rainbow connecting Italian and German flags</li>
+            <li><strong>Health Meter:</strong> Green "PROBIOTIC POWER" gauge filling up</li>
+            <li><strong>Unity Animation:</strong> Hearts and peace symbols floating around Sunny</li>
+            <li><strong>Popup (3:30):</strong> "WORLD PEACE THROUGH PICKLES" banner</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene-section" id="scene6">
+    <div class="scene-header">🎭 SCENE 6: Derek's Existential Crisis (3:45-4:30)</div>
+    <div class="scene-content">
+      <div class="scene-box">
+        <div class="runway-section">
+          <div class="runway-title">🎥 RUNWAY GENERATION</div>
+          <div class="prompt-box">
+            "Extreme close-up of Derek Deadpan, slowly removing sunglasses to reveal tired, bewildered eyes, head in hands gesture, studio lighting creating dramatic shadows, existential crisis embodied, 45 seconds duration"
+          </div>
+        </div>
+
+        <div class="audio-section">
+          <div class="audio-title">🔊 ELEVENLABS VOICE GENERATION</div>
+          <div class="dialogue">
+            <div class="dialogue-label">DEREK (philosophical despair):</div>
+            "You know what? I spent four years in journalism school. FOUR YEARS. I studied Watergate, Vietnam coverage, Cronkite's moon landing broadcast. I dreamed of investigating corruption, exposing injustice, maybe changing the world. And here I am... moderating a debate about pickle pizza. My professors would weep. I might weep. Is this what we've become as a species?"
+          </div>
+        </div>
+
+        <div class="effects-list">
+          <div class="effects-title">💔 VISUAL EFFECTS</div>
+          <ul>
+            <li><strong>Degree Overlay:</strong> Faded journalism diploma with "WASTED" stamp</li>
+            <li><strong>Ghost Images:</strong> Transparent images of Cronkite and Watergate floating behind Derek</li>
+            <li><strong>Popup (4:15):</strong> "EXISTENTIAL CRISIS LOADING..." with progress bar</li>
+            <li><strong>Tear Animation:</strong> Single digital tear rolling down screen</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene-section" id="scene7">
+    <div class="scene-header">🎭 SCENE 7: Holly's Social Media Obsession (4:30-5:15)</div>
+    <div class="scene-content">
+      <div class="scene-box">
+        <div class="runway-section">
+          <div class="runway-title">🎥 RUNWAY GENERATION</div>
+          <div class="prompt-box">
+            "Four-way split screen: Derek (top left, resigned), Karen (top right, still fuming), Sunny (bottom right, encouraging), and new addition Holly (bottom left, young woman with colorful hair constantly checking phone, surrounded by ring lights and social media equipment), 45 seconds duration"
+          </div>
+        </div>
+
+        <div class="audio-section">
+          <div class="audio-title">🔊 ELEVENLABS VOICE GENERATION</div>
+          <div class="dialogue">
+            <div class="dialogue-label">HOLLY (frantically scrolling):</div>
+            "OMG you guys, #PickleGate is TRENDING! We're at 2.3 million impressions and climbing! The engagement rate is INSANE! I'm getting 47 likes per minute on my pickle pizza reaction video! This is the kind of viral content that launches careers! Should I start a TikTok dance? A pickle pizza challenge? The algorithm LOVES controversy!"
+          </div>
+        </div>
+
+        <div class="effects-list">
+          <div class="effects-title">📱 VISUAL EFFECTS</div>
+          <ul>
+            <li><strong>Hashtag Storm:</strong> #PickleGate, #Viral, #Content floating around Holly</li>
+            <li><strong>Like Counter:</strong> Rapidly increasing numbers with heart animations</li>
+            <li><strong>Phone Notifications:</strong> Constant ping effects with notification bubbles</li>
+            <li><strong>Trending Badge:</strong> "#1 TRENDING" banner appearing and disappearing</li>
+            <li><strong>Lower Third:</strong> "HASHTAG HOLLY - CONTENT CREATOR & CHAOS AGENT"</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene-section" id="scene8">
+    <div class="scene-header">🎭 SCENE 8: Karen Demands the Manager (5:15-6:00)</div>
+    <div class="scene-content">
+      <div class="scene-box">
+        <div class="runway-section">
+          <div class="runway-title">🎥 RUNWAY GENERATION</div>
+          <div class="prompt-box">
+            "Close-up on Karen Klaxon, now standing and pointing aggressively off-camera, bob haircut perfectly maintained despite emotional turmoil, studio lighting emphasizing her determined expression, 45 seconds duration"
+          </div>
+        </div>
+
+        <div class="audio-section">
+          <div class="audio-title">🔊 ELEVENLABS VOICE GENERATION</div>
+          <div class="dialogue">
+            <div class="dialogue-label">KAREN (reaching peak Karen-ness):</div>
+            "That's IT! I don't care about your hashtags or your probiotics or your cultural bridges! I want to speak to the manager of this entire situation! Who authorized pickle pizza? Where's the oversight committee? I'm writing letters! To congress! To the FDA! To the International Pizza Authority! SOMEONE will be held accountable for this pickle pandemonium!"
+          </div>
+        </div>
+
+        <div class="effects-list">
+          <div class="effects-title">📋 VISUAL EFFECTS</div>
+          <ul>
+            <li><strong>Manager Call Button:</strong> Giant red "SUMMON MANAGER" button pulsing behind Karen</li>
+            <li><strong>Letter Animation:</strong> Angry letters flying off screen to various government buildings</li>
+            <li><strong>Authority Badges:</strong> FDA, Congress, and "International Pizza Authority" seals appearing</li>
+            <li><strong>Accountability Meter:</strong> Red gauge marked "DEMAND LEVEL: MAXIMUM"</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene-section" id="credits">
+    <div class="scene-header">🎬 EPIC CREDITS SEQUENCE (7:30-9:50)</div>
+    <div class="scene-content">
+      <div class="scene-box">
+        <div class="scene-title">🎭 Final Scene: Derek's Sign-Off (7:30-8:10)</div>
+        <div class="runway-section">
+          <div class="runway-title">🎥 RUNWAY GENERATION</div>
+          <div class="prompt-box">
+            "Derek Deadpan back to solo shot, adjusting sunglasses, slight head shake of disbelief, studio lighting returning to standard news setup, 40 seconds duration"
+          </div>
+        </div>
+        <div class="audio-section">
+          <div class="audio-title">🔊 ELEVENLABS VOICE GENERATION</div>
+          <div class="dialogue">
+            <div class="dialogue-label">DEREK (final thoughts):</div>
+            "And there you have it, folks. In the time we've been discussing this, approximately 47 actual news events have occurred worldwide, but instead we're here, passionately debating pickle placement. This has been 'Uncomfortable Truths.' I'm Derek Deadpan, reminding you that somewhere, a journalism professor is crying. Good night."
+          </div>
+        </div>
+      </div>
+
+      <div class="scene-box">
+        <div class="scene-title">🎵 EPIC CREDITS MONTAGE (8:10-9:50)</div>
+        <div class="effects-list">
+          <div class="effects-title">🎬 CREDITS SEQUENCE BREAKDOWN</div>
+          <ul>
+            <li><strong>0:00-0:20:</strong> Character showcase with quotes</li>
+            <li><strong>0:20-0:40:</strong> "Behind the Madness" fake production footage</li>
+            <li><strong>0:40-1:00:</strong> Character stats and achievements</li>
+            <li><strong>1:00-1:20:</strong> "Real" pickle pizza reviews testimonials</li>
+            <li><strong>1:20-1:40:</strong> Standard credits with epic music build</li>
+          </ul>
+        </div>
+        <div class="runway-section">
+          <div class="runway-title">🎵 MUSIC REQUIREMENTS</div>
+          Epic orchestral score building to crescendo, mixing news theme elements with comedy undertones
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="production-status">
+    🎬 TOTAL RUNWAY PROMPTS: 18 scenes<br>
+    📊 ESTIMATED PRODUCTION TIME: 8-12 hours<br>
+    💰 ESTIMATED COST: $27-59 per episode<br>
+    ✅ STATUS: READY FOR VIDEO GENERATION
+  </div>
+
+</div>
+</body>
+</html>
