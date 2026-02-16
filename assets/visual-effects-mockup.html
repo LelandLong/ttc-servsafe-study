@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Snarky AI News - Visual Effects Mockup</title>
+<style>
+body { 
+  margin: 0; 
+  font-family: 'Arial', sans-serif; 
+  background: linear-gradient(135deg, #1a1a2e, #16213e); 
+  color: white; 
+  overflow-x: hidden;
+}
+.scene { 
+  position: relative; 
+  width: 100vw; 
+  height: 100vh; 
+  padding: 20px;
+  box-sizing: border-box;
+}
+.character-box { 
+  width: 320px; 
+  height: 220px; 
+  background: linear-gradient(145deg, #16213e, #0f3460); 
+  border: 2px solid #0f3460; 
+  position: absolute; 
+  border-radius: 12px; 
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+.popup-text { 
+  position: absolute; 
+  background: rgba(255,0,0,0.95); 
+  color: white; 
+  padding: 10px 18px; 
+  border-radius: 25px; 
+  font-weight: bold; 
+  font-size: 13px; 
+  animation: bounce 1s ease-out; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  white-space: nowrap;
+}
+.popup-warning { 
+  background: rgba(255,165,0,0.95) !important; 
+}
+.popup-success { 
+  background: rgba(255,215,0,0.95) !important; 
+  color: #333 !important; 
+}
+.overlay-text { 
+  position: absolute; 
+  background: rgba(0,0,0,0.85); 
+  color: #ffd700; 
+  padding: 8px 14px; 
+  font-size: 13px; 
+  border-left: 4px solid #ffd700; 
+  font-weight: bold;
+  border-radius: 0 6px 6px 0;
+}
+.overlay-red { color: #ff6b6b; border-color: #ff6b6b; }
+.overlay-pink { color: #ff69b4; border-color: #ff69b4; }
+.overlay-green { color: #98fb98; border-color: #98fb98; }
+
+.receipt-highlight { 
+  position: absolute; 
+  width: 70px; 
+  height: 90px; 
+  border: 3px solid #ff6b6b; 
+  background: rgba(255,107,107,0.2); 
+  animation: pulse 1.8s infinite; 
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(255,107,107,0.4);
+}
+.phone-popup { 
+  position: absolute; 
+  background: #ffffff; 
+  color: #333; 
+  padding: 12px; 
+  border-radius: 10px; 
+  font-size: 11px; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4); 
+  max-width: 140px;
+  border: 1px solid #ddd;
+}
+.hashtag { 
+  position: absolute; 
+  color: #1da1f2; 
+  font-size: 15px; 
+  font-weight: bold;
+  opacity: 0.8; 
+  animation: float 2.5s ease-in-out infinite; 
+}
+.sparkle { 
+  position: absolute; 
+  font-size: 20px; 
+  animation: twinkle 2s ease-in-out infinite; 
+}
+
+/* Animations */
+@keyframes bounce { 
+  0% { transform: scale(0) rotate(-8deg); opacity: 0; } 
+  60% { transform: scale(1.15) rotate(3deg); opacity: 1; } 
+  100% { transform: scale(1) rotate(0deg); opacity: 1; } 
+}
+@keyframes pulse { 
+  0% { opacity: 0.4; transform: scale(1); } 
+  50% { opacity: 1; transform: scale(1.08); box-shadow: 0 0 20px rgba(255,107,107,0.6); } 
+  100% { opacity: 0.4; transform: scale(1); } 
+}
+@keyframes float { 
+  0%, 100% { transform: translateY(0px) rotate(0deg); } 
+  50% { transform: translateY(-12px) rotate(5deg); } 
+}
+@keyframes twinkle { 
+  0%, 100% { opacity: 0.4; transform: scale(1) rotate(0deg); } 
+  50% { opacity: 1; transform: scale(1.3) rotate(180deg); } 
+}
+
+.title { 
+  position: absolute; 
+  top: 20px; 
+  left: 20px; 
+  font-size: 32px; 
+  color: #ffd700; 
+  font-weight: bold; 
+  text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.3);
+  padding: 10px 20px;
+  border-radius: 10px;
+}
+.character-name { 
+  text-align: center; 
+  padding: 18px 12px; 
+  font-size: 16px; 
+  font-weight: bold; 
+  color: #ffd700; 
+  border-bottom: 1px solid rgba(255,215,0,0.3);
+}
+.scene-desc {
+  font-size: 11px;
+  color: #ccc;
+  font-weight: normal;
+  margin-top: 4px;
+}
+
+.legend {
+  position: absolute; 
+  bottom: 20px; 
+  left: 20px; 
+  background: rgba(0,0,0,0.9); 
+  padding: 20px; 
+  border-radius: 12px; 
+  font-size: 13px; 
+  max-width: 450px;
+  border: 1px solid #333;
+}
+.legend-title {
+  color: #ffd700; 
+  font-weight: bold; 
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+.legend-item {
+  margin: 6px 0;
+  display: flex;
+  align-items: center;
+}
+.legend-bullet {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+<div class="scene">
+  <div class="title">📺 SNARKY AI NEWS - VISUAL EFFECTS PREVIEW</div>
+  
+  <!-- Derek's Existential Crisis (Top Left) -->
+  <div class="character-box" style="top: 120px; left: 50px;">
+    <div class="character-name">
+      DEREK DEADPAN
+      <div class="scene-desc">Scene 6: Existential Crisis Moment</div>
+    </div>
+    <div class="popup-text" style="top: -55px; right: -140px;">
+      DEREK.EXE HAS STOPPED WORKING
+    </div>
+    <div class="overlay-text" style="bottom: 15px; left: 15px;">
+      JOURNALISM DEGREE: WASTED
+    </div>
+  </div>
+  
+  <!-- Karen's Manager Demand (Top Right) -->
+  <div class="character-box" style="top: 120px; right: 50px;">
+    <div class="character-name">
+      KAREN KLAXON
+      <div class="scene-desc">Scene 8: Manager Escalation</div>
+    </div>
+    <div class="receipt-highlight" style="top: 70px; right: 25px;"></div>
+    <div class="popup-text popup-warning" style="top: -55px; left: -100px;">
+      MANAGER REQUESTED
+    </div>
+    <div class="overlay-text overlay-red" style="bottom: 15px; left: 15px;">
+      PICKLE-AMERICANS: NOT A REAL THING
+    </div>
+  </div>
+  
+  <!-- Holly's Social Media Obsession (Bottom Left) -->
+  <div class="character-box" style="bottom: 180px; left: 50px;">
+    <div class="character-name">
+      HASHTAG HOLLY
+      <div class="scene-desc">Scene 7: Metrics Obsession</div>
+    </div>
+    <div class="phone-popup" style="top: 65px; right: 25px;">
+      📱 <strong>3 likes</strong><br>
+      <span style="color: #666;">1 comment:</span><br>
+      "cringe"
+    </div>
+    <div class="hashtag" style="top: 30px; left: 25px; animation-delay: 0s;">#PickleGate</div>
+    <div class="hashtag" style="top: 50px; left: 50px; animation-delay: 0.4s;">#Viral</div>
+    <div class="hashtag" style="top: 70px; left: 75px; animation-delay: 0.8s;">#Content</div>
+    <div class="overlay-text overlay-pink" style="bottom: 15px; right: 15px;">
+      ALGORITHM ANXIETY
+    </div>
+  </div>
+  
+  <!-- Sunny's Silver Lining (Bottom Right) -->
+  <div class="character-box" style="bottom: 180px; right: 50px;">
+    <div class="character-name">
+      SUNNY SPARKLES
+      <div class="scene-desc">Scene 5: Finding Positives</div>
+    </div>
+    <div class="popup-text popup-success" style="top: -55px; left: -120px;">
+      SILVER LINING DETECTED
+    </div>
+    <div class="overlay-text overlay-green" style="bottom: 15px; left: 15px;">
+      CONDIMENT UNITY
+    </div>
+    <div class="sparkle" style="top: 20px; right: 20px; animation-delay: 0s;">✨</div>
+    <div class="sparkle" style="top: 45px; right: 45px; animation-delay: 0.7s;">⭐</div>
+    <div class="sparkle" style="top: 70px; right: 25px; animation-delay: 1.4s;">✨</div>
+    <div class="sparkle" style="top: 35px; right: 70px; animation-delay: 2.1s;">💫</div>
+  </div>
+  
+  <!-- Additional Examples (Center) -->
+  <div style="position: absolute; top: 400px; left: 50%; transform: translateX(-50%); text-align: center;">
+    <div style="background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; margin: 10px;">
+      <div style="color: #ffd700; font-weight: bold; font-size: 18px;">MORE EFFECT EXAMPLES:</div>
+      <div style="margin: 10px 0;">
+        <span class="popup-text" style="position: relative; top: 0; animation: none; margin: 0 10px;">FAKE NEWS DETECTED</span>
+        <span class="popup-text popup-warning" style="position: relative; top: 0; animation: none; margin: 0 10px;">CRINGE LEVEL: MAXIMUM</span>
+        <span class="popup-text popup-success" style="position: relative; top: 0; animation: none; margin: 0 10px;">OPTIMISM OVERLOAD</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Legend/Instructions -->
+  <div class="legend">
+    <div class="legend-title">🎬 VISUAL EFFECTS IMPLEMENTATION GUIDE</div>
+    <div class="legend-item">
+      <div class="legend-bullet" style="background: #ff0000;"></div>
+      <div><strong>Red Popups:</strong> Character reactions, system alerts (Derek.exe, Cringe Level)</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-bullet" style="background: #ffa500;"></div>
+      <div><strong>Orange Popups:</strong> Warnings, demands (Manager Requested, Alert Status)</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-bullet" style="background: #ffd700;"></div>
+      <div><strong>Gold Overlays:</strong> Sarcastic commentary (Journalism Degree Wasted)</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-bullet" style="background: #ff6b6b;"></div>
+      <div><strong>Pulsing Boxes:</strong> Interactive elements (receipts, documents, evidence)</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-bullet" style="background: #1da1f2;"></div>
+      <div><strong>Floating Hashtags:</strong> Social media elements that drift around</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-bullet" style="background: #98fb98;"></div>
+      <div><strong>Sparkle Effects:</strong> Sunny's optimism aura (✨⭐💫)</div>
+    </div>
+    <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid #333; font-size: 12px; color: #ccc;">
+      <strong>ScreenFlow Implementation:</strong> Layer these as separate overlay tracks with entrance/exit animations
+    </div>
+  </div>
+  
+</div>
+</body>
+</html>
