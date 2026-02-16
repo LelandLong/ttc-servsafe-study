@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Episode 3: Privacy is Dead (And So Is Shame) - Visual Demo</title>
+<style>
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(135deg, #2d1b69, #11998e);
+  color: white;
+  overflow-x: hidden;
+}
+
+.scene {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.character-box {
+  width: 280px;
+  height: 180px;
+  background: linear-gradient(145deg, #16213e, #0f3460);
+  border: 2px solid #0f3460;
+  position: absolute;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+.conspiracy-box {
+  border: 3px solid #39ff14;
+  box-shadow: 0 0 15px rgba(57,255,20,0.3);
+  background: linear-gradient(145deg, #1a4a1a, #0f3a0f);
+}
+
+.sarcasm-box {
+  border: 3px solid #ff1493;
+  box-shadow: 0 0 15px rgba(255,20,147,0.3);
+  background: linear-gradient(145deg, #4a1a4a, #3a0f3a);
+}
+
+.manager-box {
+  border: 3px solid #ffa500;
+  box-shadow: 0 0 15px rgba(255,165,0,0.3);
+  background: linear-gradient(145deg, #4a3a1a, #3a2f0f);
+}
+
+.popup-text {
+  position: absolute;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 12px;
+  animation: bounce 1.2s ease-out;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  white-space: nowrap;
+}
+
+.conspiracy-popup {
+  background: rgba(57,255,20,0.95);
+  color: #000;
+}
+
+.sarcasm-popup {
+  background: rgba(255,20,147,0.95);
+}
+
+.manager-popup {
+  background: rgba(255,165,0,0.95);
+  color: #000;
+}
+
+.connection-line {
+  position: absolute;
+  height: 2px;
+  background: #39ff14;
+  animation: connection-draw 2s ease-in-out infinite;
+  transform-origin: left;
+}
+
+.air-quotes {
+  position: absolute;
+  font-size: 24px;
+  color: #ff1493;
+  animation: air-quote 1.5s ease-in-out infinite;
+}
+
+.complaint-file {
+  position: absolute;
+  width: 60px;
+  height: 80px;
+  background: rgba(255,165,0,0.3);
+  border: 2px solid #ffa500;
+  border-radius: 4px;
+  animation: file-shuffle 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+  60% { transform: scale(1.1) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes connection-draw {
+  0% { transform: scaleX(0); opacity: 0.3; }
+  50% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(0.8); opacity: 0.6; }
+}
+
+@keyframes air-quote {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-15deg) scale(1.2); }
+  75% { transform: rotate(15deg) scale(1.2); }
+}
+
+@keyframes file-shuffle {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(2deg); }
+}
+
+.title {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 30px;
+  color: #ffd700;
+  font-weight: bold;
+  text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.3);
+  padding: 10px 20px;
+  border-radius: 10px;
+}
+
+.character-name {
+  text-align: center;
+  padding: 12px 8px;
+  font-size: 15px;
+  font-weight: bold;
+  color: #ffd700;
+  border-bottom: 1px solid rgba(255,215,0,0.3);
+}
+
+.scene-desc {
+  font-size: 10px;
+  color: #ccc;
+  font-weight: normal;
+  margin-top: 3px;
+}
+
+.chaos-connections {
+  position: absolute;
+  top: 300px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  background: rgba(0,0,0,0.9);
+  padding: 15px;
+  border-radius: 10px;
+  border: 2px solid #39ff14;
+  animation: pulse 2.5s infinite;
+}
+
+.topic-drift {
+  position: absolute;
+  top: 200px;
+  right: 20px;
+  background: rgba(0,0,0,0.8);
+  padding: 15px;
+  border-radius: 10px;
+  border-left: 4px solid #ff1493;
+  max-width: 250px;
+}
+
+.drift-title {
+  color: #ff1493;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.drift-item {
+  margin: 5px 0;
+  font-size: 11px;
+  padding: 2px 0;
+}
+
+.legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0,0,0,0.9);
+  padding: 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  max-width: 400px;
+  border: 1px solid #333;
+}
+
+.legend-title {
+  color: #ffd700;
+  font-weight: bold;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+  100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+}
+</style>
+</head>
+<body>
+<div class="scene">
+  <div class="title">📺 EPISODE 3: PRIVACY IS DEAD</div>
+  
+  <!-- Derek processing chaos -->
+  <div class="character-box" style="top: 120px; left: 50px;">
+    <div class="character-name">
+      DEREK DEADPAN
+      <div class="scene-desc">Processing Multiple Chaos Types</div>
+    </div>
+    <div class="popup-text" style="top: -50px; right: -100px; background: rgba(100,100,100,0.9);">
+      TOPIC DRIFT: COMPLETE
+    </div>
+  </div>
+  
+  <!-- Alex's conspiracy board -->
+  <div class="character-box conspiracy-box" style="top: 120px; right: 50px;">
+    <div class="character-name">
+      ALEX TINFOIL
+      <div class="scene-desc">Government Distraction Operations</div>
+    </div>
+    <div class="connection-line" style="top: 60px; left: 20px; width: 80px;"></div>
+    <div class="connection-line" style="top: 80px; left: 40px; width: 60px;"></div>
+    <div class="popup-text conspiracy-popup" style="top: -50px; left: -80px;">
+      "THEY" COUNTER: 17
+    </div>
+  </div>
+  
+  <!-- Sasha's sarcasm mode -->
+  <div class="character-box sarcasm-box" style="bottom: 200px; left: 50px;">
+    <div class="character-name">
+      SASHA SNARK
+      <div class="scene-desc">Air-Quoting Everything</div>
+    </div>
+    <div class="air-quotes" style="top: 50px; left: 20px;">"</div>
+    <div class="air-quotes" style="top: 50px; right: 20px;">"</div>
+    <div class="air-quotes" style="top: 80px; left: 40px;">"</div>
+    <div class="air-quotes" style="top: 80px; right: 40px;">"</div>
+    <div class="popup-text sarcasm-popup" style="top: -50px; right: -120px;">
+      SARCASM LEVEL: MAXIMUM
+    </div>
+  </div>
+  
+  <!-- Karen's manager demands -->
+  <div class="character-box manager-box" style="bottom: 200px; right: 50px;">
+    <div class="character-name">
+      KAREN KLAXON
+      <div class="scene-desc">Demanding Celebrity Management</div>
+    </div>
+    <div class="complaint-file" style="top: 55px; right: 25px;"></div>
+    <div class="complaint-file" style="top: 65px; right: 35px;"></div>
+    <div class="popup-text manager-popup" style="top: -50px; left: -100px;">
+      MANAGER REQUESTED
+    </div>
+  </div>
+  
+  <!-- Chaos connections display -->
+  <div class="chaos-connections">
+    <div style="color: #39ff14; font-weight: bold; font-size: 16px;">🔗 CONNECTION ACHIEVED 🔗</div>
+    <div style="font-size: 12px; margin-top: 8px;">Celebrity Drama → Government Surveillance → Coffee Foam Quality</div>
+    <div style="font-size: 11px; margin-top: 5px; color: #ccc;">Derek's Bewilderment: MAXIMUM</div>
+  </div>
+  
+  <!-- Topic drift tracker -->
+  <div class="topic-drift">
+    <div class="drift-title">📊 Topic Drift Tracking:</div>
+    <div class="drift-item">✓ Celebrity breakdown (0:15)</div>
+    <div class="drift-item">✓ Government surveillance (1:30)</div>
+    <div class="drift-item">✓ Starbucks facial recognition (2:20)</div>
+    <div class="drift-item">✓ Coffee foam standards (3:20)</div>
+    <div class="drift-item">✓ Customer service accountability (4:00)</div>
+    <div class="drift-item">✓ Therapy session observation (6:10)</div>
+    <div class="drift-item" style="color: #ff6b6b;">⚠️ COMPLETE TOPIC CHAOS</div>
+  </div>
+  
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-title">🎬 EPISODE 3 PRODUCTION ELEMENTS</div>
+    <div style="margin: 6px 0;"><span style="color: #39ff14;">● Green:</span> Conspiracy elements (Alex's theories)</div>
+    <div style="margin: 6px 0;"><span style="color: #ff1493;">● Pink:</span> Sarcasm effects (Sasha's air quotes)</div>
+    <div style="margin: 6px 0;"><span style="color: #ffa500;">● Orange:</span> Management demands (Karen's complaints)</div>
+    <div style="margin: 6px 0;"><span style="color: #39ff14;">● Connection Lines:</span> Alex's conspiracy board</div>
+    <div style="margin: 6px 0;"><span style="color: #ff1493;">● Air Quotes:</span> Sasha's theatrical gestures</div>
+    <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid #333; font-size: 12px; color: #ccc;">
+      <strong>Theme:</strong> Current event chaos - Three different types of madness converging
+    </div>
+  </div>
+  
+</div>
+</body>
+</html>

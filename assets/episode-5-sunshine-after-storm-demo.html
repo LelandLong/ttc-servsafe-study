@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Episode 5: Sunshine After the Storm - Transformation Demo</title>
+<style>
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  color: white;
+  overflow-x: hidden;
+}
+
+.scene {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.intimate-setup {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+.character-box {
+  width: 300px;
+  height: 250px;
+  background: linear-gradient(145deg, #2a1845, #1a0f2e);
+  border: 3px solid;
+  border-radius: 20px;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.derek-box {
+  border-color: #4a90e2;
+  box-shadow: 0 15px 30px rgba(74,144,226,0.3);
+}
+
+.sunny-box {
+  border-color: #ffd700;
+  box-shadow: 0 15px 30px rgba(255,215,0,0.3);
+}
+
+.character-name {
+  text-align: center;
+  padding: 15px 10px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffd700;
+  border-bottom: 2px solid rgba(255,215,0,0.3);
+}
+
+.transformation-state {
+  font-size: 12px;
+  color: #a8d8ea;
+  font-weight: normal;
+  margin-top: 5px;
+}
+
+.hope-meter {
+  position: absolute;
+  bottom: 30px;
+  left: 20px;
+  right: 20px;
+  height: 25px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 15px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.hope-fill {
+  height: 100%;
+  background: linear-gradient(to right, #4a90e2, #ffd700);
+  width: 0%;
+  animation: hope-rising 8s ease-in-out infinite;
+  border-radius: 15px;
+  position: relative;
+}
+
+.hope-fill::after {
+  content: 'HOPE DISCOVERED';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+@keyframes hope-rising {
+  0% { width: 0%; }
+  20% { width: 15%; }
+  40% { width: 35%; }
+  60% { width: 60%; }
+  80% { width: 85%; }
+  100% { width: 95%; }
+}
+
+.wisdom-sparkle {
+  position: absolute;
+  font-size: 16px;
+  color: #ffd700;
+  animation: wisdom-twinkle 3s ease-in-out infinite;
+  text-shadow: 0 0 10px rgba(255,215,0,0.6);
+}
+
+@keyframes wisdom-twinkle {
+  0%, 100% { opacity: 0.4; transform: scale(1) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.3) rotate(180deg); }
+}
+
+.vulnerability-glow {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border-radius: 25px;
+  background: linear-gradient(45deg, transparent, rgba(74,144,226,0.2), transparent);
+  animation: vulnerable-pulse 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes vulnerable-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.02); }
+}
+
+.connection-bridge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 4px;
+  background: linear-gradient(to right, #4a90e2, #ffd700);
+  border-radius: 2px;
+  animation: connection-strengthen 6s ease-in-out infinite;
+}
+
+@keyframes connection-strengthen {
+  0% { width: 0px; opacity: 0; }
+  30% { width: 30px; opacity: 0.5; }
+  60% { width: 70px; opacity: 0.8; }
+  100% { width: 100px; opacity: 1; }
+}
+
+.philosophical-quote {
+  position: absolute;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.8);
+  padding: 20px;
+  border-radius: 15px;
+  border-left: 4px solid #ffd700;
+  max-width: 500px;
+  text-align: center;
+  animation: quote-appear 10s ease-in-out infinite;
+}
+
+@keyframes quote-appear {
+  0%, 20% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  30%, 70% { opacity: 1; transform: translateX(-50%) translateY(0px); }
+  80%, 100% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+}
+
+.quote-text {
+  font-style: italic;
+  color: #ffd700;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.quote-attribution {
+  font-size: 12px;
+  color: #a8d8ea;
+}
+
+.transformation-indicators {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 30px;
+}
+
+.indicator {
+  text-align: center;
+  background: rgba(0,0,0,0.7);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.indicator-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffd700;
+  margin-bottom: 8px;
+}
+
+.indicator-value {
+  font-size: 12px;
+  color: #a8d8ea;
+}
+
+.episode-theme {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 32px;
+  color: #ffd700;
+  font-weight: bold;
+  text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.5);
+  padding: 15px 30px;
+  border-radius: 15px;
+  text-align: center;
+  animation: theme-glow 5s ease-in-out infinite;
+}
+
+@keyframes theme-glow {
+  0%, 100% { text-shadow: 2px 2px 6px rgba(0,0,0,0.7); }
+  50% { text-shadow: 0 0 20px rgba(255,215,0,0.8), 2px 2px 6px rgba(0,0,0,0.7); }
+}
+
+.character-journey {
+  position: absolute;
+  top: 150px;
+  right: 30px;
+  background: rgba(0,0,0,0.8);
+  padding: 20px;
+  border-radius: 12px;
+  border-left: 4px solid #4a90e2;
+  max-width: 250px;
+}
+
+.journey-title {
+  color: #4a90e2;
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.journey-step {
+  margin: 8px 0;
+  font-size: 11px;
+  padding: 4px 0;
+  border-bottom: 1px dotted rgba(255,255,255,0.2);
+}
+
+.legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0,0,0,0.9);
+  padding: 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  max-width: 350px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.legend-title {
+  color: #ffd700;
+  font-weight: bold;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+</style>
+</head>
+<body>
+<div class="scene">
+  <div class="episode-theme">✨ EPISODE 5: SUNSHINE AFTER THE STORM ✨</div>
+  
+  <!-- Philosophical quote overlay -->
+  <div class="philosophical-quote">
+    <div class="quote-text">"That's not cynicism, Derek - that's hope wearing a disguise!"</div>
+    <div class="quote-attribution">— Sunny Sparkles, discovering Derek's hidden optimism</div>
+  </div>
+  
+  <!-- Main character setup -->
+  <div class="intimate-setup">
+    <!-- Derek's transformation -->
+    <div class="character-box derek-box">
+      <div class="vulnerability-glow"></div>
+      <div class="character-name">
+        DEREK DEADPAN
+        <div class="transformation-state">Discovering Hidden Hope</div>
+      </div>
+      <div style="padding: 20px; text-align: center;">
+        <div style="font-size: 14px; margin-bottom: 10px;">🕶️ → 😊</div>
+        <div style="font-size: 11px; color: #a8d8ea;">Sunglasses OFF</div>
+        <div style="font-size: 11px; color: #a8d8ea;">Guard DOWN</div>
+        <div style="font-size: 11px; color: #a8d8ea;">Hope EMERGING</div>
+      </div>
+      <div class="hope-meter">
+        <div class="hope-fill"></div>
+      </div>
+    </div>
+    
+    <!-- Connection bridge -->
+    <div class="connection-bridge"></div>
+    
+    <!-- Sunny's depth -->
+    <div class="character-box sunny-box">
+      <div class="character-name">
+        SUNNY SPARKLES
+        <div class="transformation-state">Revealing Hidden Wisdom</div>
+      </div>
+      <div style="padding: 20px; text-align: center;">
+        <div style="font-size: 14px; margin-bottom: 10px;">✨ → 🧠</div>
+        <div style="font-size: 11px; color: #a8d8ea;">Sparkles PLUS Wisdom</div>
+        <div style="font-size: 11px; color: #a8d8ea;">Depth REVEALED</div>
+        <div style="font-size: 11px; color: #a8d8ea;">Philosophy ACTIVATED</div>
+      </div>
+      
+      <!-- Wisdom sparkles -->
+      <div class="wisdom-sparkle" style="top: 60px; left: 20px;">✨</div>
+      <div class="wisdom-sparkle" style="top: 80px; right: 25px; animation-delay: 1s;">💫</div>
+      <div class="wisdom-sparkle" style="bottom: 80px; left: 40px; animation-delay: 2s;">⭐</div>
+      <div class="wisdom-sparkle" style="bottom: 60px; right: 30px; animation-delay: 0.5s;">✨</div>
+    </div>
+  </div>
+  
+  <!-- Character journey tracker -->
+  <div class="character-journey">
+    <div class="journey-title">🎭 Derek's Journey:</div>
+    <div class="journey-step">Cynicism → Curiosity</div>
+    <div class="journey-step">Defensive → Vulnerable</div>
+    <div class="journey-step">Closed → Open</div>
+    <div class="journey-step">Hopeless → Hopeful</div>
+    <div class="journey-step">Alone → Connected</div>
+    <div style="margin-top: 15px; font-size: 10px; color: #ffd700;">
+      First genuine smile in 4 episodes!
+    </div>
+  </div>
+  
+  <!-- Transformation indicators -->
+  <div class="transformation-indicators">
+    <div class="indicator">
+      <div class="indicator-title">EPISODE TONE</div>
+      <div class="indicator-value">Intimate & Warm</div>
+    </div>
+    <div class="indicator">
+      <div class="indicator-title">LIGHTING</div>
+      <div class="indicator-value">Soft & Gentle</div>
+    </div>
+    <div class="indicator">
+      <div class="indicator-title">PACE</div>
+      <div class="indicator-value">Contemplative</div>
+    </div>
+    <div class="indicator">
+      <div class="indicator-title">OUTCOME</div>
+      <div class="indicator-value">Hope Discovered</div>
+    </div>
+  </div>
+  
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-title">🎬 EPISODE 5 PRODUCTION ELEMENTS</div>
+    <div style="margin: 6px 0;"><span style="color: #4a90e2;">● Blue Glow:</span> Derek's vulnerability and transformation</div>
+    <div style="margin: 6px 0;"><span style="color: #ffd700;">● Gold Sparkles:</span> Sunny's wisdom emergence</div>
+    <div style="margin: 6px 0;"><span style="color: #ffd700;">● Connection Bridge:</span> Building genuine relationship</div>
+    <div style="margin: 6px 0;"><span style="color: #4a90e2;">● Hope Meter:</span> Derek's cynicism melting away</div>
+    <div style="margin: 6px 0;"><span style="color: #a8d8ea;">● Soft Colors:</span> Warm, intimate atmosphere</div>
+    <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 12px; color: #ccc;">
+      <strong>Theme:</strong> Character growth, finding hope after chaos, series emotional conclusion
+    </div>
+  </div>
+  
+</div>
+</body>
+</html>

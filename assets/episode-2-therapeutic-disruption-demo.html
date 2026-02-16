@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Episode 2: Therapeutic Disruption - Visual Demo</title>
+<style>
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  color: white;
+  overflow-x: hidden;
+}
+
+.scene {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.character-box {
+  width: 300px;
+  height: 200px;
+  background: linear-gradient(145deg, #16213e, #0f3460);
+  border: 2px solid #0f3460;
+  position: absolute;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+.expert-box {
+  border: 3px solid #ff6b6b;
+  box-shadow: 0 0 15px rgba(255,107,107,0.3);
+}
+
+.real-expert-box {
+  border: 3px solid #4ecdc4;
+  box-shadow: 0 0 15px rgba(78,205,196,0.3);
+}
+
+.popup-text {
+  position: absolute;
+  background: rgba(255,0,0,0.95);
+  color: white;
+  padding: 10px 18px;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 13px;
+  animation: bounce 1s ease-out;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  white-space: nowrap;
+}
+
+.tech-popup {
+  background: rgba(0,150,255,0.95) !important;
+}
+
+.fake-popup {
+  background: rgba(255,165,0,0.95) !important;
+}
+
+.stress-popup {
+  background: rgba(255,50,50,0.95) !important;
+}
+
+.blockchain-diagram {
+  position: absolute;
+  width: 150px;
+  height: 100px;
+  border: 2px dashed #00aaff;
+  background: rgba(0,170,255,0.1);
+  animation: pulse 2s infinite;
+  border-radius: 8px;
+}
+
+.fake-chart {
+  position: absolute;
+  width: 120px;
+  height: 80px;
+  border: 2px dashed #ff9500;
+  background: rgba(255,149,0,0.1);
+  animation: float 3s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+.stress-meter {
+  position: absolute;
+  width: 80px;
+  height: 20px;
+  background: linear-gradient(to right, #4ecdc4, #ff6b6b);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.stress-fill {
+  height: 100%;
+  background: #ff6b6b;
+  width: 85%;
+  animation: stress-build 3s ease-in-out infinite;
+  border-radius: 10px;
+}
+
+@keyframes bounce {
+  0% { transform: scale(0) rotate(-8deg); opacity: 0; }
+  60% { transform: scale(1.1) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 0.4; transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(3deg); }
+}
+
+@keyframes stress-build {
+  0% { width: 20%; }
+  50% { width: 85%; }
+  100% { width: 95%; }
+}
+
+.title {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 32px;
+  color: #ffd700;
+  font-weight: bold;
+  text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.3);
+  padding: 10px 20px;
+  border-radius: 10px;
+}
+
+.character-name {
+  text-align: center;
+  padding: 15px 10px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffd700;
+  border-bottom: 1px solid rgba(255,215,0,0.3);
+}
+
+.scene-desc {
+  font-size: 11px;
+  color: #ccc;
+  font-weight: normal;
+  margin-top: 4px;
+}
+
+.expert-chaos {
+  position: absolute;
+  bottom: 200px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  background: rgba(0,0,0,0.9);
+  padding: 15px;
+  border-radius: 10px;
+  border: 2px solid #ff6b6b;
+  animation: pulse 2s infinite;
+}
+
+.legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0,0,0,0.9);
+  padding: 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  max-width: 450px;
+  border: 1px solid #333;
+}
+
+.legend-title {
+  color: #ffd700;
+  font-weight: bold;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.key-concepts {
+  position: absolute;
+  top: 200px;
+  right: 20px;
+  background: rgba(0,0,0,0.8);
+  padding: 15px;
+  border-radius: 10px;
+  border-left: 4px solid #00aaff;
+  max-width: 300px;
+}
+
+.concept-title {
+  color: #00aaff;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.concept-item {
+  margin: 5px 0;
+  font-size: 12px;
+}
+</style>
+</head>
+<body>
+<div class="scene">
+  <div class="title">📺 EPISODE 2: THERAPEUTIC DISRUPTION</div>
+  
+  <!-- Derek enjoying expert chaos -->
+  <div class="character-box" style="top: 120px; left: 50px;">
+    <div class="character-name">
+      DEREK DEADPAN
+      <div class="scene-desc">Enjoying Expert Chaos</div>
+    </div>
+    <div class="popup-text" style="top: -55px; right: -120px;">
+      EXPERTS: TERM USED LOOSELY
+    </div>
+  </div>
+  
+  <!-- Chad's blockchain therapy -->
+  <div class="character-box expert-box" style="top: 120px; right: 50px;">
+    <div class="character-name">
+      CHAD BLOCKCHAIN
+      <div class="scene-desc">Disrupting Mental Health</div>
+    </div>
+    <div class="blockchain-diagram" style="top: 60px; right: 20px;"></div>
+    <div class="popup-text tech-popup" style="top: -55px; left: -100px;">
+      BLOCKCHAIN THERAPY!
+    </div>
+  </div>
+  
+  <!-- Professor's fake psychology -->
+  <div class="character-box expert-box" style="bottom: 250px; left: 50px;">
+    <div class="character-name">
+      PROFESSOR WRONGSTON
+      <div class="scene-desc">Confidently Wrong</div>
+    </div>
+    <div class="fake-chart" style="top: 65px; right: 25px;"></div>
+    <div class="popup-text fake-popup" style="top: -55px; right: -140px;">
+      HISTORICAL ACCURACY: 0%
+    </div>
+  </div>
+  
+  <!-- Grace's stress -->
+  <div class="character-box real-expert-box" style="bottom: 250px; right: 50px;">
+    <div class="character-name">
+      GRACE GENUINE
+      <div class="scene-desc">Desperately Fact-Checking</div>
+    </div>
+    <div class="stress-meter" style="top: 50px; left: 25px;">
+      <div class="stress-fill"></div>
+    </div>
+    <div class="popup-text stress-popup" style="top: -55px; left: -120px;">
+      ACADEMIC STRESS: 95%
+    </div>
+  </div>
+  
+  <!-- Expert chaos indicator -->
+  <div class="expert-chaos">
+    <div style="color: #ff6b6b; font-weight: bold; font-size: 18px;">⚠️ EXPERT CHAOS DETECTED ⚠️</div>
+    <div style="font-size: 14px; margin-top: 8px;">Real Expert vs Fake Experts</div>
+    <div style="font-size: 12px; margin-top: 5px;">Derek's Entertainment Level: MAXIMUM</div>
+  </div>
+  
+  <!-- Key concepts -->
+  <div class="key-concepts">
+    <div class="concept-title">Episode 2 Key Concepts:</div>
+    <div class="concept-item">• Blockchain-verified emotional outcomes</div>
+    <div class="concept-item">• Therapy pyramids (triangular energy focus)</div>
+    <div class="concept-item">• DopamineCoin cryptocurrency</div>
+    <div class="concept-item">• Strategic couch positioning</div>
+    <div class="concept-item">• Gamified mental health achievements</div>
+    <div class="concept-item">• Surveillance bidets (Alex's prediction)</div>
+  </div>
+  
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-title">🎬 EPISODE 2 PRODUCTION ELEMENTS</div>
+    <div style="margin: 6px 0;"><span style="color: #ff6b6b;">● Red Boxes:</span> Fake experts (Chad & Professor)</div>
+    <div style="margin: 6px 0;"><span style="color: #4ecdc4;">● Teal Box:</span> Real expert (Grace)</div>
+    <div style="margin: 6px 0;"><span style="color: #00aaff;">● Blue Graphics:</span> Tech/blockchain elements</div>
+    <div style="margin: 6px 0;"><span style="color: #ff9500;">● Orange Graphics:</span> Fake academic props</div>
+    <div style="margin: 6px 0;"><span style="color: #ff6b6b;">● Stress Meter:</span> Grace's mounting panic</div>
+    <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid #333; font-size: 12px; color: #ccc;">
+      <strong>Theme:</strong> Expert panel chaos - Real expertise vs confident wrongness
+    </div>
+  </div>
+  
+</div>
+</body>
+</html>
