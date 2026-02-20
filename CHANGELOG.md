@@ -6,6 +6,17 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [02-20-2026-1] - February 20, 2026
+
+### Added
+- **47 new questions from Class #10 (Week 6 exam review session)**
+  - Covers comprehensive exam review topics: coving, foodborne illness prevention (bacterial vs viral vs parasites), allergen transfer, ready-to-eat foods, personal hygiene details, TCS food handling, receiving/suppliers, storage organization, cooking/reheating temperatures, cooling procedures, thawing methods, cleaning/sanitizing procedures, Active Managerial Control steps, regulatory agencies, variance requirements, facilities/equipment, and more
+  - Questions span chapters 1-12 with heavy exam focus
+  - All 47 questions marked `examFocus: true`
+- **Total questions now: 298** (up from 251)
+
+---
+
 ## [02-15-2026-2] - February 15, 2026
 
 ### Added
@@ -478,6 +489,9 @@ Format: `MM-DD-YYYY-BUILD`
 ### Question Bank History
 - **Initial:** 163 questions (Jan 2026)
 - **02-09-2026-3:** 195 questions (added 32 from Quiz #2 and Ch 10 lecture)
+- **02-15-2026-1:** 219 questions (added 24 from Class 8 & 9 recordings)
+- **02-15-2026-2:** 251 questions (added 32 from Quiz #3 & #4)
+- **02-20-2026-1:** 298 questions (added 47 from Class #10 exam review)
 
 ### Known Issues
 - Convex deployment shows benign warning about unknown `deployment` property in `convex.json` (ignore it)
