@@ -6,6 +6,17 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [02-20-2026-2] - February 20, 2026
+
+### Added
+- **44 new questions from Class #11 (Practice Exam #2) and ServSafe Mock Exam docx**
+  - Sourced from both the Class #11 transcript (82+ question walkthrough) and the professor's Mock Exam document
+  - Topics: time-temperature abuse during slicing, norovirus reporting, allergen response protocol, hepatitis outbreak procedures, chemical/physical contamination types, ALERT food defense system, honest menu presentation, restriction vs exclusion, Staphylococcus locations, thermocouple use for thin items, thermometer accuracy standards, cutting board materials, unmarked food disposal, sliced tomato transport temps, time marking requirements, norovirus symptoms, 7-day date marking, 3-compartment sink heat sanitizing (171°F), power outage food disposal, master cleaning schedule involvement, inverted pot storage, abrasive powders prohibition, self-service monitoring, USDA grading, Listeria/deli meats, vacuum breakers, wastewater response, outdoor garbage lids, oyster sourcing, restricted-use pesticides, pasteurized eggs for children, sesame allergen, cleaning vs sanitizing, off-site catering time limits, CCP corrective action, pork sausage temps
+  - All 44 questions marked `examFocus: true`
+- **Total questions now: 342** (up from 298)
+
+---
+
 ## [02-20-2026-1] - February 20, 2026
 
 ### Added
@@ -492,6 +503,7 @@ Format: `MM-DD-YYYY-BUILD`
 - **02-15-2026-1:** 219 questions (added 24 from Class 8 & 9 recordings)
 - **02-15-2026-2:** 251 questions (added 32 from Quiz #3 & #4)
 - **02-20-2026-1:** 298 questions (added 47 from Class #10 exam review)
+- **02-20-2026-2:** 342 questions (added 44 from Class #11 practice exam & Mock Exam docx)
 
 ### Known Issues
 - Convex deployment shows benign warning about unknown `deployment` property in `convex.json` (ignore it)
