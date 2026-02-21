@@ -6,6 +6,19 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [02-21-2026-2] - February 21, 2026
+
+### Fixed
+- **Q254 & Q255: Swapped correct answers** — bacterial vs viral prevention answers were reversed
+  - Q254 (bacterial): Changed correct answer to "Controlling time and temperature" (was "Practicing good personal hygiene")
+  - Q255 (viral): Changed correct answer to "Practicing good personal hygiene" (was "Controlling time and temperature")
+  - Updated hints and explanations for both questions
+  - Q254 category corrected from "Sanitation & Hygiene" to "Foodborne Illness", chapter 3 → 2
+  - Verified against official ServSafe materials
+  - Fixed in both `questions.js` and `questions-original.js`
+
+---
+
 ## [02-21-2026-1] - February 21, 2026
 
 ### Fixed
