@@ -12,7 +12,14 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(node -c:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "WebFetch(domain:www.wekivaculinary.org)",
+      "WebFetch(domain:uniontestprep.com)",
+      "WebFetch(domain:quizlet.com)",
+      "WebFetch(domain:newwoodys.com)",
+      "WebFetch(domain:www.servsafe.com)",
+      "WebFetch(domain:www.studocu.com)",
+      "WebFetch(domain:bostonfoodsafety.com)"
     ]
   }
 }
