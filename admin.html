@@ -1358,10 +1358,11 @@
         var studentOnly = students.filter(function(s) { return !s.isProf; });
         var totalStudents = studentOnly.length;
         var totalAnswered = studentOnly.reduce(function(s, st) { return s + st.totalAnswered; }, 0);
-        var avgAcc = totalStudents > 0
-          ? Math.round(studentOnly.reduce(function(s, st) {
-              return s + (st.totalAnswered > 0 ? st.totalCorrect / st.totalAnswered : 0);
-            }, 0) / totalStudents * 100)
+        var activeStudents = studentOnly.filter(function(s) { return s.totalAnswered > 0; });
+        var avgAcc = activeStudents.length > 0
+          ? Math.round(activeStudents.reduce(function(s, st) {
+              return s + st.totalCorrect / st.totalAnswered;
+            }, 0) / activeStudents.length * 100)
           : 0;
 
         function exportCSV() {

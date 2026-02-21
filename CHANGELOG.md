@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [02-21-2026-1] - February 21, 2026
+
+### Fixed
+- **Admin Students tab: Avg Accuracy now excludes inactive students** — students who haven't answered any questions are no longer counted in the average, so it reflects actual usage instead of being dragged down by 0% entries
+
+---
+
 ## [02-20-2026-2] - February 20, 2026
 
 ### Added
