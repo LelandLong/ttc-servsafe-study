@@ -361,6 +361,16 @@
       // Global connection status - updated by Convex sync
       var convexConnectionStatus = CONVEX_URL ? 'connecting' : 'offline';
 
+      // Timeout: if still 'connecting' after 10s, fall back to 'offline'
+      if (CONVEX_URL) {
+        var connectionTimeout = setTimeout(function() {
+          if (convexConnectionStatus === 'connecting') {
+            console.log('Connection timeout - falling back to offline mode');
+            updateConvexStatus('offline');
+          }
+        }, 10000);
+      }
+
       // ============ QUESTIONS LOADING STRATEGY ============
       // Priority: 1. Convex (if configured) -> 2. localStorage -> 3. questions.js file
 
@@ -393,6 +403,10 @@
 
       function updateConvexStatus(status) {
         convexConnectionStatus = status;
+        // Clear connection timeout once we have a definitive status
+        if (status !== 'connecting' && typeof connectionTimeout !== 'undefined') {
+          clearTimeout(connectionTimeout);
+        }
         convexStatusListeners.forEach(function(listener) {
           listener(status);
         });
@@ -488,6 +502,17 @@
         return true;
       }
 
+      // ============ PENDING SYNC TRACKING ============
+      var PENDING_SYNC_KEY = 'chefKitchenPendingSync';
+
+      function hasPendingSync() {
+        try { return localStorage.getItem(PENDING_SYNC_KEY) === 'true'; } catch (e) { return false; }
+      }
+
+      function setPendingSync(val) {
+        try { localStorage.setItem(PENDING_SYNC_KEY, val ? 'true' : 'false'); } catch (e) {}
+      }
+
       // ============ CLOUD SYNC (DEBOUNCED) ============
       var syncTimeout = null;
 
@@ -501,10 +526,67 @@
             badges: badges
           }).then(function() {
             console.log('Progress synced to cloud');
+            setPendingSync(false);
+            updateConvexStatus('connected');
           }).catch(function(err) {
             console.log('Cloud sync failed (saved locally):', err.message);
+            setPendingSync(true);
+            updateConvexStatus('offline');
           });
         }, 2000);
+      }
+
+      // Auto-retry sync when browser comes back online
+      window.addEventListener('online', function() {
+        console.log('Network restored - checking for pending sync');
+        if (hasPendingSync()) {
+          try {
+            var userData = JSON.parse(localStorage.getItem('chefKitchenUser'));
+            var progressData = JSON.parse(localStorage.getItem('chefKitchenProgress'));
+            var badgesData = JSON.parse(localStorage.getItem('chefKitchenBadges'));
+            if (userData && progressData) {
+              console.log('Flushing pending sync to cloud');
+              convexMutation("users:syncProgress", {
+                userId: userData.userId,
+                progress: progressData,
+                badges: badgesData ? badgesData.earned || [] : []
+              }).then(function() {
+                console.log('Pending sync flushed successfully');
+                setPendingSync(false);
+                updateConvexStatus('connected');
+              }).catch(function(err) {
+                console.log('Pending sync flush failed:', err.message);
+              });
+            }
+          } catch (e) {
+            console.log('Error during pending sync flush:', e.message);
+          }
+        }
+      });
+
+      // ============ VERSION CHECK ============
+      var versionCheckListeners = [];
+
+      function checkForUpdate() {
+        return fetch('version.js?t=' + Date.now())
+          .then(function(res) { return res.text(); })
+          .then(function(text) {
+            var match = text.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+            if (match && match[1] !== APP_VERSION) {
+              console.log('Update available: ' + APP_VERSION + ' -> ' + match[1]);
+              versionCheckListeners.forEach(function(fn) { fn(match[1]); });
+              return match[1];
+            }
+            return null;
+          })
+          .catch(function() { return null; });
+      }
+
+      function onUpdateAvailable(listener) {
+        versionCheckListeners.push(listener);
+        return function() {
+          versionCheckListeners = versionCheckListeners.filter(function(l) { return l !== listener; });
+        };
       }
 
       function mergeProgressFromCloud(localProgress, cloudData, localBadges) {
@@ -515,10 +597,12 @@
         var cloud = cloudData.progress;
         var cloudBadges = cloudData.badges || [];
 
-        // Use whichever has more answers (more recent data)
+        // Use local as base if there's unsynced data (prevents stale cloud overwrite)
+        // Otherwise use whichever has more answers
         var merged;
-        if (localProgress.totalAnswered > cloud.totalAnswered) {
+        if (hasPendingSync() || localProgress.totalAnswered > cloud.totalAnswered) {
           merged = JSON.parse(JSON.stringify(localProgress));
+          if (hasPendingSync()) console.log('Pending sync detected - preserving local progress');
         } else {
           merged = JSON.parse(JSON.stringify(cloud));
         }
@@ -2188,6 +2272,10 @@
             }, 'Are you still ', createElement('strong', {
               style: { color: '#F97316' }
             }, displayName), '?'),
+            props.updateAvailable ? createElement('p', {
+              className: 'text-xs mb-4 px-3 py-2 rounded-lg',
+              style: { backgroundColor: '#DBEAFE', color: '#1E40AF' }
+            }, 'App update will install when you continue') : null,
             createElement('div', { className: 'flex gap-3 justify-center' },
               createElement('button', {
                 onClick: props.onYes,
@@ -3325,8 +3413,9 @@
       // Network Status Indicator Component
       function NetworkStatus(props) {
         var status = props.status;
+        var statusBar;
         if (status === 'connected') {
-          return createElement('div', {
+          statusBar = createElement('div', {
             className: 'fixed top-0 left-0 right-0 z-50 bg-green-500 text-white text-center py-1 text-xs font-medium flex items-center justify-center gap-2',
             style: { fontSize: '11px' }
           },
@@ -3334,7 +3423,7 @@
             'Live Cloud Data'
           );
         } else if (status === 'connecting') {
-          return createElement('div', {
+          statusBar = createElement('div', {
             className: 'fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-white text-center py-1 text-xs font-medium flex items-center justify-center gap-2',
             style: { fontSize: '11px' }
           },
@@ -3342,14 +3431,16 @@
             'Connecting to cloud...'
           );
         } else {
-          return createElement('div', {
+          var pendingSync = hasPendingSync();
+          statusBar = createElement('div', {
             className: 'fixed top-0 left-0 right-0 z-50 bg-gray-500 text-white text-center py-1 text-xs font-medium flex items-center justify-center gap-2',
             style: { fontSize: '11px' }
           },
             createElement('span', { className: 'inline-block w-2 h-2 bg-orange-300 rounded-full' }),
-            'Offline Mode - Using Local Data'
+            pendingSync ? 'Offline - Changes saved locally' : 'Offline Mode - Using Local Data'
           );
         }
+        return statusBar;
       }
 
       // Badge Notification Component with Confetti Explosion
@@ -3465,6 +3556,9 @@
         const [personalDevice, setPersonalDeviceState] = useState(isPersonalDevice);
         const [classStats, setClassStats] = useState(null);
 
+        // Version check state
+        const [updateAvailable, setUpdateAvailable] = useState(null);
+
         // Live test polling state
         const [activeTest, setActiveTest] = useState(null);
         const [testScreen, setTestScreen] = useState(null); // null | 'waiting' | 'active' | 'finished'
@@ -3483,6 +3577,15 @@
           } else if (user) {
             updateLastActive();
           }
+        }, []);
+
+        // Version check: on mount + every 30 minutes
+        useEffect(function() {
+          checkForUpdate().then(function(v) { if (v) setUpdateAvailable(v); });
+          var versionInterval = setInterval(function() {
+            checkForUpdate().then(function(v) { if (v) setUpdateAvailable(v); });
+          }, 30 * 60 * 1000);
+          return function() { clearInterval(versionInterval); };
         }, []);
 
         // Fetch cloud progress on login
@@ -3645,6 +3748,10 @@
         function handleIdentityYes() {
           setShowIdentityCheck(false);
           updateLastActive();
+          // If an update is available, reload to get the latest version
+          if (updateAvailable) {
+            window.location.reload();
+          }
         }
 
         function handleIdentityNo() {
@@ -3893,7 +4000,8 @@
           return createElement(IdentityCheckScreen, {
             displayName: user.displayName,
             onYes: handleIdentityYes,
-            onNo: handleIdentityNo
+            onNo: handleIdentityNo,
+            updateAvailable: updateAvailable
           });
         }
 
@@ -3906,6 +4014,42 @@
               setMode: setAuthMode,
               onAuth: handleAuth
             })
+          );
+        }
+
+        // Update required screen (blocks app until user updates)
+        if (updateAvailable) {
+          return createElement('div', {
+            className: 'min-h-screen flex items-center justify-center p-4',
+            style: { backgroundColor: 'var(--bg-primary)' }
+          },
+            createElement('div', {
+              className: 'max-w-sm w-full text-center p-8 rounded-2xl shadow-lg',
+              style: { backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }
+            },
+              createElement('img', {
+                src: 'assets/chef-greeting.jpg',
+                alt: 'Chef Whiskers',
+                className: 'w-24 h-24 mx-auto mb-4 rounded-xl object-cover'
+              }),
+              createElement('h2', {
+                className: 'text-xl font-bold mb-2',
+                style: { fontFamily: 'Fredoka, sans-serif', color: 'var(--text-primary)' }
+              }, 'Update Available!'),
+              createElement('p', {
+                className: 'mb-2',
+                style: { color: 'var(--text-secondary)' }
+              }, 'A new version of Chef\'s Kitchen is ready.'),
+              createElement('p', {
+                className: 'text-xs mb-6',
+                style: { color: 'var(--text-muted)' }
+              }, 'v' + APP_VERSION + ' → v' + updateAvailable),
+              createElement('button', {
+                onClick: function() { window.location.reload(); },
+                className: 'w-full px-6 py-3 rounded-xl font-bold text-white transition-all',
+                style: { background: 'linear-gradient(135deg, #3B82F6, #2563EB)' }
+              }, 'Update Now')
+            )
           );
         }
 

@@ -6,6 +6,22 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [02-21-2026-3] - February 21, 2026
+
+### Added
+- **Offline resilience** — Progress earned while offline is now protected
+  - Pending sync flag tracks when cloud sync fails; local data won't be overwritten by stale cloud data on reconnect
+  - Auto-retry: when browser comes back online, pending progress is flushed to cloud automatically
+  - Connection timeout: "Connecting to cloud..." falls back to "Offline" after 10 seconds instead of hanging indefinitely
+  - Offline banner now shows "Changes saved locally" when there's unsynced progress
+- **Version checking & auto-update for PWA**
+  - Checks for new version on app load and every 30 minutes
+  - Blue "Update Now" banner appears when a newer version is deployed
+  - Identity check screen (idle timeout) auto-reloads to latest version when user confirms identity
+  - Ensures installed PWAs on iOS/Android don't run stale versions indefinitely
+
+---
+
 ## [02-21-2026-2] - February 21, 2026
 
 ### Fixed
