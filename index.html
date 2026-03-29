@@ -632,11 +632,23 @@
           merged[courseId] = base;
         });
 
-        // Union badges (never lose a badge)
-        var badgeSet = {};
-        (localBadges.earned || []).forEach(function(b) { badgeSet[b] = true; });
-        cloudBadges.forEach(function(b) { badgeSet[b] = true; });
-        var mergedBadges = { earned: Object.keys(badgeSet), newlyEarned: [] };
+        // Merge badges: local is per-course format, cloud is flat array
+        // Reconstruct per-course from flat cloud array by checking badge IDs
+        var mergedBadges = JSON.parse(JSON.stringify(localBadges));
+        // Ensure all courses exist
+        if (!mergedBadges['CUL-104']) mergedBadges['CUL-104'] = { earned: [], newlyEarned: [] };
+        if (!mergedBadges['CUL-105']) mergedBadges['CUL-105'] = { earned: [], newlyEarned: [] };
+        // Add any cloud badges not already present (cloud badges go to CUL-104 by convention for backward compat)
+        cloudBadges.forEach(function(b) {
+          // Check if badge exists in any course
+          var found = false;
+          Object.keys(mergedBadges).forEach(function(c) {
+            if (mergedBadges[c].earned && mergedBadges[c].earned.indexOf(b) !== -1) found = true;
+          });
+          if (!found) {
+            mergedBadges['CUL-104'].earned.push(b);
+          }
+        });
 
         return { progress: merged, badges: mergedBadges };
       }
@@ -1796,7 +1808,7 @@
       var COURSES = {
         'CUL-104': {
           name: 'CUL-104: ServSafe',
-          shortName: 'ServSafe',
+          shortName: 'CUL-104: ServSafe',
           icon: '\uD83E\uDDA0',
           description: 'Food Safety Certification',
           questions: questionsDB,
@@ -1812,11 +1824,13 @@
           },
           hasExamFocus: true,
           hasQuizGroups: true,
-          hasFlashcards: false
+          hasFlashcards: false,
+          examLabel: 'Exam Focus',
+          examDescription: 'questions emphasized for the test.'
         },
         'CUL-105': {
           name: 'CUL-105: Kitchen Fundamentals',
-          shortName: 'Kitchen Fund.',
+          shortName: 'CUL-105: Kitchen Fund.',
           icon: '\uD83D\uDD2A',
           description: 'Culinary Techniques & Knowledge',
           questions: (typeof questionsCUL105 !== 'undefined') ? questionsCUL105 : [],
@@ -1833,7 +1847,9 @@
           ],
           hasExamFocus: true,
           hasQuizGroups: false,
-          hasFlashcards: true
+          hasFlashcards: true,
+          examLabel: 'Midterm Focus',
+          examDescription: 'questions from the midterm study guide.'
         }
       };
 
@@ -2128,8 +2144,22 @@
       function loadBadges() {
         try {
           var saved = localStorage.getItem(BADGES_KEY);
-          if (saved) return JSON.parse(saved);
+          if (saved) {
+            var parsed = JSON.parse(saved);
+            // Migrate old flat format to per-course format
+            if (parsed.earned !== undefined && !parsed['CUL-104']) {
+              // Old flat format — wrap under CUL-104
+              return { 'CUL-104': parsed, 'CUL-105': { earned: [], newlyEarned: [] } };
+            }
+            return parsed;
+          }
         } catch (e) {}
+        return {};
+      }
+
+      // Get badges for a specific course
+      function getCourseBadges(allBadges, courseId) {
+        if (allBadges[courseId]) return allBadges[courseId];
         return { earned: [], newlyEarned: [] };
       }
 
@@ -2137,6 +2167,20 @@
         try {
           localStorage.setItem(BADGES_KEY, JSON.stringify(badges));
         } catch (e) {}
+      }
+
+      // Get flat array of all earned badge IDs across all courses (for cloud sync)
+      function getAllEarnedBadges(allBadges) {
+        var all = [];
+        Object.keys(allBadges).forEach(function(courseId) {
+          var cb = allBadges[courseId];
+          if (cb && cb.earned) {
+            cb.earned.forEach(function(b) {
+              if (all.indexOf(b) === -1) all.push(b);
+            });
+          }
+        });
+        return all;
       }
 
       function checkForNewBadges(progress, currentBadges) {
@@ -3143,11 +3187,11 @@
               },
                 createElement('div', { className: 'flex items-center gap-3 mb-2' },
                   createElement('span', { className: 'text-3xl' }, '\u2B50'),
-                  createElement('span', { className: 'font-bold text-lg text-gray-800' }, 'Exam Focus'),
+                  createElement('span', { className: 'font-bold text-lg text-gray-800' }, courseConfig.examLabel || 'Exam Focus'),
                   createElement('span', { className: 'text-xs bg-red-500 text-white px-2 py-0.5 rounded-full ml-2' }, 'RECOMMENDED')
                 ),
                 createElement('p', { className: 'text-gray-600 text-sm' },
-                  getCourseQuestions(activeCourse).filter(function(q) { return q.examFocus; }).length + ' questions emphasized for the test.'
+                  getCourseQuestions(activeCourse).filter(function(q) { return q.examFocus; }).length + ' ' + (courseConfig.examDescription || 'questions emphasized for the test.')
                 )
               ),
 
@@ -3759,11 +3803,12 @@
         const [networkStatus, setNetworkStatus] = useState(convexConnectionStatus);
         const [activeCourse, setActiveCourseState] = useState(loadActiveCourse);
 
-        // Derived: current course's progress
+        // Derived: current course's progress and badges
         var courseProgress = getCourseProgress(progress, activeCourse);
         var courseQuestions = getCourseQuestions(activeCourse);
         var courseFlashcards = getCourseFlashcards(activeCourse);
         var courseConfig = COURSES[activeCourse];
+        var courseBadges = getCourseBadges(badges, activeCourse);
 
         function switchCourse(courseId) {
           setActiveCourseState(courseId);
@@ -3918,18 +3963,19 @@
           return unsubscribe;
         }, []);
 
-        // Show badge notifications from queue
+        // Show badge notifications from queue (per-course)
         useEffect(function() {
-          if (!newBadgeToShow && badges.newlyEarned && badges.newlyEarned.length > 0) {
-            var nextBadge = getBadgeById(badges.newlyEarned[0]);
+          if (!newBadgeToShow && courseBadges.newlyEarned && courseBadges.newlyEarned.length > 0) {
+            var nextBadge = getBadgeById(courseBadges.newlyEarned[0]);
             if (nextBadge) setNewBadgeToShow(nextBadge);
           }
-        }, [badges.newlyEarned, newBadgeToShow]);
+        }, [courseBadges.newlyEarned, newBadgeToShow]);
 
         function dismissBadgeNotification() {
           setBadges(function(prev) {
-            var remaining = prev.newlyEarned.slice(1);
-            var updated = { earned: prev.earned, newlyEarned: remaining };
+            var updated = JSON.parse(JSON.stringify(prev));
+            if (!updated[activeCourse]) updated[activeCourse] = { earned: [], newlyEarned: [] };
+            updated[activeCourse].newlyEarned = updated[activeCourse].newlyEarned.slice(1);
             saveBadges(updated);
             return updated;
           });
@@ -4175,22 +4221,23 @@
             saveProgress(allProgress);
             updateLastActive();
 
-            // Check for new badges
-            var badgeResult = checkForNewBadges(newCp, badges);
+            // Check for new badges (per-course)
+            var currentCourseBadges = getCourseBadges(badges, activeCourse);
+            var badgeResult = checkForNewBadges(newCp, currentCourseBadges);
             if (badgeResult.newBadges.length > 0) {
               setBadges(function(prevBadges) {
-                var updated = {
-                  earned: prevBadges.earned.concat(badgeResult.newBadges),
-                  newlyEarned: prevBadges.newlyEarned.concat(badgeResult.newBadges)
-                };
+                var updated = JSON.parse(JSON.stringify(prevBadges));
+                if (!updated[activeCourse]) updated[activeCourse] = { earned: [], newlyEarned: [] };
+                updated[activeCourse].earned = updated[activeCourse].earned.concat(badgeResult.newBadges);
+                updated[activeCourse].newlyEarned = updated[activeCourse].newlyEarned.concat(badgeResult.newBadges);
                 saveBadges(updated);
                 if (user) {
-                  syncProgressToCloud(user.userId, allProgress, updated.earned);
+                  syncProgressToCloud(user.userId, allProgress, getAllEarnedBadges(updated));
                 }
                 return updated;
               });
             } else if (user) {
-              syncProgressToCloud(user.userId, allProgress, badges.earned);
+              syncProgressToCloud(user.userId, allProgress, getAllEarnedBadges(badges));
             }
 
             return allProgress;
@@ -4206,7 +4253,7 @@
             allProgress[activeCourse] = cp;
             saveProgress(allProgress);
             if (user) {
-              syncProgressToCloud(user.userId, allProgress, badges.earned);
+              syncProgressToCloud(user.userId, allProgress, getAllEarnedBadges(badges));
             }
             return allProgress;
           });
@@ -4221,12 +4268,16 @@
               return allProgress;
             });
 
-            // Also ask about resetting badges
-            var resetBadges = badges.earned.length > 0 && confirm('Also reset your ' + badges.earned.length + ' earned badges?');
-            if (resetBadges) {
-              var emptyBadges = { earned: [], newlyEarned: [] };
-              setBadges(emptyBadges);
-              saveBadges(emptyBadges);
+            // Also ask about resetting badges for this course
+            var cb = getCourseBadges(badges, activeCourse);
+            var resetBadgesConfirm = cb.earned.length > 0 && confirm('Also reset your ' + cb.earned.length + ' earned ' + courseConfig.shortName + ' badges?');
+            if (resetBadgesConfirm) {
+              setBadges(function(prev) {
+                var updated = JSON.parse(JSON.stringify(prev));
+                updated[activeCourse] = { earned: [], newlyEarned: [] };
+                saveBadges(updated);
+                return updated;
+              });
             }
 
             // Archive and reset on cloud
@@ -4540,7 +4591,7 @@
           createElement('div', { style: { paddingTop: '24px' } },
             createElement(HomeScreen, {
               progress: courseProgress,
-              badges: badges,
+              badges: courseBadges,
               onSelectMode: handleSelectMode,
               onResetProgress: handleResetProgress,
               theme: theme,
