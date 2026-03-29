@@ -1975,125 +1975,156 @@
       const BADGES_KEY = 'chefKitchenBadges';
 
       // Badge definitions - id, name, icon, description, requirement check function
+      // course: 'shared' = both courses, 'CUL-104' = ServSafe only, 'CUL-105' = Kitchen Fund only
       const badgeDefinitions = [
-        // === STREAK BADGES ===
-        { id: 'streak5', name: 'On Fire', icon: '🔥', description: 'Answer 5 in a row correctly', category: 'Streaks',
+        // === STREAK BADGES (shared) ===
+        { id: 'streak5', name: 'On Fire', icon: '\uD83D\uDD25', description: 'Answer 5 in a row correctly', category: 'Streaks', course: 'shared',
           check: function(p) { return p.currentStreak >= 5; } },
-        { id: 'streak10', name: 'Unstoppable', icon: '⚡', description: 'Answer 10 in a row correctly', category: 'Streaks',
+        { id: 'streak10', name: 'Unstoppable', icon: '\u26A1', description: 'Answer 10 in a row correctly', category: 'Streaks', course: 'shared',
           check: function(p) { return p.currentStreak >= 10; } },
-        { id: 'streak20', name: 'Perfect Chef', icon: '👨‍🍳', description: 'Answer 20 in a row correctly', category: 'Streaks',
+        { id: 'streak20', name: 'Perfect Chef', icon: '\uD83D\uDC68\u200D\uD83C\uDF73', description: 'Answer 20 in a row correctly', category: 'Streaks', course: 'shared',
           check: function(p) { return p.currentStreak >= 20; } },
-        { id: 'streak50', name: 'Legendary', icon: '🏆', description: 'Answer 50 in a row correctly', category: 'Streaks',
+        { id: 'streak50', name: 'Legendary', icon: '\uD83C\uDFC6', description: 'Answer 50 in a row correctly', category: 'Streaks', course: 'shared',
           check: function(p) { return p.currentStreak >= 50; } },
 
-        // === VOLUME BADGES ===
-        { id: 'first', name: 'First Bite', icon: '🍴', description: 'Answer your first question', category: 'Progress',
+        // === VOLUME BADGES (shared) ===
+        { id: 'first', name: 'First Bite', icon: '\uD83C\uDF74', description: 'Answer your first question', category: 'Progress', course: 'shared',
           check: function(p) { return p.totalAnswered >= 1; } },
-        { id: 'q10', name: 'Getting Started', icon: '📚', description: 'Answer 10 questions', category: 'Progress',
+        { id: 'q10', name: 'Getting Started', icon: '\uD83D\uDCDA', description: 'Answer 10 questions', category: 'Progress', course: 'shared',
           check: function(p) { return p.totalAnswered >= 10; } },
-        { id: 'q50', name: 'Dedicated Student', icon: '🎓', description: 'Answer 50 questions', category: 'Progress',
+        { id: 'q50', name: 'Dedicated Student', icon: '\uD83C\uDF93', description: 'Answer 50 questions', category: 'Progress', course: 'shared',
           check: function(p) { return p.totalAnswered >= 50; } },
-        { id: 'q100', name: 'Study Master', icon: '📖', description: 'Answer 100 questions', category: 'Progress',
+        { id: 'q100', name: 'Study Master', icon: '\uD83D\uDCD6', description: 'Answer 100 questions', category: 'Progress', course: 'shared',
           check: function(p) { return p.totalAnswered >= 100; } },
-        { id: 'q250', name: 'Knowledge Seeker', icon: '🧠', description: 'Answer 250 questions', category: 'Progress',
+        { id: 'q250', name: 'Knowledge Seeker', icon: '\uD83E\uDDE0', description: 'Answer 250 questions', category: 'Progress', course: 'shared',
           check: function(p) { return p.totalAnswered >= 250; } },
-        { id: 'q500', name: 'Quiz Champion', icon: '🏅', description: 'Answer 500 questions', category: 'Progress',
+        { id: 'q500', name: 'Quiz Champion', icon: '\uD83C\uDFC5', description: 'Answer 500 questions', category: 'Progress', course: 'shared',
           check: function(p) { return p.totalAnswered >= 500; } },
 
-        // === NO-HINT BADGES ===
-        { id: 'nohint5', name: 'Independent', icon: '💪', description: 'Get 5 correct without hints', category: 'No Hints',
+        // === NO-HINT BADGES (shared) ===
+        { id: 'nohint5', name: 'Independent', icon: '\uD83D\uDCAA', description: 'Get 5 correct without hints', category: 'No Hints', course: 'shared',
           check: function(p) { return p.correctWithoutHint >= 5; } },
-        { id: 'nohint25', name: 'Self-Reliant', icon: '🎯', description: 'Get 25 correct without hints', category: 'No Hints',
+        { id: 'nohint25', name: 'Self-Reliant', icon: '\uD83C\uDFAF', description: 'Get 25 correct without hints', category: 'No Hints', course: 'shared',
           check: function(p) { return p.correctWithoutHint >= 25; } },
-        { id: 'nohint50', name: 'No Help Needed', icon: '🦸', description: 'Get 50 correct without hints', category: 'No Hints',
+        { id: 'nohint50', name: 'No Help Needed', icon: '\uD83E\uDDB8', description: 'Get 50 correct without hints', category: 'No Hints', course: 'shared',
           check: function(p) { return p.correctWithoutHint >= 50; } },
-        { id: 'nohintstreak10', name: 'Flying Solo', icon: '✈️', description: '10 in a row without hints', category: 'No Hints',
+        { id: 'nohintstreak10', name: 'Flying Solo', icon: '\u2708\uFE0F', description: '10 in a row without hints', category: 'No Hints', course: 'shared',
           check: function(p) { return p.bestNoHintStreak >= 10; } },
 
-        // === ACCURACY BADGES ===
-        { id: 'acc70', name: 'Passing Grade', icon: '✓', description: 'Achieve 70% accuracy (min 20 questions)', category: 'Accuracy',
+        // === ACCURACY BADGES (shared) ===
+        { id: 'acc70', name: 'Passing Grade', icon: '\u2713', description: 'Achieve 70% accuracy (min 20 questions)', category: 'Accuracy', course: 'shared',
           check: function(p) { return p.totalAnswered >= 20 && (p.totalCorrect / p.totalAnswered) >= 0.70; } },
-        { id: 'acc80', name: 'Honor Roll', icon: '⭐', description: 'Achieve 80% accuracy (min 30 questions)', category: 'Accuracy',
+        { id: 'acc80', name: 'Honor Roll', icon: '\u2B50', description: 'Achieve 80% accuracy (min 30 questions)', category: 'Accuracy', course: 'shared',
           check: function(p) { return p.totalAnswered >= 30 && (p.totalCorrect / p.totalAnswered) >= 0.80; } },
-        { id: 'acc90', name: 'Dean\'s List', icon: '🌟', description: 'Achieve 90% accuracy (min 50 questions)', category: 'Accuracy',
+        { id: 'acc90', name: 'Dean\'s List', icon: '\uD83C\uDF1F', description: 'Achieve 90% accuracy (min 50 questions)', category: 'Accuracy', course: 'shared',
           check: function(p) { return p.totalAnswered >= 50 && (p.totalCorrect / p.totalAnswered) >= 0.90; } },
-        { id: 'acc95', name: 'Valedictorian', icon: '💎', description: 'Achieve 95% accuracy (min 75 questions)', category: 'Accuracy',
+        { id: 'acc95', name: 'Valedictorian', icon: '\uD83D\uDC8E', description: 'Achieve 95% accuracy (min 75 questions)', category: 'Accuracy', course: 'shared',
           check: function(p) { return p.totalAnswered >= 75 && (p.totalCorrect / p.totalAnswered) >= 0.95; } },
 
-        // === CATEGORY MASTERY ===
-        { id: 'catmaster1', name: 'Specialist', icon: '🔬', description: 'Master 1 category (90%+, min 5 questions)', category: 'Mastery',
+        // === CATEGORY MASTERY (shared) ===
+        { id: 'catmaster1', name: 'Specialist', icon: '\uD83D\uDD2C', description: 'Master 1 category (90%+, min 5 questions)', category: 'Mastery', course: 'shared',
           check: function(p) { return countMasteredCategories(p) >= 1; } },
-        { id: 'catmaster3', name: 'Multi-talented', icon: '🎭', description: 'Master 3 categories', category: 'Mastery',
+        { id: 'catmaster3', name: 'Multi-talented', icon: '\uD83C\uDFAD', description: 'Master 3 categories', category: 'Mastery', course: 'shared',
           check: function(p) { return countMasteredCategories(p) >= 3; } },
-        { id: 'catmaster5', name: 'Renaissance Chef', icon: '👑', description: 'Master 5 categories', category: 'Mastery',
+        { id: 'catmaster5', name: 'Renaissance Chef', icon: '\uD83D\uDC51', description: 'Master 5 categories', category: 'Mastery', course: 'shared',
           check: function(p) { return countMasteredCategories(p) >= 5; } },
-        { id: 'catmasterall', name: 'Complete Master', icon: '🎖️', description: 'Master ALL categories', category: 'Mastery',
+        { id: 'catmasterall', name: 'Complete Master', icon: '\uD83C\uDF96\uFE0F', description: 'Master ALL categories', category: 'Mastery', course: 'shared',
           check: function(p) { var total = Object.keys(p.categoryStats || {}).length; return total > 0 && countMasteredCategories(p) >= total; } },
 
-        // === EXAM FOCUS BADGES ===
-        { id: 'examfocus10', name: 'Exam Ready', icon: '📝', description: 'Get 10 Exam Focus questions correct', category: 'Exam',
+        // === EXAM FOCUS BADGES (shared) ===
+        { id: 'examfocus10', name: 'Exam Ready', icon: '\uD83D\uDCDD', description: 'Get 10 Exam Focus questions correct', category: 'Exam', course: 'shared',
           check: function(p) { return (p.examFocusCorrect || 0) >= 10; } },
-        { id: 'examfocus25', name: 'Test Prep Pro', icon: '📋', description: 'Get 25 Exam Focus questions correct', category: 'Exam',
+        { id: 'examfocus25', name: 'Test Prep Pro', icon: '\uD83D\uDCCB', description: 'Get 25 Exam Focus questions correct', category: 'Exam', course: 'shared',
           check: function(p) { return (p.examFocusCorrect || 0) >= 25; } },
-        { id: 'examfocusall', name: 'Exam Champion', icon: '🏆', description: 'Answer ALL Exam Focus questions correctly', category: 'Exam',
-          check: function(p) { var total = questionsDB.filter(function(q) { return q.examFocus; }).length; return (p.examFocusCorrect || 0) >= total; } },
 
-        // === TIME-BASED FUN BADGES ===
-        { id: 'earlybird', name: 'Early Bird', icon: '🌅', description: 'Study before 7 AM', category: 'Fun',
+        // === TIME-BASED FUN BADGES (shared) ===
+        { id: 'earlybird', name: 'Early Bird', icon: '\uD83C\uDF05', description: 'Study before 7 AM', category: 'Fun', course: 'shared',
           check: function(p) { return p.studiedEarly; } },
-        { id: 'nightowl', name: 'Night Owl', icon: '🦉', description: 'Study after 10 PM', category: 'Fun',
+        { id: 'nightowl', name: 'Night Owl', icon: '\uD83E\uDD89', description: 'Study after 10 PM', category: 'Fun', course: 'shared',
           check: function(p) { return p.studiedLate; } },
-        { id: 'weekend', name: 'Weekend Warrior', icon: '⚔️', description: 'Study on a weekend', category: 'Fun',
+        { id: 'weekend', name: 'Weekend Warrior', icon: '\u2694\uFE0F', description: 'Study on a weekend', category: 'Fun', course: 'shared',
           check: function(p) { return p.studiedWeekend; } },
 
-        // === CHAPTER PROGRESS BADGES ===
-        { id: 'ch1done', name: 'Chapter 1 Complete', icon: '📗', description: 'Answer all Chapter 1 questions', category: 'Chapters',
+        // === CUL-104 ONLY: CHAPTER PROGRESS ===
+        { id: 'ch1done', name: 'Chapter 1 Complete', icon: '\uD83D\uDCD7', description: 'Answer all Chapter 1 questions', category: 'Chapters', course: 'CUL-104',
           check: function(p) { return getChapterProgress(p, 1).answered >= getChapterQuestionCount(1); } },
-        { id: 'ch5done', name: 'Halfway There', icon: '🎯', description: 'Complete Chapters 1-5', category: 'Chapters',
+        { id: 'ch5done', name: 'Halfway There', icon: '\uD83C\uDFAF', description: 'Complete Chapters 1-5', category: 'Chapters', course: 'CUL-104',
           check: function(p) { return [1,2,3,4,5].every(function(ch) { return getChapterProgress(p, ch).answered >= getChapterQuestionCount(ch); }); } },
-        { id: 'ch10done', name: 'Double Digits', icon: '🔟', description: 'Complete Chapters 1-10', category: 'Chapters',
+        { id: 'ch10done', name: 'Double Digits', icon: '\uD83D\uDD1F', description: 'Complete Chapters 1-10', category: 'Chapters', course: 'CUL-104',
           check: function(p) { return [1,2,3,4,5,6,7,8,9,10].every(function(ch) { return getChapterProgress(p, ch).answered >= getChapterQuestionCount(ch); }); } },
-        { id: 'allchapters', name: 'Full Course', icon: '📚', description: 'Answer questions from all 15 chapters', category: 'Chapters',
+        { id: 'allchapters', name: 'Full Course', icon: '\uD83D\uDCDA', description: 'Answer questions from all 15 chapters', category: 'Chapters', course: 'CUL-104',
           check: function(p) { return [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].every(function(ch) { return getChapterProgress(p, ch).answered > 0; }); } },
 
-        // === QUIZ GROUP BADGES ===
-        { id: 'quiz1ready', name: 'Quiz 1 Ready', icon: '✏️', description: 'Answer all Ch 1-4 questions', category: 'Quizzes',
+        // === CUL-104 ONLY: QUIZ GROUP BADGES ===
+        { id: 'quiz1ready', name: 'Quiz 1 Ready', icon: '\u270F\uFE0F', description: 'Answer all Ch 1-4 questions', category: 'Quizzes', course: 'CUL-104',
           check: function(p) { return [1,2,3,4].every(function(ch) { return getChapterProgress(p, ch).answered >= getChapterQuestionCount(ch); }); } },
-        { id: 'quiz2ready', name: 'Quiz 2 Ready', icon: '✏️', description: 'Answer all Ch 5-7 questions', category: 'Quizzes',
+        { id: 'quiz2ready', name: 'Quiz 2 Ready', icon: '\u270F\uFE0F', description: 'Answer all Ch 5-7 questions', category: 'Quizzes', course: 'CUL-104',
           check: function(p) { return [5,6,7].every(function(ch) { return getChapterProgress(p, ch).answered >= getChapterQuestionCount(ch); }); } },
-        { id: 'quiz3ready', name: 'Quiz 3 Ready', icon: '✏️', description: 'Answer all Ch 8-10 questions', category: 'Quizzes',
+        { id: 'quiz3ready', name: 'Quiz 3 Ready', icon: '\u270F\uFE0F', description: 'Answer all Ch 8-10 questions', category: 'Quizzes', course: 'CUL-104',
           check: function(p) { return [8,9,10].every(function(ch) { return getChapterProgress(p, ch).answered >= getChapterQuestionCount(ch); }); } },
-        { id: 'quiz4ready', name: 'Quiz 4 Ready', icon: '✏️', description: 'Answer all Ch 11-14 questions', category: 'Quizzes',
+        { id: 'quiz4ready', name: 'Quiz 4 Ready', icon: '\u270F\uFE0F', description: 'Answer all Ch 11-14 questions', category: 'Quizzes', course: 'CUL-104',
           check: function(p) { return [11,12,13,14].every(function(ch) { return getChapterProgress(p, ch).answered >= getChapterQuestionCount(ch); }); } },
-        { id: 'finalready', name: 'Final Ready', icon: '🎓', description: 'Answer all Ch 15 questions', category: 'Quizzes',
-          check: function(p) { return getChapterProgress(p, 15).answered >= getChapterQuestionCount(15); } },
-
-        // === QUIZ MASTERY BADGES (90%+ accuracy) ===
-        { id: 'quiz1master', name: 'Quiz 1 Master', icon: '🥇', description: '90%+ on Ch 1-4 (min 10 Q)', category: 'Quizzes',
+        { id: 'quiz1master', name: 'Quiz 1 Master', icon: '\uD83E\uDD47', description: '90%+ on Ch 1-4 (min 10 Q)', category: 'Quizzes', course: 'CUL-104',
           check: function(p) { var s = getQuizGroupStats(p, [1,2,3,4]); return s.total >= 10 && s.correct/s.total >= 0.90; } },
-        { id: 'quiz2master', name: 'Quiz 2 Master', icon: '🥇', description: '90%+ on Ch 5-7 (min 10 Q)', category: 'Quizzes',
+        { id: 'quiz2master', name: 'Quiz 2 Master', icon: '\uD83E\uDD47', description: '90%+ on Ch 5-7 (min 10 Q)', category: 'Quizzes', course: 'CUL-104',
           check: function(p) { var s = getQuizGroupStats(p, [5,6,7]); return s.total >= 10 && s.correct/s.total >= 0.90; } },
-        { id: 'quiz3master', name: 'Quiz 3 Master', icon: '🥇', description: '90%+ on Ch 8-10 (min 10 Q)', category: 'Quizzes',
+        { id: 'quiz3master', name: 'Quiz 3 Master', icon: '\uD83E\uDD47', description: '90%+ on Ch 8-10 (min 10 Q)', category: 'Quizzes', course: 'CUL-104',
           check: function(p) { var s = getQuizGroupStats(p, [8,9,10]); return s.total >= 10 && s.correct/s.total >= 0.90; } },
-        { id: 'quiz4master', name: 'Quiz 4 Master', icon: '🥇', description: '90%+ on Ch 11-14 (min 10 Q)', category: 'Quizzes',
+        { id: 'quiz4master', name: 'Quiz 4 Master', icon: '\uD83E\uDD47', description: '90%+ on Ch 11-14 (min 10 Q)', category: 'Quizzes', course: 'CUL-104',
           check: function(p) { var s = getQuizGroupStats(p, [11,12,13,14]); return s.total >= 10 && s.correct/s.total >= 0.90; } },
-        { id: 'allquizmaster', name: 'Quiz King', icon: '👑', description: 'Master all 4 quizzes', category: 'Quizzes',
+        { id: 'allquizmaster', name: 'Quiz King', icon: '\uD83D\uDC51', description: 'Master all 4 quizzes', category: 'Quizzes', course: 'CUL-104',
           check: function(p) {
             return [[1,2,3,4],[5,6,7],[8,9,10],[11,12,13,14]].every(function(chs) {
               var s = getQuizGroupStats(p, chs); return s.total >= 10 && s.correct/s.total >= 0.90;
             });
           } },
 
-        // === CHAPTER MASTERY BADGES ===
-        { id: 'chmaster1', name: 'Chapter Expert', icon: '⭐', description: 'Master 1 chapter (90%+, min 5 Q)', category: 'Chapters',
+        // === CUL-104 ONLY: CHAPTER MASTERY ===
+        { id: 'chmaster1', name: 'Chapter Expert', icon: '\u2B50', description: 'Master 1 chapter (90%+, min 5 Q)', category: 'Chapters', course: 'CUL-104',
           check: function(p) { return countMasteredChapters(p) >= 1; } },
-        { id: 'chmaster5', name: 'Multi-Chapter Pro', icon: '🌟', description: 'Master 5 chapters', category: 'Chapters',
+        { id: 'chmaster5', name: 'Multi-Chapter Pro', icon: '\uD83C\uDF1F', description: 'Master 5 chapters', category: 'Chapters', course: 'CUL-104',
           check: function(p) { return countMasteredChapters(p) >= 5; } },
-        { id: 'chmaster10', name: 'Knowledge Expert', icon: '💫', description: 'Master 10 chapters', category: 'Chapters',
+        { id: 'chmaster10', name: 'Knowledge Expert', icon: '\uD83D\uDCAB', description: 'Master 10 chapters', category: 'Chapters', course: 'CUL-104',
           check: function(p) { return countMasteredChapters(p) >= 10; } },
-        { id: 'chmasterall', name: 'ServSafe Master', icon: '🏅', description: 'Master all 15 chapters', category: 'Chapters',
-          check: function(p) { return countMasteredChapters(p) >= 15; } }
+        { id: 'chmasterall', name: 'ServSafe Master', icon: '\uD83C\uDFC5', description: 'Master all 15 chapters', category: 'Chapters', course: 'CUL-104',
+          check: function(p) { return countMasteredChapters(p) >= 15; } },
+
+        // === CUL-105 ONLY: TOPIC MASTERY ===
+        { id: 'topicmaster1', name: 'Topic Specialist', icon: '\uD83D\uDD2A', description: 'Master 1 topic (90%+, min 5 Q)', category: 'Topics', course: 'CUL-105',
+          check: function(p) { return countMasteredTopics(p) >= 1; } },
+        { id: 'topicmaster5', name: 'Well-Rounded', icon: '\uD83C\uDF1F', description: 'Master 5 topics', category: 'Topics', course: 'CUL-105',
+          check: function(p) { return countMasteredTopics(p) >= 5; } },
+        { id: 'topicmaster10', name: 'Kitchen Expert', icon: '\uD83D\uDCAB', description: 'Master 10 topics', category: 'Topics', course: 'CUL-105',
+          check: function(p) { return countMasteredTopics(p) >= 10; } },
+        { id: 'topicmasterall', name: 'Kitchen Master', icon: '\uD83C\uDFC5', description: 'Master all topics', category: 'Topics', course: 'CUL-105',
+          check: function(p) { var total = Object.keys(p.topicStats || {}).length; return total > 0 && countMasteredTopics(p) >= total; } },
+
+        // === CUL-105 ONLY: FLASHCARD BADGES ===
+        { id: 'flash10', name: 'Card Starter', icon: '\uD83D\uDCDD', description: 'Review 10 flashcards', category: 'Flashcards', course: 'CUL-105',
+          check: function(p) { return (p.flashcardsReviewed || 0) >= 10; } },
+        { id: 'flash50', name: 'Card Collector', icon: '\uD83D\uDCDA', description: 'Review 50 flashcards', category: 'Flashcards', course: 'CUL-105',
+          check: function(p) { return (p.flashcardsReviewed || 0) >= 50; } },
+        { id: 'flash100', name: 'Flash Master', icon: '\u26A1', description: 'Review 100 flashcards', category: 'Flashcards', course: 'CUL-105',
+          check: function(p) { return (p.flashcardsReviewed || 0) >= 100; } },
+
+        // === CUL-105 ONLY: MIDTERM PREP ===
+        { id: 'midterm50', name: 'Midterm Prepping', icon: '\uD83D\uDCCB', description: 'Get 50 midterm questions correct', category: 'Exam', course: 'CUL-105',
+          check: function(p) { return (p.examFocusCorrect || 0) >= 50; } },
+        { id: 'midtermall', name: 'Midterm Ready', icon: '\uD83C\uDFC6', description: 'Get 100+ midterm questions correct', category: 'Exam', course: 'CUL-105',
+          check: function(p) { return (p.examFocusCorrect || 0) >= 100; } }
       ];
+
+      // Count mastered topics (for CUL-105 badges)
+      function countMasteredTopics(progress) {
+        var count = 0;
+        var stats = progress.topicStats || {};
+        for (var topic in stats) {
+          if (stats[topic].answered >= 5 && (stats[topic].correct / stats[topic].answered) >= 0.90) {
+            count++;
+          }
+        }
+        return count;
+      }
 
       function countMasteredCategories(progress) {
         var count = 0;
@@ -2183,20 +2214,28 @@
         return all;
       }
 
-      function checkForNewBadges(progress, currentBadges) {
+      // Get badge definitions filtered for a specific course
+      function getCourseBadgeDefinitions(courseId) {
+        return badgeDefinitions.filter(function(b) {
+          return b.course === 'shared' || b.course === courseId;
+        });
+      }
+
+      function checkForNewBadges(progress, currentBadges, courseId) {
         var newBadges = [];
         var now = new Date();
         var hour = now.getHours();
         var day = now.getDay();
 
-        // Add time-based flags to progress for checking
         var extendedProgress = Object.assign({}, progress, {
           studiedEarly: progress.studiedEarly || (hour < 7),
           studiedLate: progress.studiedLate || (hour >= 22),
           studiedWeekend: progress.studiedWeekend || (day === 0 || day === 6)
         });
 
-        badgeDefinitions.forEach(function(badge) {
+        // Only check badges relevant to this course
+        var courseBadgeDefs = getCourseBadgeDefinitions(courseId);
+        courseBadgeDefs.forEach(function(badge) {
           if (currentBadges.earned.indexOf(badge.id) === -1) {
             if (badge.check(extendedProgress)) {
               newBadges.push(badge.id);
@@ -3098,84 +3137,95 @@
               userProgress: progress
             }),
 
-            // Badges Section
-            createElement('div', { className: 'card-bg rounded-2xl shadow-lg p-5 mb-6 border-2 border-purple-200' },
-              createElement('div', { className: 'flex items-center justify-between mb-4' },
-                createElement('div', { className: 'flex items-center gap-3' },
-                  createElement('span', { className: 'text-2xl' }, '🏆'),
-                  createElement('h3', { className: 'font-bold text-primary' }, 'Achievements'),
-                  createElement('span', { className: 'text-sm text-muted' },
-                    badges.earned.length + '/' + badgeDefinitions.length + ' unlocked'
-                  )
-                ),
-                createElement('button', {
-                  onClick: function() { setShowAllBadges(!showAllBadges); },
-                  className: 'text-sm text-purple-600 hover:text-purple-800 font-medium'
-                }, showAllBadges ? 'Hide Catalog' : 'View All Badges')
-              ),
+            // Badges Section (filtered to active course)
+            (function() {
+              var courseBadgeDefs = getCourseBadgeDefinitions(activeCourse);
+              var courseBadgeCategories = [];
+              courseBadgeDefs.forEach(function(b) {
+                if (courseBadgeCategories.indexOf(b.category) === -1) courseBadgeCategories.push(b.category);
+              });
 
-              // Earned badges display - always show ALL earned badges
-              badges.earned.length > 0 ?
-                createElement('div', { className: 'flex flex-wrap gap-2 mb-3' },
-                  badges.earned.map(function(badgeId) {
-                    var badge = getBadgeById(badgeId);
-                    if (!badge) return null;
-                    return createElement('div', {
-                      key: badgeId,
-                      className: 'group relative flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-full border border-yellow-300',
-                      title: badge.name + ': ' + badge.description
-                    },
-                      createElement('span', { className: 'text-lg' }, badge.icon),
-                      createElement('span', { className: 'text-xs font-medium text-gray-700' }, badge.name)
+              return createElement('div', { className: 'card-bg rounded-2xl shadow-lg p-5 mb-6 border-2 border-purple-200' },
+                createElement('div', { className: 'flex items-center justify-between mb-4' },
+                  createElement('div', { className: 'flex items-center gap-3' },
+                    createElement('span', { className: 'text-2xl' }, '\uD83C\uDFC6'),
+                    createElement('h3', { className: 'font-bold text-primary' }, 'Achievements'),
+                    createElement('span', { className: 'text-sm text-muted' },
+                      badges.earned.length + '/' + courseBadgeDefs.length + ' unlocked'
+                    )
+                  ),
+                  createElement('button', {
+                    onClick: function() { setShowAllBadges(!showAllBadges); },
+                    className: 'text-sm text-purple-600 hover:text-purple-800 font-medium'
+                  }, showAllBadges ? 'Hide Catalog' : 'View All Badges')
+                ),
+
+                // Earned badges display
+                badges.earned.length > 0 ?
+                  createElement('div', { className: 'flex flex-wrap gap-2 mb-3' },
+                    badges.earned.map(function(badgeId) {
+                      var badge = getBadgeById(badgeId);
+                      if (!badge) return null;
+                      // Only show badges relevant to this course
+                      if (badge.course !== 'shared' && badge.course !== activeCourse) return null;
+                      return createElement('div', {
+                        key: badgeId,
+                        className: 'group relative flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-full border border-yellow-300',
+                        title: badge.name + ': ' + badge.description
+                      },
+                        createElement('span', { className: 'text-lg' }, badge.icon),
+                        createElement('span', { className: 'text-xs font-medium text-gray-700' }, badge.name)
+                      );
+                    })
+                  ) :
+                  createElement('p', { className: 'text-sm text-muted text-center py-2' },
+                    '\uD83C\uDFAF Answer questions to earn your first badge!'
+                  ),
+
+                // Show all badges grid when expanded (filtered to course)
+                showAllBadges && createElement('div', { className: 'mt-4 border-t border-themed pt-4' },
+                  createElement('h4', { className: 'text-sm font-semibold text-muted mb-3' }, 'All Achievements'),
+                  courseBadgeCategories.map(function(category) {
+                    var categoryBadges = courseBadgeDefs.filter(function(b) { return b.category === category; });
+                    if (categoryBadges.length === 0) return null;
+                    return createElement('div', { key: category, className: 'mb-4' },
+                      createElement('h5', { className: 'text-xs font-medium text-muted uppercase tracking-wide mb-2' }, category),
+                      createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2' },
+                        categoryBadges.map(function(badge) {
+                          var isEarned = badges.earned.indexOf(badge.id) !== -1;
+                          return createElement('div', {
+                            key: badge.id,
+                            className: 'flex items-center gap-2 p-2 rounded-lg border ' +
+                              (isEarned ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300' : 'bg-gray-50 border-gray-200 opacity-50')
+                          },
+                            createElement('span', { className: 'text-xl ' + (isEarned ? '' : 'grayscale') }, badge.icon),
+                            createElement('div', { className: 'min-w-0' },
+                              createElement('p', { className: 'text-xs font-medium truncate ' + (isEarned ? 'text-gray-800' : 'text-gray-500') }, badge.name),
+                              createElement('p', { className: 'text-xs text-muted truncate' }, badge.description)
+                            )
+                          );
+                        })
+                      )
                     );
                   })
-                ) :
-                createElement('p', { className: 'text-sm text-muted text-center py-2' },
-                  '🎯 Answer questions to earn your first badge!'
                 ),
 
-              // Show all badges grid when expanded
-              showAllBadges && createElement('div', { className: 'mt-4 border-t border-themed pt-4' },
-                createElement('h4', { className: 'text-sm font-semibold text-muted mb-3' }, 'All Achievements'),
-                ['Chapters', 'Quizzes', 'Streaks', 'Progress', 'No Hints', 'Accuracy', 'Mastery', 'Exam', 'Fun'].map(function(category) {
-                  var categoryBadges = badgeDefinitions.filter(function(b) { return b.category === category; });
-                  return createElement('div', { key: category, className: 'mb-4' },
-                    createElement('h5', { className: 'text-xs font-medium text-muted uppercase tracking-wide mb-2' }, category),
-                    createElement('div', { className: 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2' },
-                      categoryBadges.map(function(badge) {
-                        var isEarned = badges.earned.indexOf(badge.id) !== -1;
-                        return createElement('div', {
-                          key: badge.id,
-                          className: 'flex items-center gap-2 p-2 rounded-lg border ' +
-                            (isEarned ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300' : 'bg-gray-50 border-gray-200 opacity-50')
-                        },
-                          createElement('span', { className: 'text-xl ' + (isEarned ? '' : 'grayscale') }, badge.icon),
-                          createElement('div', { className: 'min-w-0' },
-                            createElement('p', { className: 'text-xs font-medium truncate ' + (isEarned ? 'text-gray-800' : 'text-gray-500') }, badge.name),
-                            createElement('p', { className: 'text-xs text-muted truncate' }, badge.description)
-                          )
-                        );
+                // Progress bar to next badge
+                badges.earned.length < courseBadgeDefs.length &&
+                  createElement('div', { className: 'mt-3 pt-3 border-t border-themed' },
+                    createElement('div', { className: 'flex items-center justify-between text-xs text-muted mb-1' },
+                      createElement('span', null, 'Badge Progress'),
+                      createElement('span', null, Math.round((badges.earned.length / courseBadgeDefs.length) * 100) + '%')
+                    ),
+                    createElement('div', { className: 'h-2 bg-gray-200 rounded-full overflow-hidden' },
+                      createElement('div', {
+                        className: 'h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full transition-all',
+                        style: { width: Math.round((badges.earned.length / courseBadgeDefs.length) * 100) + '%' }
                       })
                     )
-                  );
-                })
-              ),
-
-              // Progress bar to next badge
-              badges.earned.length < badgeDefinitions.length &&
-                createElement('div', { className: 'mt-3 pt-3 border-t border-themed' },
-                  createElement('div', { className: 'flex items-center justify-between text-xs text-muted mb-1' },
-                    createElement('span', null, 'Badge Progress'),
-                    createElement('span', null, Math.round((badges.earned.length / badgeDefinitions.length) * 100) + '%')
-                  ),
-                  createElement('div', { className: 'h-2 bg-gray-200 rounded-full overflow-hidden' },
-                    createElement('div', {
-                      className: 'h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full transition-all',
-                      style: { width: Math.round((badges.earned.length / badgeDefinitions.length) * 100) + '%' }
-                    })
                   )
-                )
-            ),
+              );
+            })(),
 
             // Study Mode Selection
             createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '\uD83D\uDCDA Choose Study Mode'),
@@ -4223,7 +4273,7 @@
 
             // Check for new badges (per-course)
             var currentCourseBadges = getCourseBadges(badges, activeCourse);
-            var badgeResult = checkForNewBadges(newCp, currentCourseBadges);
+            var badgeResult = checkForNewBadges(newCp, currentCourseBadges, activeCourse);
             if (badgeResult.newBadges.length > 0) {
               setBadges(function(prevBadges) {
                 var updated = JSON.parse(JSON.stringify(prevBadges));
