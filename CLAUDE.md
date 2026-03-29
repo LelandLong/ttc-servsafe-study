@@ -66,32 +66,34 @@ Ratatouille-inspired rat chef character. The mascot appears on the login screen 
 
 ## Technical Overview
 
-- **Current Version:** 02-12-2026-2
+- **Current Version:** 02-21-2026-3
 - **Framework:** React 18 via CDN (no build step, no JSX)
 - **Styling:** Tailwind CSS via CDN + CSS variables for theming
 - **Backend:** Convex Cloud (production: `cautious-monitor-526.convex.cloud`)
 - **Deployment:** GitHub Pages (static hosting)
 - **Database:** 8 Convex tables (questions, categories, metadata, users, userProgress, progressArchives, liveTests, testResults)
 - **User Base:** College classroom (~30 students)
+- **Question Bank:** 342 questions across 15 chapters, 7 categories
 
 ---
 
 ## Project Structure
 
 ```
-ttc-servsafe-study/
-├── index.html              # Student study app (main PWA, ~4200 lines)
-├── admin.html              # Professor dashboard (~2000 lines)
-├── questions.js            # Main question bank (195 questions, var questionsDB)
+ServSafePWA/
+├── index.html              # Student study app (main PWA, ~4300 lines)
+├── admin.html              # Professor dashboard (~2260 lines)
+├── questions.js            # Main question bank (342 questions, var questionsDB)
 ├── questions-original.js   # Backup for admin "Reset to Original" (var originalQuestionsDB)
 ├── version.js              # Shared APP_VERSION constant
 ├── manifest.json           # PWA manifest
-├── assets/                 # Images (chef-greeting.jpg, headshot_20260210.png, icons)
+├── assets/                 # Images (chef-*.jpg themed illustrations, headshot_20260210.png)
 ├── convex/
 │   ├── schema.ts           # Database schema (8 tables)
-│   ├── users.ts            # User queries/mutations (10 functions)
-│   ├── tests.ts            # Live test functions (8 functions)
-│   └── questions.ts        # Question CRUD (7 functions)
+│   ├── users.ts            # User queries/mutations
+│   ├── tests.ts            # Live test functions
+│   ├── questions.ts        # Question CRUD
+│   └── seed.ts             # Initial seed script (historical)
 ├── CLAUDE.md               # This file - project guide for Claude Code
 ├── plan.md                 # Development roadmap and status
 ├── README.md               # Project overview, features, deployment
@@ -233,8 +235,8 @@ CSS variables approach with dark mode via `[data-theme="dark"]` attribute:
 
 | Table | Records | Purpose |
 |-------|---------|---------|
-| `questions` | 195 | Study questions with options, hints, explanations |
-| `categories` | 20+ | Question category names |
+| `questions` | 342 | Study questions with options, hints, explanations |
+| `categories` | 7 | Question category names |
 | `metadata` | Key-value | Timestamps and config |
 | `users` | ~30 | Student accounts |
 | `userProgress` | ~30 | Per-user progress objects |
@@ -245,7 +247,7 @@ CSS variables approach with dark mode via `[data-theme="dark"]` attribute:
 ### Question Schema
 
 Each question has:
-- `id` — Unique identifier (1-195)
+- `id` — Unique identifier (1-342)
 - `question` — Question text
 - `options` — Array of 4 answer choices
 - `correct` — Index of correct answer (0-3)
@@ -267,14 +269,15 @@ When `user.isProf === true`, the account is excluded from:
 ## Key Features
 
 ### Student App (`index.html`)
-- 195 study questions across 15 ServSafe chapters
+- 342 study questions across 15 ServSafe chapters, 7 categories
 - 6 study modes: Exam Focus, Chapter, Quiz Groups, Chapter Ranges, Category, All
 - User accounts with cross-device cloud sync
 - 15 achievement badges with confetti celebrations
 - Class-wide statistics (polled every 5s) with performance comparison
 - Live timed tests with countdown and leaderboard
 - Dark/light/system themes
-- PWA (offline support, install to home screen)
+- Offline resilience (pending sync flag, auto-retry on reconnect)
+- PWA version checking & auto-update banner
 - Identity check on idle timeout (30 min on shared devices)
 
 ### Admin App (`admin.html`)
@@ -338,10 +341,10 @@ The developer may work from multiple devices using VSCode with Claude extension.
 
 | File | Purpose |
 |------|---------|
-| `index.html` | Student study app (main PWA, ~4200 lines) |
-| `admin.html` | Professor dashboard (~2000 lines) |
+| `index.html` | Student study app (main PWA, ~4300 lines) |
+| `admin.html` | Professor dashboard (~2260 lines) |
 | `version.js` | Shared `APP_VERSION` constant |
-| `questions.js` | Question bank (195 questions, `var questionsDB`) |
+| `questions.js` | Question bank (342 questions, `var questionsDB`) |
 | `questions-original.js` | Backup for reset (`var originalQuestionsDB`) |
 | `convex/schema.ts` | Database schema (8 tables) |
 | `convex/users.ts` | User queries/mutations (10 functions) |
@@ -377,7 +380,7 @@ This project follows a standardized documentation structure:
 - **Institution:** Trident Technical College
 - **Target:** ServSafe Manager Certification Exam
 - **Chapters:** 1-15 (full curriculum coverage)
-- **Question Bank:** 195 questions (as of 02-09-2026)
+- **Question Bank:** 342 questions (as of 02-20-2026)
 
 ---
 
@@ -385,4 +388,4 @@ This project follows a standardized documentation structure:
 
 **Primary Developer:** Leland Long
 **AI Assistant:** Claude (Anthropic)
-**Last Updated:** February 12, 2026
+**Last Updated:** March 29, 2026

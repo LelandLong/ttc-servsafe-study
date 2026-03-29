@@ -49,9 +49,9 @@ Technical deep dive into Chef's Kitchen ServSafe PWA implementation.
 - **VSCode** (primary IDE)
 
 ### PWA
-- **Service Worker** (`sw.js`) for offline caching
 - **Manifest** (`manifest.json`) for install prompt
 - **localStorage** for client-side persistence
+- **Version checking** for auto-update detection
 
 ---
 
@@ -705,7 +705,7 @@ leaderboard.sort((a, b) => {
 ### 5. Question Filtering (Client-Side)
 - Filter questions by mode in-memory (no backend filtering)
 - Shuffle in-memory (no backend randomization)
-- Fast iteration through large question banks (195 questions)
+- Fast iteration through large question banks (342 questions)
 
 ### 6. No Build Step
 - Instant refresh during development
@@ -724,7 +724,7 @@ leaderboard.sort((a, b) => {
 ### 2. No Backend Filtering
 - All questions loaded to client
 - Filtering done in JavaScript
-- Acceptable for 195 questions, may scale poorly beyond 1000+
+- Acceptable for 342 questions, may scale poorly beyond 1000+
 
 ### 3. No Password Security
 - Gamer name + first name authentication is weak
@@ -845,5 +845,5 @@ Replace HTTP fetch with Convex client SDK:
 
 ---
 
-**Last Updated:** February 12, 2026
+**Last Updated:** March 29, 2026
 **Maintainer:** Leland Long

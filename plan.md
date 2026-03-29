@@ -1,7 +1,7 @@
 # Chef's Kitchen ServSafe PWA - Development Plan
 
-**Last Updated:** February 12, 2026
-**Current Version:** 02-12-2026-2
+**Last Updated:** March 29, 2026
+**Current Version:** 02-21-2026-3
 
 ---
 
@@ -17,10 +17,14 @@
 ## Current Status
 
 ### Recent Versions
+- **02-21-2026-3** - Offline resilience (pending sync, auto-retry) + PWA version checking & auto-update
+- **02-21-2026-2** - Fixed Q254/Q255 swapped correct answers
+- **02-21-2026-1** - Avg accuracy excludes inactive students
+- **02-20-2026-2** - 44 new questions from Class #11 & Mock Exam (total: 342)
+- **02-20-2026-1** - 47 new questions from Class #10 exam review (total: 298)
+- **02-15-2026-2** - 32 new questions from Quiz #3 & #4 (total: 251)
+- **02-15-2026-1** - 24 new questions from Class 8 & 9 + category consolidation (total: 219)
 - **02-12-2026-2** - Documentation standardization (CLAUDE.md rewrite, plan.md created)
-- **02-12-2026-1** - Comprehensive documentation (README, CHANGELOG, ARCHITECTURE)
-- **02-09-2026-13** - Professor account system (isProf flag, excluded from stats/leaderboards)
-- **02-09-2026-3** - 32 new questions (Quiz #2 + Chapter 10 lecture, total: 195)
 
 ---
 
@@ -28,8 +32,8 @@
 
 ### Completed Features
 
-**Core Study App (January 2026):**
-- [x] 195 study questions across 15 ServSafe chapters
+**Core Study App (January 2026 → ongoing):**
+- [x] 342 study questions across 15 ServSafe chapters, 7 categories
 - [x] 6 study modes (Exam Focus, Chapter, Quiz Groups, Chapter Ranges, Category, All)
 - [x] Hint system with usage tracking
 - [x] Detailed explanations after answering
@@ -88,10 +92,33 @@
 - [x] Install to home screen
 - [x] Responsive design (mobile, tablet, desktop)
 
-**Question Bank Updates (February 9, 2026):**
-- [x] 32 new questions added (Quiz #2 + Chapter 10 lecture)
-- [x] Total: 195 questions covering all 15 chapters
+**Category Consolidation (February 15, 2026):**
+- [x] Consolidated 19 categories into 7 balanced categories
+- [x] Food Safety Basics (46), Temperature Control (34), Sanitation & Hygiene (27+), Foodborne Illness (22+), Facilities & Operations (19+), Food Storage (9), Training (6)
+
+**Question Bank Updates (February 9 → 20, 2026):**
+- [x] 32 new questions from Quiz #2 + Ch 10 lecture (total: 195)
+- [x] 24 new questions from Class 8 & 9 recordings (total: 219)
+- [x] 32 new questions from Quiz #3 & #4 (total: 251)
+- [x] 47 new questions from Class #10 exam review (total: 298)
+- [x] 44 new questions from Class #11 & Mock Exam docx (total: 342)
 - [x] All new questions marked examFocus: true
+
+**Offline & Update Resilience (February 21, 2026):**
+- [x] Pending sync flag — local progress protected when offline
+- [x] Auto-retry sync when browser comes back online
+- [x] Connection timeout — "Connecting to cloud..." falls back to "Offline" after 10s
+- [x] Offline banner shows "Changes saved locally" when unsynced progress exists
+- [x] PWA version checking on load + every 30 minutes
+- [x] Blue "Update Now" banner when newer version is deployed
+- [x] Identity check screen auto-reloads to latest version on confirm
+
+**Bug Fixes (February 15-21, 2026):**
+- [x] Exam Focus button invisible in dark mode — fixed text color
+- [x] Badge notification not dismissing on tap — fixed stopPropagation
+- [x] Chapter stats not tracking — added to handleAnswer and reset
+- [x] Q254/Q255 swapped correct answers — fixed per official ServSafe materials
+- [x] Avg accuracy now excludes inactive students (0 answers)
 
 **Documentation (February 12, 2026):**
 - [x] README.md - Project overview, features, deployment, schema
@@ -111,12 +138,14 @@
 ## Active Work Items
 
 ### Recently Completed
-- [x] Documentation standardization (CLAUDE.md rewrite, plan.md creation)
-- [x] Professor account system (isProf flag)
-- [x] All dark mode fixes (student + admin apps)
+- [x] Offline resilience with pending sync protection
+- [x] PWA version checking & auto-update banner
+- [x] 147 new questions added (195 → 342) from Classes 8-11, Quizzes 3-4, Mock Exam
+- [x] Category consolidation (19 → 7 categories)
+- [x] Multiple bug fixes (dark mode, badge tap, chapter stats, Q254/Q255, inactive avg)
 
 ### No Active Development
-The app is feature-complete for the current semester. All planned features have been implemented and are working in production.
+The app is feature-complete for the Spring 2026 semester. Exam is approaching — professor may still request additional questions or corrections.
 
 ---
 
@@ -187,6 +216,10 @@ The app is stable and in active use by students.
 |------|-------|--------|
 | January 2026 | 163 | Initial question bank |
 | February 9, 2026 | 195 | +32 from Quiz #2 and Chapter 10 lecture |
+| February 15, 2026 | 219 | +24 from Class 8 & 9 recordings |
+| February 15, 2026 | 251 | +32 from Quiz #3 & #4 |
+| February 20, 2026 | 298 | +47 from Class #10 exam review |
+| February 20, 2026 | 342 | +44 from Class #11 & Mock Exam docx |
 
 ---
 
@@ -194,6 +227,13 @@ The app is stable and in active use by students.
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| 02-21-2026-3 | Feb 21, 2026 | Offline resilience + PWA version checking & auto-update |
+| 02-21-2026-2 | Feb 21, 2026 | Fixed Q254/Q255 swapped answers |
+| 02-21-2026-1 | Feb 21, 2026 | Avg accuracy excludes inactive students |
+| 02-20-2026-2 | Feb 20, 2026 | +44 questions from Class #11 & Mock Exam (342 total) |
+| 02-20-2026-1 | Feb 20, 2026 | +47 questions from Class #10 exam review (298 total) |
+| 02-15-2026-2 | Feb 15, 2026 | +32 questions from Quiz #3 & #4 (251 total) |
+| 02-15-2026-1 | Feb 15, 2026 | +24 questions, category consolidation (219 total) |
 | 02-12-2026-2 | Feb 12, 2026 | Documentation standardization (CLAUDE.md, plan.md) |
 | 02-12-2026-1 | Feb 12, 2026 | Comprehensive documentation (README, CHANGELOG, ARCHITECTURE) |
 | 02-09-2026-13 | Feb 12, 2026 | Professor account system (isProf) |
@@ -221,7 +261,8 @@ See [CHANGELOG.md](./CHANGELOG.md) for detailed change descriptions.
 ## Notes
 
 - The app is **feature-complete** for the Spring 2026 semester
-- Professor may request new questions as the course progresses through chapters
+- 342 questions covering all 15 chapters across 7 consolidated categories
+- Professor may request new questions or corrections as the exam approaches
 - Live test feature is actively used during class sessions
 - All student progress is backed up in Convex cloud
 - GitHub Pages deployment is instant after push to main branch

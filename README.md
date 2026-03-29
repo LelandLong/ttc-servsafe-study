@@ -2,7 +2,7 @@
 
 A Progressive Web App (PWA) for CUL 104 ServSafe exam preparation at Trident Technical College. Features a Ratatouille-inspired rat chef theme with gamified learning, cloud sync, live tests, and professor dashboard.
 
-**Version:** 02-12-2026-2
+**Version:** 02-21-2026-3
 **Deployment:** GitHub Pages
 **Backend:** Convex Cloud (`https://cautious-monitor-526.convex.cloud`)
 
@@ -24,7 +24,7 @@ A Progressive Web App (PWA) for CUL 104 ServSafe exam preparation at Trident Tec
 ## ✨ Features
 
 ### Student Features
-- **195 Study Questions** across 15 ServSafe chapters
+- **342 Study Questions** across 15 ServSafe chapters
 - **Multiple Study Modes:**
   - Exam Focus (professor-curated)
   - Single Chapter
@@ -121,11 +121,10 @@ A Progressive Web App (PWA) for CUL 104 ServSafe exam preparation at Trident Tec
 ServSafePWA/
 ├── index.html              # Student study app (main PWA)
 ├── admin.html              # Professor dashboard
-├── questions.js            # Main question bank (195 questions, var questionsDB)
+├── questions.js            # Main question bank (342 questions, var questionsDB)
 ├── questions-original.js   # Backup for reset (var originalQuestionsDB)
 ├── version.js              # Shared APP_VERSION constant
 ├── manifest.json           # PWA manifest
-├── sw.js                   # Service worker (offline support)
 ├── assets/                 # Images (chef-greeting.jpg, headshot_20260210.png, icons)
 ├── convex/
 │   ├── schema.ts           # Database schema (8 tables)
@@ -187,11 +186,11 @@ npx convex deploy --yes
 ## 🗄️ Database Schema
 
 ### Core Tables
-- **questions** (195 records)
+- **questions** (342 records)
   - questionId, question, options[], correct, hint, explanation, category, chapter (1-15), examFocus
   - Indexes: by_questionId, by_category, by_chapter
 
-- **categories** (20+ unique categories)
+- **categories** (7 consolidated categories)
   - name
   - Index: by_name
 
@@ -278,10 +277,12 @@ npx convex deploy --yes
 
 See [CHANGELOG.md](./CHANGELOG.md) for detailed version history.
 
-**Latest:** 02-12-2026-2
-- Rewrote CLAUDE.md to match FlooringXP documentation standards
-- Created plan.md with development roadmap, progress tracking, and goals
-- Full documentation suite now consistent across projects
+**Latest:** 02-21-2026-3
+- Offline resilience (pending sync, auto-retry on reconnect)
+- PWA version checking & auto-update banner
+- 342 total questions (up from 195 as of Feb 12)
+- Category consolidation (19 → 7 categories)
+- Multiple bug fixes and quality improvements
 
 ---
 
@@ -291,7 +292,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for detailed version history.
 - **Institution:** Trident Technical College
 - **Target:** ServSafe Manager Certification Exam
 - **Chapters:** 1-15 (full curriculum coverage)
-- **Question Bank:** 195 questions (as of 02-09-2026)
+- **Question Bank:** 342 questions (as of 02-20-2026)
 
 ---
 
@@ -337,4 +338,4 @@ Educational project for Trident Technical College CUL 104.
 
 **Primary Developer:** Leland Long
 **AI Assistant:** Claude (Anthropic)
-**Last Updated:** February 12, 2026
+**Last Updated:** March 29, 2026
