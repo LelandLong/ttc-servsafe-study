@@ -3037,7 +3037,7 @@ var originalQuestionsCUL105 = [
     hint: "Think about dividing the total cost among all the portions you get from a recipe.",
     explanation: "Cost Per Portion = Total Food Cost ÷ Yield (number of portions). This tells you how much each serving costs to produce.",
     category: "Measurements & Math",
-    topic: "Measurements & Math",
+    topic: "Food Costing & Purchasing",
     chapter: null,
     examFocus: false,
     type: "quiz"
@@ -3050,7 +3050,7 @@ var originalQuestionsCUL105 = [
     hint: "You divide by the percentage, not multiply — this makes the selling price higher than the cost.",
     explanation: "Selling Price = Cost Per Portion ÷ Desired Food Cost %. For example, $0.14 ÷ 0.30 (30%) = $0.46 selling price.",
     category: "Measurements & Math",
-    topic: "Measurements & Math",
+    topic: "Food Costing & Purchasing",
     chapter: null,
     examFocus: false,
     type: "quiz"
@@ -3063,7 +3063,7 @@ var originalQuestionsCUL105 = [
     hint: "Most restaurants aim for roughly a third of the selling price to be food cost.",
     explanation: "Standard food cost percentage is typically 28-35% for restaurants. This means for every dollar in sales, 28-35 cents goes to food costs.",
     category: "Measurements & Math",
-    topic: "Measurements & Math",
+    topic: "Food Costing & Purchasing",
     chapter: null,
     examFocus: false,
     type: "quiz"
@@ -3076,7 +3076,7 @@ var originalQuestionsCUL105 = [
     hint: "Divide the total cost by the number of portions.",
     explanation: "$13.20 ÷ 93 portions = approximately $0.14 per portion.",
     category: "Measurements & Math",
-    topic: "Measurements & Math",
+    topic: "Food Costing & Purchasing",
     chapter: null,
     examFocus: false,
     type: "quiz"
@@ -3394,7 +3394,7 @@ var originalQuestionsCUL105 = [
     hint: "",
     explanation: "Total Food Cost ÷ Yield (number of portions) = Cost Per Portion. Example: $13.20 ÷ 93 portions = $0.14 per portion.",
     category: "Measurements & Math",
-    topic: "Measurements & Math",
+    topic: "Food Costing & Purchasing",
     chapter: null,
     examFocus: false,
     type: "flashcard"
@@ -3407,7 +3407,7 @@ var originalQuestionsCUL105 = [
     hint: "",
     explanation: "Cost Per Portion ÷ Desired Food Cost % = Selling Price. Example: $0.14 ÷ 30% (0.30) = $0.46. Standard restaurant food cost: 28-35%.",
     category: "Measurements & Math",
-    topic: "Measurements & Math",
+    topic: "Food Costing & Purchasing",
     chapter: null,
     examFocus: false,
     type: "flashcard"
@@ -5964,7 +5964,7 @@ var originalQuestionsCUL105 = [
     hint: "If food cost is 30% of the selling price, then selling price = cost divided by 0.30.",
     explanation: "Selling price = plate cost \u00F7 desired food cost percentage. For example, if a dish costs $6.00 and the desired food cost is 30%, the selling price would be $6.00 \u00F7 0.30 = $20.00. The food cost percentage represents what portion of the price covers food cost.",
     category: "Measurements & Math",
-    topic: "Measurements & Math",
+    topic: "Food Costing & Purchasing",
     chapter: null,
     examFocus: false,
     type: "quiz"
@@ -5982,7 +5982,7 @@ var originalQuestionsCUL105 = [
     hint: "Dividing by yield makes the cost go UP, reflecting the waste you paid for but can't use.",
     explanation: "E.P. cost per pound = A.P. cost per pound \u00F7 yield percentage. For example, if carrots cost $1.00/lb (A.P.) and the yield is 80%, the edible portion cost is $1.00 \u00F7 0.80 = $1.25/lb (E.P.). The trim waste increases the effective cost per usable pound.",
     category: "Measurements & Math",
-    topic: "Measurements & Math",
+    topic: "Food Costing & Purchasing",
     chapter: null,
     examFocus: false,
     type: "quiz"
@@ -6871,7 +6871,7 @@ var originalQuestionsCUL105 = [
     hint: "Take what you paid for the whole package and divide by how many pieces or portions it contains.",
     explanation: "Unit cost = A.P. (As Purchased) cost \u00F7 number of units. For example, if a case of 24 cans costs $48, the unit cost is $48 \u00F7 24 = $2.00 per can. This is a fundamental calculation in food cost management.",
     category: "Measurements & Math",
-    topic: "Measurements & Math",
+    topic: "Food Costing & Purchasing",
     chapter: null,
     examFocus: false,
     type: "quiz"
@@ -7446,7 +7446,7 @@ var originalQuestionsCUL105 = [
     hint: "",
     explanation: "Cost per portion = Total recipe cost \u00F7 number of portions. Selling price = Plate cost \u00F7 desired food cost %. Example: If plate cost is $6 and desired food cost is 30%, selling price = $6 \u00F7 0.30 = $20. Plate cost: Cost of food served. Overhead cost: Business operating costs. Food cost percentage: Target ratio of food cost to revenue.",
     category: "Measurements & Math",
-    topic: "Measurements & Math",
+    topic: "Food Costing & Purchasing",
     chapter: null,
     examFocus: false,
     type: "flashcard"
