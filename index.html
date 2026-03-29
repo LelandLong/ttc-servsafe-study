@@ -2943,6 +2943,40 @@
 
           // Main Content
           createElement('main', { className: 'max-w-4xl mx-auto p-6' },
+
+            // Course Selector - PROMINENT at top
+            createElement('div', { className: 'mb-6' },
+              createElement('h3', {
+                className: 'text-sm font-semibold uppercase tracking-wide mb-3',
+                style: { color: 'var(--text-muted)' }
+              }, '\uD83C\uDF93 Select Your Course'),
+              createElement('div', { className: 'grid grid-cols-2 gap-3' },
+                Object.keys(COURSES).map(function(courseId) {
+                  var c = COURSES[courseId];
+                  var isActive = courseId === activeCourse;
+                  var courseQs = getCourseQuestions(courseId);
+                  return createElement('button', {
+                    key: courseId,
+                    onClick: function() { onSwitchCourse(courseId); },
+                    className: 'rounded-xl p-4 border-3 text-left transition-all ' +
+                      (isActive ? 'border-orange-500 shadow-lg ring-2 ring-orange-300' : 'border-themed opacity-60 hover:opacity-100 hover:border-orange-300'),
+                    style: { backgroundColor: 'var(--bg-card)', borderWidth: isActive ? '3px' : '2px' }
+                  },
+                    createElement('div', { className: 'flex items-center gap-2 mb-1' },
+                      createElement('span', { className: 'text-3xl' }, c.icon),
+                      createElement('div', null,
+                        createElement('div', { className: 'font-bold text-primary' }, c.shortName),
+                        createElement('div', { className: 'text-xs text-muted' }, c.description)
+                      )
+                    ),
+                    isActive
+                      ? createElement('div', { className: 'mt-2 text-xs font-medium text-orange-600' }, '\u2713 Active \u2022 ' + courseQs.length + ' questions')
+                      : createElement('div', { className: 'mt-2 text-xs text-muted' }, 'Tap to switch \u2022 ' + courseQs.length + ' questions')
+                  );
+                })
+              )
+            ),
+
             // Chef and overall stats
             createElement('div', { className: 'card-bg rounded-2xl shadow-xl p-6 mb-6 border-4 border-amber-200' },
               createElement('div', { className: 'flex flex-col md:flex-row items-center gap-6' },
@@ -3097,28 +3131,6 @@
                     })
                   )
                 )
-            ),
-
-            // Course Selector
-            createElement('div', { className: 'grid grid-cols-2 gap-3 mb-6' },
-              Object.keys(COURSES).map(function(courseId) {
-                var c = COURSES[courseId];
-                var isActive = courseId === activeCourse;
-                return createElement('button', {
-                  key: courseId,
-                  onClick: function() { onSwitchCourse(courseId); },
-                  className: 'rounded-xl p-4 border-2 text-left transition-all ' +
-                    (isActive ? 'border-orange-400 shadow-lg' : 'border-themed opacity-70 hover:opacity-100 hover:border-orange-300'),
-                  style: isActive ? { backgroundColor: 'var(--bg-card)', boxShadow: '0 4px 12px var(--shadow-color)' } : { backgroundColor: 'var(--bg-card)' }
-                },
-                  createElement('div', { className: 'flex items-center gap-2 mb-1' },
-                    createElement('span', { className: 'text-2xl' }, c.icon),
-                    createElement('span', { className: 'font-bold text-sm text-primary' }, c.shortName),
-                    isActive && createElement('span', { className: 'text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full' }, 'Active')
-                  ),
-                  createElement('p', { className: 'text-xs text-muted' }, c.description)
-                );
-              })
             ),
 
             // Study Mode Selection
