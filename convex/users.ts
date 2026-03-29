@@ -14,18 +14,38 @@ export const getProgress = query({
   },
 });
 
+// Helper: extract course-specific progress from possibly nested format
+function getCourseProgress(progress: any, course?: string): any {
+  if (!progress) return null;
+  // New nested format: progress["CUL-104"] or progress["CUL-105"]
+  if (course && progress[course]) return progress[course];
+  // Old flat format (pre-migration): has totalAnswered at top level
+  if (progress.totalAnswered !== undefined) return progress;
+  // If course specified but not found in nested, return null
+  if (course) return null;
+  // No course specified — try flat format first, then first course found
+  if (progress.totalAnswered !== undefined) return progress;
+  // Return first course found
+  for (const key of Object.keys(progress)) {
+    if (progress[key] && progress[key].totalAnswered !== undefined) return progress[key];
+  }
+  return null;
+}
+
 // Get all students with summary stats (for professor dashboard)
 export const getAllStudents = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { course: v.optional(v.string()) },
+  handler: async (ctx, args) => {
     const users = await ctx.db.query("users").collect();
     const results = [];
 
     for (const user of users) {
-      const progress = await ctx.db
+      const progressDoc = await ctx.db
         .query("userProgress")
         .withIndex("by_userId", (q) => q.eq("userId", user._id))
         .first();
+
+      const prog = getCourseProgress(progressDoc?.progress, args.course);
 
       results.push({
         userId: user._id,
@@ -33,9 +53,9 @@ export const getAllStudents = query({
         displayName: user.displayName,
         firstName: user.firstName,
         isProf: user.isProf || false,
-        totalAnswered: progress?.progress?.totalAnswered || 0,
-        totalCorrect: progress?.progress?.totalCorrect || 0,
-        badgeCount: progress?.badges?.length || 0,
+        totalAnswered: prog?.totalAnswered || 0,
+        totalCorrect: prog?.totalCorrect || 0,
+        badgeCount: progressDoc?.badges?.length || 0,
         lastActiveAt: user.lastActiveAt,
         createdAt: user.createdAt,
       });
@@ -77,10 +97,10 @@ export const getStudentDetail = query({
   },
 });
 
-// Get anonymized class-wide statistics
+// Get anonymized class-wide statistics (optionally per-course)
 export const getClassStats = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { course: v.optional(v.string()) },
+  handler: async (ctx, args) => {
     const allProgress = await ctx.db.query("userProgress").collect();
 
     // Get prof user IDs to exclude from stats
@@ -90,11 +110,17 @@ export const getClassStats = query({
     );
 
     // Filter to students who have actually answered questions (excluding profs)
-    const active = allProgress.filter(
-      (p) => p.progress && p.progress.totalAnswered > 0 && !profUserIds.has(p.userId)
-    );
+    // Extract course-specific progress if course is specified
+    const activeWithProg: Array<{ prog: any; badges: string[] }> = [];
+    for (const p of allProgress) {
+      if (profUserIds.has(p.userId)) continue;
+      const prog = getCourseProgress(p.progress, args.course);
+      if (prog && prog.totalAnswered > 0) {
+        activeWithProg.push({ prog, badges: p.badges || [] });
+      }
+    }
 
-    if (active.length === 0) {
+    if (activeWithProg.length === 0) {
       return {
         studentCount: 0,
         avgAccuracy: 0,
@@ -111,12 +137,11 @@ export const getClassStats = query({
     const categoryTotals: Record<string, { totalAccuracy: number; count: number }> = {};
     const chapterTotals: Record<string, { totalAccuracy: number; count: number }> = {};
 
-    for (const p of active) {
-      const prog = p.progress;
+    for (const { prog, badges } of activeWithProg) {
       const accuracy = prog.totalAnswered > 0 ? prog.totalCorrect / prog.totalAnswered : 0;
       totalAccuracy += accuracy;
       totalQuestions += prog.totalAnswered;
-      totalBadges += (p.badges?.length || 0);
+      totalBadges += badges.length;
 
       // Aggregate category stats
       if (prog.categoryStats) {
@@ -130,9 +155,10 @@ export const getClassStats = query({
         }
       }
 
-      // Aggregate chapter stats
-      if (prog.chapterStats) {
-        for (const [ch, stats] of Object.entries(prog.chapterStats)) {
+      // Aggregate chapter stats (CUL-104) or topic stats (CUL-105)
+      var statsObj = prog.chapterStats || prog.topicStats;
+      if (statsObj) {
+        for (const [ch, stats] of Object.entries(statsObj)) {
           const s = stats as { correct: number; answered: number };
           if (s.answered > 0) {
             if (!chapterTotals[ch]) chapterTotals[ch] = { totalAccuracy: 0, count: 0 };
@@ -152,7 +178,7 @@ export const getClassStats = query({
       };
     }
 
-    // Compute chapter averages
+    // Compute chapter/topic averages
     const chapterAverages: Record<string, { avgAccuracy: number; studentsAttempted: number }> = {};
     for (const [ch, totals] of Object.entries(chapterTotals)) {
       chapterAverages[ch] = {
@@ -162,10 +188,10 @@ export const getClassStats = query({
     }
 
     return {
-      studentCount: active.length,
-      avgAccuracy: totalAccuracy / active.length,
-      avgQuestionsAnswered: totalQuestions / active.length,
-      avgBadgeCount: totalBadges / active.length,
+      studentCount: activeWithProg.length,
+      avgAccuracy: totalAccuracy / activeWithProg.length,
+      avgQuestionsAnswered: totalQuestions / activeWithProg.length,
+      avgBadgeCount: totalBadges / activeWithProg.length,
       categoryAverages,
       chapterAverages,
     };

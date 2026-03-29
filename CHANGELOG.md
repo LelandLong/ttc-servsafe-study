@@ -6,6 +6,44 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [03-29-2026-1] - March 29, 2026
+
+### Added
+- **Multi-course support** — App now handles CUL-104 (ServSafe) and CUL-105 (Kitchen Fundamentals) side by side
+  - Course selector cards on the home screen to switch between courses
+  - Per-course progress tracking (nested under course keys, fully independent)
+  - Automatic migration of existing CUL-104 progress to new nested format
+  - Dynamic study modes: chapters/quiz groups for CUL-104, topics for CUL-105
+  - Course-aware class stats polling
+- **CUL-105 Kitchen Fundamentals question bank** — 530 items total
+  - 340 multiple-choice quiz questions covering comprehensive course material
+  - 190 flashcards for key terms, definitions, techniques, and concepts
+  - 200 items marked Exam Focus (midterm study guide material — accessible via Exam Focus button)
+  - 330 additional items extracted from all 15 course PowerPoints (binary .ppt files parsed via olefile)
+  - Full coverage: food safety, eggs & dairy, vegetables, salads, flavors & spices, menus, brigade system, heat transfer, meat cooking/USDA grades, stocks (remouillage, glace, demi-glace, court bouillon), tools & equipment, mise en place, cooking principles, costing, and specific dish techniques
+  - Topics: Knife Skills, Cooking Methods, Stocks & Sauces, Soups, Grains/Rice/Pasta, Vegetables/Potatoes, Measurements, Culinary History, and more
+  - Categories: Techniques & Methods, Sauces & Soups, Ingredients & Products, Measurements & Math, Culinary History, Kitchen Fundamentals
+- **Flashcard mode** — New study mode for CUL-105
+  - Tap to flip between term and definition
+  - Track cards reviewed in progress
+  - Navigate through full deck with Next/Finish buttons
+- **Convex schema updates** — Added `course`, `topic`, and `type` fields to questions table; `course` field to liveTests table; `by_course` index
+- **Backend function updates** — All queries/mutations now support optional `course` parameter for per-course filtering
+  - `bulkImport` and `resetToOriginal` scoped per course (won't wipe other courses)
+  - `getClassStats` and `getAllStudents` extract per-course progress from nested format
+
+### Changed
+- Title changed from "CUL 104 Study Aid" to "Chef's Kitchen Study Aid"
+- Header dynamically shows active course name
+- Progress stored in nested format: `{ "CUL-104": {...}, "CUL-105": {...} }`
+- Study mode filtering uses course-scoped questions instead of global questionsDB
+
+### Files Added
+- `questions-cul105.js` — CUL-105 question bank (200 items, `var questionsCUL105`)
+- `questions-cul105-original.js` — CUL-105 backup (`var originalQuestionsCUL105`)
+
+---
+
 ## [02-21-2026-3] - February 21, 2026
 
 ### Added

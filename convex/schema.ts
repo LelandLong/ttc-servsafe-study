@@ -3,7 +3,7 @@ import { v } from "convex/values";
 
 export default defineSchema({
   questions: defineTable({
-    questionId: v.number(), // Original ID from the question (1-163, etc.)
+    questionId: v.number(), // Original ID from the question (1-342 CUL-104, 1001+ CUL-105)
     question: v.string(),
     options: v.array(v.string()),
     correct: v.number(),
@@ -11,10 +11,14 @@ export default defineSchema({
     explanation: v.string(),
     category: v.string(),
     examFocus: v.boolean(),
-    chapter: v.optional(v.number()), // Chapter 1-15 for chapter-based filtering
+    chapter: v.optional(v.number()), // Chapter 1-15 for CUL-104 chapter-based filtering
+    course: v.optional(v.string()),  // "CUL-104" or "CUL-105"
+    topic: v.optional(v.string()),   // Topic name for CUL-105 topic-based filtering
+    type: v.optional(v.string()),    // "quiz" or "flashcard" (default: "quiz")
   }).index("by_questionId", ["questionId"])
     .index("by_category", ["category"])
-    .index("by_chapter", ["chapter"]),
+    .index("by_chapter", ["chapter"])
+    .index("by_course", ["course"]),
 
   categories: defineTable({
     name: v.string(),
@@ -62,6 +66,7 @@ export default defineSchema({
     questionIds: v.array(v.number()), // Specific question IDs for this test
     timerMinutes: v.number(),   // Duration in minutes
     status: v.string(),         // "waiting" | "active" | "finished"
+    course: v.optional(v.string()), // "CUL-104" or "CUL-105"
     createdAt: v.number(),
     startedAt: v.optional(v.number()),
     endedAt: v.optional(v.number()),

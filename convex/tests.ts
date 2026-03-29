@@ -137,6 +137,7 @@ export const createTest = mutation({
     modeValue: v.optional(v.any()),
     questionIds: v.array(v.number()),
     timerMinutes: v.number(),
+    course: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Generate unique test ID
@@ -150,6 +151,7 @@ export const createTest = mutation({
       questionIds: args.questionIds,
       timerMinutes: args.timerMinutes,
       status: "waiting",
+      course: args.course,
       createdAt: Date.now(),
     });
 

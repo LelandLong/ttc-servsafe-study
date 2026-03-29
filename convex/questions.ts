@@ -3,11 +3,19 @@ import { v } from "convex/values";
 
 // ============ QUERIES ============
 
-// Get all questions
+// Get all questions (optionally filtered by course)
 export const getAll = query({
-  args: {},
-  handler: async (ctx) => {
-    const questions = await ctx.db.query("questions").collect();
+  args: { course: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    let questions;
+    if (args.course) {
+      questions = await ctx.db
+        .query("questions")
+        .withIndex("by_course", (q) => q.eq("course", args.course))
+        .collect();
+    } else {
+      questions = await ctx.db.query("questions").collect();
+    }
     // Sort by questionId for consistent ordering
     return questions.sort((a, b) => a.questionId - b.questionId);
   },
@@ -35,9 +43,17 @@ export const getByCategory = query({
 
 // Get exam focus questions only
 export const getExamFocus = query({
-  args: {},
-  handler: async (ctx) => {
-    const questions = await ctx.db.query("questions").collect();
+  args: { course: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    let questions;
+    if (args.course) {
+      questions = await ctx.db
+        .query("questions")
+        .withIndex("by_course", (q) => q.eq("course", args.course))
+        .collect();
+    } else {
+      questions = await ctx.db.query("questions").collect();
+    }
     return questions.filter(q => q.examFocus).sort((a, b) => a.questionId - b.questionId);
   },
 });
@@ -65,6 +81,9 @@ export const addQuestion = mutation({
     category: v.string(),
     examFocus: v.boolean(),
     chapter: v.optional(v.number()),
+    course: v.optional(v.string()),
+    topic: v.optional(v.string()),
+    type: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const newId = await ctx.db.insert("questions", args);
@@ -89,6 +108,9 @@ export const updateQuestion = mutation({
     category: v.string(),
     examFocus: v.boolean(),
     chapter: v.optional(v.number()),
+    course: v.optional(v.string()),
+    topic: v.optional(v.string()),
+    type: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...data } = args;
@@ -153,7 +175,7 @@ export const deleteCategory = mutation({
   },
 });
 
-// Bulk import questions (replaces all existing)
+// Bulk import questions (scoped to a course — only deletes/replaces that course's questions)
 export const bulkImport = mutation({
   args: {
     questions: v.array(v.object({
@@ -166,16 +188,23 @@ export const bulkImport = mutation({
       category: v.string(),
       examFocus: v.boolean(),
       chapter: v.optional(v.number()),
+      course: v.optional(v.string()),
+      topic: v.optional(v.string()),
+      type: v.optional(v.string()),
     })),
+    course: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Delete all existing questions
+    // Delete only questions for the specified course (or all if no course specified)
     const existing = await ctx.db.query("questions").collect();
     for (const q of existing) {
-      await ctx.db.delete(q._id);
+      if (!args.course || q.course === args.course || (!q.course && !args.course)) {
+        await ctx.db.delete(q._id);
+      }
     }
 
-    // Delete all existing categories
+    // Rebuild categories from ALL remaining questions + new ones
+    const remaining = await ctx.db.query("questions").collect();
     const existingCats = await ctx.db.query("categories").collect();
     for (const c of existingCats) {
       await ctx.db.delete(c._id);
@@ -188,7 +217,12 @@ export const bulkImport = mutation({
       categorySet.add(q.category);
     }
 
-    // Insert categories
+    // Add categories from remaining questions too
+    for (const q of remaining) {
+      categorySet.add(q.category);
+    }
+
+    // Insert all categories
     for (const cat of categorySet) {
       await ctx.db.insert("categories", { name: cat });
     }
@@ -200,7 +234,7 @@ export const bulkImport = mutation({
   },
 });
 
-// Reset to original questions (will be called with original data from frontend)
+// Reset to original questions (scoped to a course)
 export const resetToOriginal = mutation({
   args: {
     questions: v.array(v.object({
@@ -213,15 +247,23 @@ export const resetToOriginal = mutation({
       category: v.string(),
       examFocus: v.boolean(),
       chapter: v.optional(v.number()),
+      course: v.optional(v.string()),
+      topic: v.optional(v.string()),
+      type: v.optional(v.string()),
     })),
+    course: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Same as bulkImport - replaces everything
+    // Delete only questions for the specified course (or all if no course specified)
     const existing = await ctx.db.query("questions").collect();
     for (const q of existing) {
-      await ctx.db.delete(q._id);
+      if (!args.course || q.course === args.course || (!q.course && !args.course)) {
+        await ctx.db.delete(q._id);
+      }
     }
 
+    // Rebuild categories from ALL remaining questions + new ones
+    const remaining = await ctx.db.query("questions").collect();
     const existingCats = await ctx.db.query("categories").collect();
     for (const c of existingCats) {
       await ctx.db.delete(c._id);
@@ -230,6 +272,10 @@ export const resetToOriginal = mutation({
     const categorySet = new Set<string>();
     for (const q of args.questions) {
       await ctx.db.insert("questions", q);
+      categorySet.add(q.category);
+    }
+
+    for (const q of remaining) {
       categorySet.add(q.category);
     }
 

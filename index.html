@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#B91C1C">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Chef's Kitchen | CUL 104 Study Aid</title>
+  <title>Chef's Kitchen | Study Aid</title>
   <link rel="manifest" href="manifest.json">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -347,6 +347,8 @@
   <!-- Questions Database - Default file and original backup for reset functionality -->
   <script src="questions.js"></script>
   <script src="questions-original.js"></script>
+  <script src="questions-cul105.js"></script>
+  <script src="questions-cul105-original.js"></script>
   <script src="version.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -590,31 +592,45 @@
       }
 
       function mergeProgressFromCloud(localProgress, cloudData, localBadges) {
-        if (!cloudData || !cloudData.progress || cloudData.progress.totalAnswered === 0) {
-          // Cloud is empty — use local
+        if (!cloudData || !cloudData.progress) {
           return { progress: localProgress, badges: localBadges };
         }
-        var cloud = cloudData.progress;
+
+        // Migrate both to nested format
+        var local = migrateProgress(JSON.parse(JSON.stringify(localProgress)));
+        var cloud = migrateProgress(JSON.parse(JSON.stringify(cloudData.progress)));
         var cloudBadges = cloudData.badges || [];
 
-        // Use local as base if there's unsynced data (prevents stale cloud overwrite)
-        // Otherwise use whichever has more answers
-        var merged;
-        if (hasPendingSync() || localProgress.totalAnswered > cloud.totalAnswered) {
-          merged = JSON.parse(JSON.stringify(localProgress));
-          if (hasPendingSync()) console.log('Pending sync detected - preserving local progress');
-        } else {
-          merged = JSON.parse(JSON.stringify(cloud));
-        }
+        // Merge each course separately
+        var merged = {};
+        var allCourses = {};
+        Object.keys(local).forEach(function(k) { allCourses[k] = true; });
+        Object.keys(cloud).forEach(function(k) { allCourses[k] = true; });
 
-        // Always take the max of best-of fields
-        merged.bestStreak = Math.max(merged.bestStreak || 0, localProgress.bestStreak || 0, cloud.bestStreak || 0);
-        merged.bestNoHintStreak = Math.max(merged.bestNoHintStreak || 0, localProgress.bestNoHintStreak || 0, cloud.bestNoHintStreak || 0);
+        Object.keys(allCourses).forEach(function(courseId) {
+          var lp = local[courseId] || emptyProgress();
+          var cp = cloud[courseId] || emptyProgress();
 
-        // Boolean OR for time-based flags
-        merged.studiedEarly = (localProgress.studiedEarly || cloud.studiedEarly) || false;
-        merged.studiedLate = (localProgress.studiedLate || cloud.studiedLate) || false;
-        merged.studiedWeekend = (localProgress.studiedWeekend || cloud.studiedWeekend) || false;
+          if (cp.totalAnswered === 0 && lp.totalAnswered === 0) {
+            merged[courseId] = emptyProgress();
+            return;
+          }
+
+          var base;
+          if (hasPendingSync() || lp.totalAnswered > cp.totalAnswered) {
+            base = JSON.parse(JSON.stringify(lp));
+          } else {
+            base = JSON.parse(JSON.stringify(cp));
+          }
+
+          base.bestStreak = Math.max(base.bestStreak || 0, lp.bestStreak || 0, cp.bestStreak || 0);
+          base.bestNoHintStreak = Math.max(base.bestNoHintStreak || 0, lp.bestNoHintStreak || 0, cp.bestNoHintStreak || 0);
+          base.studiedEarly = (lp.studiedEarly || cp.studiedEarly) || false;
+          base.studiedLate = (lp.studiedLate || cp.studiedLate) || false;
+          base.studiedWeekend = (lp.studiedWeekend || cp.studiedWeekend) || false;
+
+          merged[courseId] = base;
+        });
 
         // Union badges (never lose a badge)
         var badgeSet = {};
@@ -1774,6 +1790,131 @@
       // 2. Fall back to questions.js if no localStorage data
       // Professor can edit questions at /admin.html and changes appear immediately!
 
+      // ============ MULTI-COURSE CONFIGURATION ============
+      var COURSE_KEY = 'chefKitchenActiveCourse';
+
+      var COURSES = {
+        'CUL-104': {
+          name: 'CUL-104: ServSafe',
+          shortName: 'ServSafe',
+          icon: '\uD83E\uDDA0',
+          description: 'Food Safety Certification',
+          questions: questionsDB,
+          orgType: 'chapters',
+          orgLabel: 'Chapter',
+          chapters: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
+          quizGroups: {
+            '1-4': { label: 'Quiz 1 (Ch 1-4)', chapters: [1,2,3,4] },
+            '5-7': { label: 'Quiz 2 (Ch 5-7)', chapters: [5,6,7] },
+            '8-10': { label: 'Quiz 3 (Ch 8-10)', chapters: [8,9,10] },
+            '11-14': { label: 'Quiz 4 (Ch 11-14)', chapters: [11,12,13,14] },
+            '15': { label: 'Final (Ch 15)', chapters: [15] }
+          },
+          hasExamFocus: true,
+          hasQuizGroups: true,
+          hasFlashcards: false
+        },
+        'CUL-105': {
+          name: 'CUL-105: Kitchen Fundamentals',
+          shortName: 'Kitchen Fund.',
+          icon: '\uD83D\uDD2A',
+          description: 'Culinary Techniques & Knowledge',
+          questions: (typeof questionsCUL105 !== 'undefined') ? questionsCUL105 : [],
+          orgType: 'topics',
+          orgLabel: 'Topic',
+          topics: [
+            'Cooking Methods', 'Moist-Heat & Combination', 'Meat Cooking & Doneness',
+            'Stocks & Foundations', 'Sauces & Thickeners',
+            'Eggs & Breakfast', 'Dairy Products',
+            'Grains, Rice & Pasta', 'Vegetables & Potatoes',
+            'Flavors & Seasoning', 'Food Safety & Sanitation',
+            'Knife Skills & Cuts', 'Tools & Equipment', 'Mise en Place',
+            'Measurements & Math', 'Professionalism', 'Culinary History'
+          ],
+          hasExamFocus: true,
+          hasQuizGroups: false,
+          hasFlashcards: true
+        }
+      };
+
+      function loadActiveCourse() {
+        try {
+          var saved = localStorage.getItem(COURSE_KEY);
+          if (saved && COURSES[saved]) return saved;
+        } catch (e) {}
+        return 'CUL-104';
+      }
+
+      function saveActiveCourse(courseId) {
+        try { localStorage.setItem(COURSE_KEY, courseId); } catch (e) {}
+      }
+
+      // Get questions for a specific course (quiz questions only, no flashcards)
+      function getCourseQuestions(courseId) {
+        var course = COURSES[courseId];
+        if (!course) return [];
+        return course.questions.filter(function(q) { return q.type !== 'flashcard'; });
+      }
+
+      // Get flashcards for a specific course
+      function getCourseFlashcards(courseId) {
+        var course = COURSES[courseId];
+        if (!course) return [];
+        return course.questions.filter(function(q) { return q.type === 'flashcard'; });
+      }
+
+      // Get unique categories for a course's questions
+      function getCourseCategories(courseId) {
+        var questions = COURSES[courseId] ? COURSES[courseId].questions : [];
+        var cats = {};
+        questions.forEach(function(q) { if (q.category) cats[q.category] = true; });
+        return Object.keys(cats).sort();
+      }
+
+      // Get unique topics for a course
+      function getCourseTopics(courseId) {
+        var questions = COURSES[courseId] ? COURSES[courseId].questions : [];
+        var topics = {};
+        questions.forEach(function(q) { if (q.topic) topics[q.topic] = true; });
+        return Object.keys(topics).sort();
+      }
+
+      // ============ PROGRESS MIGRATION ============
+      // Migrate old flat progress format to nested per-course format
+      function migrateProgress(raw) {
+        if (!raw) return {};
+        // Already migrated: has course keys
+        if (raw['CUL-104'] || raw['CUL-105']) return raw;
+        // Old flat format: has totalAnswered at top level
+        if (raw.totalAnswered !== undefined) {
+          return { 'CUL-104': raw };
+        }
+        return raw;
+      }
+
+      // Get empty progress for a course
+      function emptyProgress() {
+        return {
+          totalAnswered: 0,
+          totalCorrect: 0,
+          categoryStats: {},
+          chapterStats: {},
+          topicStats: {},
+          questionHistory: {},
+          hintsUsed: 0,
+          correctWithoutHint: 0,
+          currentNoHintStreak: 0,
+          bestNoHintStreak: 0,
+          currentStreak: 0,
+          bestStreak: 0,
+          examFocusCorrect: 0,
+          flashcardsReviewed: 0,
+          studiedEarly: false,
+          studiedLate: false,
+          studiedWeekend: false
+        };
+      }
+
       // ============ STORAGE HELPERS ============
       const STORAGE_KEY = 'chefKitchenProgress';
 
@@ -1782,26 +1923,28 @@
           const saved = localStorage.getItem(STORAGE_KEY);
           if (saved) {
             var parsed = JSON.parse(saved);
-            // Ensure hint tracking fields exist for existing users
-            if (parsed.hintsUsed === undefined) parsed.hintsUsed = 0;
-            if (parsed.correctWithoutHint === undefined) parsed.correctWithoutHint = 0;
-            if (parsed.currentNoHintStreak === undefined) parsed.currentNoHintStreak = 0;
-            if (parsed.bestNoHintStreak === undefined) parsed.bestNoHintStreak = 0;
+            // Migrate old flat format to nested per-course format
+            parsed = migrateProgress(parsed);
             return parsed;
           }
         } catch (e) {
           console.log('Could not load progress');
         }
-        return {
-          totalAnswered: 0,
-          totalCorrect: 0,
-          categoryStats: {},
-          questionHistory: {},
-          hintsUsed: 0,
-          correctWithoutHint: 0,
-          currentNoHintStreak: 0,
-          bestNoHintStreak: 0
-        };
+        return {};
+      }
+
+      // Get progress for the active course from the nested structure
+      function getCourseProgress(allProgress, courseId) {
+        var prog = allProgress[courseId];
+        if (!prog) return emptyProgress();
+        // Ensure hint tracking fields exist
+        if (prog.hintsUsed === undefined) prog.hintsUsed = 0;
+        if (prog.correctWithoutHint === undefined) prog.correctWithoutHint = 0;
+        if (prog.currentNoHintStreak === undefined) prog.currentNoHintStreak = 0;
+        if (prog.bestNoHintStreak === undefined) prog.bestNoHintStreak = 0;
+        if (prog.topicStats === undefined) prog.topicStats = {};
+        if (prog.flashcardsReviewed === undefined) prog.flashcardsReviewed = 0;
+        return prog;
       }
 
       function saveProgress(progress) {
@@ -2762,13 +2905,17 @@
         const onResetProgress = props.onResetProgress;
         const theme = props.theme;
         const onCycleTheme = props.onCycleTheme;
+        const activeCourse = props.activeCourse;
+        const onSwitchCourse = props.onSwitchCourse;
+        const courseConfig = COURSES[activeCourse];
         const [showAllBadges, setShowAllBadges] = useState(false);
         const totalPercentage = progress.totalAnswered > 0
           ? Math.round((progress.totalCorrect / progress.totalAnswered) * 100)
           : 0;
 
-        // Find weak categories (below 70%)
-        const weakCategories = categories.filter(function(cat) {
+        // Find weak categories (below 70%) for this course
+        const courseCats = getCourseCategories(activeCourse);
+        const weakCategories = courseCats.filter(function(cat) {
           const stats = progress.categoryStats[cat];
           if (!stats || stats.total === 0) return false;
           return (stats.correct / stats.total) < 0.7;
@@ -2782,14 +2929,14 @@
           // Header
           createElement('header', { className: 'bg-gradient-to-r from-red-700 via-red-600 to-orange-600 text-white p-6 shadow-lg' },
             createElement('div', { className: 'max-w-4xl mx-auto' },
-              // Version in top right (theme toggle moved to Account Menu)
+              // Version in top right
               createElement('div', { className: 'flex justify-end items-center gap-3 mb-2' },
                 createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION)
               ),
               createElement('div', { className: 'text-center' },
                 createElement('div', { className: 'text-5xl mb-2' }, '🍳'),
                 createElement('h1', { className: 'brand text-3xl font-bold' }, "Chef's Kitchen"),
-                createElement('p', { className: 'text-orange-200' }, 'CUL 104 • ServSafe Study Aid')
+                createElement('p', { className: 'text-orange-200' }, courseConfig.name)
               )
             )
           ),
@@ -2952,21 +3099,43 @@
                 )
             ),
 
+            // Course Selector
+            createElement('div', { className: 'grid grid-cols-2 gap-3 mb-6' },
+              Object.keys(COURSES).map(function(courseId) {
+                var c = COURSES[courseId];
+                var isActive = courseId === activeCourse;
+                return createElement('button', {
+                  key: courseId,
+                  onClick: function() { onSwitchCourse(courseId); },
+                  className: 'rounded-xl p-4 border-2 text-left transition-all ' +
+                    (isActive ? 'border-orange-400 shadow-lg' : 'border-themed opacity-70 hover:opacity-100 hover:border-orange-300'),
+                  style: isActive ? { backgroundColor: 'var(--bg-card)', boxShadow: '0 4px 12px var(--shadow-color)' } : { backgroundColor: 'var(--bg-card)' }
+                },
+                  createElement('div', { className: 'flex items-center gap-2 mb-1' },
+                    createElement('span', { className: 'text-2xl' }, c.icon),
+                    createElement('span', { className: 'font-bold text-sm text-primary' }, c.shortName),
+                    isActive && createElement('span', { className: 'text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full' }, 'Active')
+                  ),
+                  createElement('p', { className: 'text-xs text-muted' }, c.description)
+                );
+              })
+            ),
+
             // Study Mode Selection
-            createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '📚 Choose Study Mode'),
+            createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '\uD83D\uDCDA Choose Study Mode'),
             createElement('div', { className: 'grid md:grid-cols-2 gap-4 mb-6' },
-              // Exam Focus - RECOMMENDED
-              createElement('button', {
+              // Exam Focus - if course supports it
+              courseConfig.hasExamFocus && createElement('button', {
                 onClick: function() { onSelectMode('examFocus'); },
                 className: 'mode-card bg-gradient-to-br from-red-50 to-orange-50 rounded-xl p-5 border-2 border-red-300 text-left hover:border-red-500 hover:shadow-lg'
               },
                 createElement('div', { className: 'flex items-center gap-3 mb-2' },
-                  createElement('span', { className: 'text-3xl' }, '⭐'),
+                  createElement('span', { className: 'text-3xl' }, '\u2B50'),
                   createElement('span', { className: 'font-bold text-lg text-gray-800' }, 'Exam Focus'),
                   createElement('span', { className: 'text-xs bg-red-500 text-white px-2 py-0.5 rounded-full ml-2' }, 'RECOMMENDED')
                 ),
                 createElement('p', { className: 'text-gray-600 text-sm' },
-                  questionsDB.filter(function(q) { return q.examFocus; }).length + ' questions Chef Carmel emphasized for the test.'
+                  getCourseQuestions(activeCourse).filter(function(q) { return q.examFocus; }).length + ' questions emphasized for the test.'
                 )
               ),
 
@@ -2976,10 +3145,24 @@
                 className: 'mode-card card-bg rounded-xl p-5 border-2 border-amber-200 text-left hover:border-orange-400'
               },
                 createElement('div', { className: 'flex items-center gap-3 mb-2' },
-                  createElement('span', { className: 'text-3xl' }, '📚'),
+                  createElement('span', { className: 'text-3xl' }, '\uD83D\uDCDA'),
                   createElement('span', { className: 'font-bold text-lg text-primary' }, 'Full Coverage')
                 ),
-                createElement('p', { className: 'text-secondary text-sm' }, 'All ' + questionsDB.length + ' questions including basic knowledge.')
+                createElement('p', { className: 'text-secondary text-sm' }, 'All ' + getCourseQuestions(activeCourse).length + ' questions.')
+              ),
+
+              // Flashcards - if course supports it
+              courseConfig.hasFlashcards && getCourseFlashcards(activeCourse).length > 0 && createElement('button', {
+                onClick: function() { onSelectMode('flashcards'); },
+                className: 'mode-card bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-5 border-2 border-blue-300 text-left hover:border-blue-500 hover:shadow-lg'
+              },
+                createElement('div', { className: 'flex items-center gap-3 mb-2' },
+                  createElement('span', { className: 'text-3xl' }, '\uD83D\uDCDD'),
+                  createElement('span', { className: 'font-bold text-lg text-gray-800' }, 'Flashcards')
+                ),
+                createElement('p', { className: 'text-gray-600 text-sm' },
+                  getCourseFlashcards(activeCourse).length + ' terms and definitions to review.'
+                )
               ),
 
               // Weak Areas
@@ -2990,7 +3173,7 @@
                   (weakCategories.length > 0 ? 'border-red-200 hover:border-red-400' : 'border-themed opacity-50 cursor-not-allowed')
               },
                 createElement('div', { className: 'flex items-center gap-3 mb-2' },
-                  createElement('span', { className: 'text-3xl' }, '🔥'),
+                  createElement('span', { className: 'text-3xl' }, '\uD83D\uDD25'),
                   createElement('span', { className: 'font-bold text-lg text-primary' }, 'Weak Areas')
                 ),
                 createElement('p', { className: 'text-secondary text-sm' },
@@ -2998,142 +3181,89 @@
                     ? 'Focus on ' + weakCategories.length + ' categories below 70%.'
                     : 'No weak areas yet! Keep practicing.'
                 )
-              ),
-
-              // Basic Knowledge Only
-              createElement('button', {
-                onClick: function() { onSelectMode('basicOnly'); },
-                className: 'mode-card card-bg rounded-xl p-5 border-2 border-themed text-left hover:border-amber-400'
-              },
-                createElement('div', { className: 'flex items-center gap-3 mb-2' },
-                  createElement('span', { className: 'text-3xl' }, '📖'),
-                  createElement('span', { className: 'font-bold text-lg text-primary' }, 'Basic Knowledge')
-                ),
-                createElement('p', { className: 'text-secondary text-sm' },
-                  questionsDB.filter(function(q) { return !q.examFocus; }).length + ' foundational questions for deeper understanding.'
-                )
               )
             ),
 
-            // Chapter-Based Study Modes
-            createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '📗 Study by Chapter'),
-            createElement('p', { className: 'text-sm text-muted mb-3' }, 'Focus on specific chapters or quiz groups'),
+            // Chapter-Based Study Modes (CUL-104 only)
+            courseConfig.orgType === 'chapters' && createElement('div', null,
+              createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '\uD83D\uDCD7 Study by Chapter'),
 
-            // Quiz Groups (matches class quiz structure)
-            createElement('div', { className: 'grid grid-cols-2 md:grid-cols-5 gap-3 mb-4' },
-              [
-                { id: '1-4', label: 'Quiz 1', chapters: 'Ch 1-4', count: questionsDB.filter(function(q) { return [1,2,3,4].indexOf(q.chapter) !== -1; }).length },
-                { id: '5-7', label: 'Quiz 2', chapters: 'Ch 5-7', count: questionsDB.filter(function(q) { return [5,6,7].indexOf(q.chapter) !== -1; }).length },
-                { id: '8-10', label: 'Quiz 3', chapters: 'Ch 8-10', count: questionsDB.filter(function(q) { return [8,9,10].indexOf(q.chapter) !== -1; }).length },
-                { id: '11-14', label: 'Quiz 4', chapters: 'Ch 11-14', count: questionsDB.filter(function(q) { return [11,12,13,14].indexOf(q.chapter) !== -1; }).length },
-                { id: '15', label: 'Final', chapters: 'Ch 15', count: questionsDB.filter(function(q) { return q.chapter === 15; }).length }
-              ].map(function(quiz) {
-                var isDisabled = quiz.count === 0;
-                return createElement('button', {
-                  key: quiz.id,
-                  onClick: function() {
-                    if (isDisabled) {
-                      alert('No questions available for ' + quiz.label + '. The question database may need to be synced with chapter data.');
-                    } else {
-                      onSelectMode('quizGroup', quiz.id);
-                    }
+              // Quiz Groups
+              courseConfig.hasQuizGroups && createElement('div', { className: 'grid grid-cols-2 md:grid-cols-5 gap-3 mb-4' },
+                Object.keys(courseConfig.quizGroups).map(function(groupId) {
+                  var group = courseConfig.quizGroups[groupId];
+                  var count = getCourseQuestions(activeCourse).filter(function(q) { return group.chapters.indexOf(q.chapter) !== -1; }).length;
+                  return createElement('button', {
+                    key: groupId,
+                    onClick: function() { onSelectMode('quizGroup', groupId); },
+                    disabled: count === 0,
+                    className: 'mode-card card-bg rounded-xl p-3 border-2 text-left transition-all ' +
+                      (count === 0 ? 'border-gray-200 opacity-50 cursor-not-allowed' : 'border-blue-200 hover:border-blue-400 hover:shadow-md')
                   },
-                  className: 'mode-card card-bg rounded-xl p-3 border-2 text-left transition-all ' +
-                    (isDisabled ? 'border-gray-200 opacity-50 cursor-not-allowed' : 'border-blue-200 hover:border-blue-400 hover:shadow-md')
-                },
-                  createElement('div', { className: 'text-lg font-bold ' + (isDisabled ? 'text-gray-400' : 'text-primary') }, quiz.label),
-                  createElement('div', { className: 'text-xs ' + (isDisabled ? 'text-gray-400' : 'text-blue-600') }, quiz.chapters),
-                  createElement('div', { className: 'text-xs mt-1 ' + (isDisabled ? 'text-gray-400' : 'text-muted') },
-                    isDisabled ? '⚠️ No data' : quiz.count + ' questions'
-                  )
-                );
-              })
-            ),
-
-            // Chapter Range Selector (Ch 1 through X)
-            createElement('div', { className: 'card-bg rounded-xl p-4 border-2 border-green-200 mb-4' },
-              createElement('div', { className: 'flex items-center gap-3 mb-3' },
-                createElement('span', { className: 'text-2xl' }, '📚'),
-                createElement('span', { className: 'font-bold text-primary' }, 'Study Through Chapter...')
+                    createElement('div', { className: 'text-lg font-bold text-primary' }, group.label),
+                    createElement('div', { className: 'text-xs text-muted' }, count + ' questions')
+                  );
+                })
               ),
-              createElement('div', { className: 'flex flex-wrap gap-2' },
-                [4, 7, 9, 10, 12, 14, 15].map(function(ch) {
-                  var count = questionsDB.filter(function(q) { return q.chapter >= 1 && q.chapter <= ch; }).length;
-                  var isDisabled = count === 0;
+
+              // Individual Chapters
+              createElement('div', { className: 'grid grid-cols-5 md:grid-cols-8 gap-2 mb-6' },
+                courseConfig.chapters.map(function(ch) {
+                  var count = getCourseQuestions(activeCourse).filter(function(q) { return q.chapter === ch; }).length;
                   return createElement('button', {
                     key: ch,
-                    onClick: function() {
-                      if (isDisabled) {
-                        alert('No questions available for Chapters 1-' + ch + '. The question database may need to be synced with chapter data.');
-                      } else {
-                        onSelectMode('chapterRange', ch);
-                      }
-                    },
-                    className: 'px-3 py-2 rounded-lg border-2 transition-colors ' +
-                      (isDisabled ? 'border-gray-200 opacity-50 cursor-not-allowed' : 'border-green-300 hover:bg-green-50 hover:border-green-500')
+                    onClick: function() { onSelectMode('chapter', ch); },
+                    disabled: count === 0,
+                    className: 'p-2 rounded-lg border-2 transition-colors text-center ' +
+                      (count === 0 ? 'border-gray-200 opacity-50 cursor-not-allowed' : 'border-purple-200 hover:bg-purple-50 hover:border-purple-400')
                   },
-                    createElement('div', { className: 'font-semibold text-sm ' + (isDisabled ? 'text-gray-400' : '') }, 'Ch 1-' + ch),
-                    createElement('div', { className: 'text-xs ' + (isDisabled ? 'text-gray-400' : 'text-muted') },
-                      isDisabled ? '⚠️' : count + ' Q'
-                    )
+                    createElement('div', { className: 'font-bold text-lg text-primary' }, ch),
+                    createElement('div', { className: 'text-xs text-muted' }, count + ' Q')
                   );
                 })
               )
             ),
 
-            // Individual Chapter Selection
-            createElement('div', { className: 'card-bg rounded-xl p-4 border-2 border-purple-200 mb-6' },
-              createElement('div', { className: 'flex items-center gap-3 mb-3' },
-                createElement('span', { className: 'text-2xl' }, '📖'),
-                createElement('span', { className: 'font-bold text-primary' }, 'Single Chapter')
-              ),
-              createElement('div', { className: 'grid grid-cols-5 md:grid-cols-8 gap-2' },
-                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(function(ch) {
-                  var count = questionsDB.filter(function(q) { return q.chapter === ch; }).length;
-                  var isDisabled = count === 0;
-                  var chapterNames = {
-                    1: 'Food Safety', 2: 'Pathogens', 3: 'Hygiene', 4: 'Purchasing',
-                    5: 'Thermometers', 6: 'Receiving', 7: 'Storage', 8: 'Prep/Cooking',
-                    9: 'Holding', 10: 'HACCP', 11: 'Facilities', 12: 'Cleaning',
-                    13: 'Pests', 14: 'Inspections', 15: 'Training'
-                  };
+            // Topic-Based Study Modes (CUL-105)
+            courseConfig.orgType === 'topics' && createElement('div', null,
+              createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '\uD83D\uDCD7 Study by Topic'),
+              createElement('div', { className: 'grid grid-cols-2 md:grid-cols-3 gap-3 mb-6' },
+                getCourseTopics(activeCourse).map(function(topic) {
+                  var count = getCourseQuestions(activeCourse).filter(function(q) { return q.topic === topic; }).length;
+                  var topicStats = progress.topicStats ? progress.topicStats[topic] : null;
                   return createElement('button', {
-                    key: ch,
-                    onClick: function() {
-                      if (isDisabled) {
-                        alert('No questions available for Chapter ' + ch + ' (' + chapterNames[ch] + '). The question database may need to be synced with chapter data.');
-                      } else {
-                        onSelectMode('chapter', ch);
-                      }
-                    },
-                    className: 'p-2 rounded-lg border-2 transition-colors text-center ' +
-                      (isDisabled ? 'border-gray-200 opacity-50 cursor-not-allowed' : 'border-purple-200 hover:bg-purple-50 hover:border-purple-400'),
-                    title: 'Chapter ' + ch + ': ' + chapterNames[ch]
+                    key: topic,
+                    onClick: function() { onSelectMode('topic', topic); },
+                    disabled: count === 0,
+                    className: 'mode-card card-bg rounded-xl p-4 border-2 text-left transition-all ' +
+                      (count === 0 ? 'border-themed opacity-50 cursor-not-allowed' : 'border-green-200 hover:border-green-400 hover:shadow-md')
                   },
-                    createElement('div', { className: 'font-bold text-lg ' + (isDisabled ? 'text-gray-400' : 'text-primary') }, ch),
-                    createElement('div', { className: 'text-xs truncate ' + (isDisabled ? 'text-gray-400' : 'text-muted') },
-                      isDisabled ? '⚠️' : count + ' Q'
-                    )
+                    createElement('div', { className: 'font-semibold text-sm text-primary' }, topic),
+                    createElement('div', { className: 'text-xs text-muted' }, count + ' questions'),
+                    topicStats && topicStats.answered > 0 && createElement('div', {
+                      className: 'text-xs mt-1 ' + (topicStats.correct / topicStats.answered >= 0.7 ? 'text-green-600' : 'text-orange-600')
+                    }, Math.round((topicStats.correct / topicStats.answered) * 100) + '% mastery')
                   );
                 })
               )
             ),
 
             // Category Selection
-            createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '📂 Study by Category'),
+            createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '\uD83D\uDCC2 Study by Category'),
             createElement('div', { className: 'grid grid-cols-2 md:grid-cols-3 gap-3 mb-6' },
-              categories.map(function(cat) {
+              courseCats.map(function(cat) {
                 const stats = progress.categoryStats[cat] || { correct: 0, total: 0 };
-                const count = questionsDB.filter(function(q) { return q.category === cat; }).length;
-                const icon = {
-                  'Food Safety Basics': '📖',
-                  'Temperature Control': '🌡️',
-                  'Sanitation & Hygiene': '🧼',
-                  'Foodborne Illness': '🦠',
-                  'Facilities & Operations': '🏢',
-                  'Food Storage': '🗄️',
-                  'Training': '👨‍🏫'
-                }[cat] || '📋';
+                const count = getCourseQuestions(activeCourse).filter(function(q) { return q.category === cat; }).length;
+                const defaultIcons = {
+                  'Food Safety Basics': '\uD83D\uDCD6', 'Temperature Control': '\uD83C\uDF21\uFE0F',
+                  'Sanitation & Hygiene': '\uD83E\uDDFC', 'Foodborne Illness': '\uD83E\uDDA0',
+                  'Facilities & Operations': '\uD83C\uDFE2', 'Food Storage': '\uD83D\uDDC4\uFE0F',
+                  'Training': '\uD83D\uDC68\u200D\uD83C\uDFEB',
+                  'Techniques & Methods': '\uD83D\uDD2A', 'Sauces & Soups': '\uD83C\uDF72',
+                  'Ingredients & Products': '\uD83E\uDD66', 'Measurements & Math': '\uD83D\uDCCF',
+                  'Culinary History': '\uD83D\uDCDC', 'Kitchen Fundamentals': '\uD83D\uDC68\u200D\uD83C\uDF73'
+                };
+                const icon = defaultIcons[cat] || '\uD83D\uDCCB';
 
                 return createElement('button', {
                   key: cat,
@@ -3261,7 +3391,74 @@
               createElement('button', {
                 onClick: onBack,
                 className: 'px-6 py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold rounded-xl hover:from-red-700 hover:to-orange-600 transition-all'
-              }, '← Back to Home')
+              }, '\u2190 Back to Home')
+            )
+          );
+        }
+
+        // ============ FLASHCARD MODE ============
+        if (props.isFlashcardMode) {
+          var fcFlippedState = useState(false);
+          var fcFlipped = fcFlippedState[0];
+          var setFcFlipped = fcFlippedState[1];
+
+          function fcNext() {
+            if (props.onFlashcardReview) props.onFlashcardReview(currentQuestion);
+            setFcFlipped(false);
+            if (currentIndex < questions.length - 1) {
+              setCurrentIndex(function(p) { return p + 1; });
+            } else {
+              onBack();
+            }
+          }
+
+          return createElement('div', { className: 'min-h-screen p-4 md:p-6' },
+            createElement('div', { className: 'max-w-2xl mx-auto' },
+              // Header
+              createElement('div', { className: 'flex items-center justify-between mb-4' },
+                createElement('button', {
+                  onClick: onBack,
+                  className: 'px-4 py-2 rounded-xl font-medium transition-all',
+                  style: { backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }
+                }, '\u2190 Back'),
+                createElement('span', { className: 'text-sm font-medium', style: { color: 'var(--text-muted)' } },
+                  (currentIndex + 1) + ' / ' + questions.length
+                )
+              ),
+
+              // Flashcard
+              createElement('div', {
+                className: 'rounded-2xl shadow-xl p-8 text-center cursor-pointer min-h-64 flex flex-col items-center justify-center',
+                style: {
+                  backgroundColor: fcFlipped ? 'var(--bg-card)' : 'var(--bg-secondary)',
+                  border: fcFlipped ? '3px solid #22C55E' : '3px solid var(--border-color)',
+                  transition: 'all 0.3s ease'
+                },
+                onClick: function() { setFcFlipped(!fcFlipped); }
+              },
+                !fcFlipped ? createElement('div', null,
+                  createElement('div', { className: 'text-sm text-muted mb-2 uppercase tracking-wide' }, currentQuestion.topic || currentQuestion.category),
+                  createElement('h2', {
+                    className: 'text-2xl md:text-3xl font-bold',
+                    style: { color: 'var(--text-primary)', fontFamily: 'Fredoka, sans-serif' }
+                  }, currentQuestion.question),
+                  createElement('p', { className: 'text-sm mt-4', style: { color: 'var(--text-muted)' } }, 'Tap to reveal answer')
+                ) : createElement('div', null,
+                  createElement('div', { className: 'text-sm text-green-600 mb-2 uppercase tracking-wide font-medium' }, '\u2705 Answer'),
+                  createElement('p', {
+                    className: 'text-lg md:text-xl',
+                    style: { color: 'var(--text-primary)', lineHeight: '1.6' }
+                  }, currentQuestion.explanation)
+                )
+              ),
+
+              // Navigation
+              createElement('div', { className: 'flex justify-center mt-6' },
+                createElement('button', {
+                  onClick: fcNext,
+                  className: 'px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-500 text-white font-bold rounded-xl hover:from-blue-700 hover:to-purple-600 transition-all text-lg'
+                }, currentIndex < questions.length - 1 ? 'Next Card \u2192' : 'Finish \u2713')
+              )
             )
           );
         }
@@ -3548,6 +3745,19 @@
         const [modeName, setModeName] = useState('');
         const [theme, setTheme] = useState(getInitialTheme);
         const [networkStatus, setNetworkStatus] = useState(convexConnectionStatus);
+        const [activeCourse, setActiveCourseState] = useState(loadActiveCourse);
+
+        // Derived: current course's progress
+        var courseProgress = getCourseProgress(progress, activeCourse);
+        var courseQuestions = getCourseQuestions(activeCourse);
+        var courseFlashcards = getCourseFlashcards(activeCourse);
+        var courseConfig = COURSES[activeCourse];
+
+        function switchCourse(courseId) {
+          setActiveCourseState(courseId);
+          saveActiveCourse(courseId);
+          setScreen('home');
+        }
 
         // User auth state
         const [user, setUser] = useState(loadUser);
@@ -3610,14 +3820,14 @@
         useEffect(function() {
           if (!user || !CONVEX_URL) return;
           function fetchStats() {
-            convexQuery("users:getClassStats")
+            convexQuery("users:getClassStats", { course: activeCourse })
               .then(function(stats) { setClassStats(stats); })
               .catch(function() {});
           }
           fetchStats();
           var interval = setInterval(fetchStats, 5000);
           return function() { clearInterval(interval); };
-        }, [user ? user.userId : null]);
+        }, [user ? user.userId : null, activeCourse]);
 
         // Poll for active tests every 3 seconds
         useEffect(function() {
@@ -3816,39 +4026,47 @@
         }
 
         function handleSelectMode(mode, category) {
-          var filtered = questionsDB;
+          var qs = courseQuestions;
+          var filtered = qs;
           var name = 'Full Coverage';
+          var cp = courseProgress;
 
           if (mode === 'examFocus') {
-            filtered = questionsDB.filter(function(q) {
+            filtered = qs.filter(function(q) {
               return q.examFocus === true;
             });
             name = '\u2B50 Exam Focus';
           } else if (mode === 'basicOnly') {
-            filtered = questionsDB.filter(function(q) {
+            filtered = qs.filter(function(q) {
               return q.examFocus === false;
             });
             name = '\uD83D\uDCD6 Basic Knowledge';
           } else if (mode === 'weak') {
-            var weakCats = categories.filter(function(cat) {
-              var stats = progress.categoryStats[cat];
+            var courseCats = getCourseCategories(activeCourse);
+            var weakCats = courseCats.filter(function(cat) {
+              var stats = cp.categoryStats[cat];
               if (!stats || stats.total === 0) return false;
               return (stats.correct / stats.total) < 0.7;
             });
-            filtered = questionsDB.filter(function(q) {
+            filtered = qs.filter(function(q) {
               return weakCats.indexOf(q.category) !== -1;
             });
             name = '\uD83D\uDD25 Weak Areas';
           } else if (mode === 'category' && category) {
-            filtered = questionsDB.filter(function(q) {
+            filtered = qs.filter(function(q) {
               return q.category === category;
             });
             name = category;
           } else if (mode === 'chapter' && category) {
-            filtered = questionsDB.filter(function(q) {
+            filtered = qs.filter(function(q) {
               return q.chapter === category;
             });
             name = '\uD83D\uDCD7 Chapter ' + category;
+          } else if (mode === 'topic' && category) {
+            filtered = qs.filter(function(q) {
+              return q.topic === category;
+            });
+            name = '\uD83D\uDCD7 ' + category;
           } else if (mode === 'quizGroup' && category) {
             var ranges = {
               '1-4': [1, 2, 3, 4],
@@ -3858,15 +4076,19 @@
               '15': [15]
             };
             var chapterList = ranges[category] || [];
-            filtered = questionsDB.filter(function(q) {
+            filtered = qs.filter(function(q) {
               return chapterList.indexOf(q.chapter) !== -1;
             });
             name = '\uD83D\uDCDD Quiz ' + (category === '15' ? '(Ch 15)' : '(Ch ' + category + ')');
           } else if (mode === 'chapterRange' && category) {
-            filtered = questionsDB.filter(function(q) {
+            filtered = qs.filter(function(q) {
               return q.chapter >= 1 && q.chapter <= category;
             });
             name = '\uD83D\uDCDA Chapters 1-' + category;
+          } else if (mode === 'flashcards') {
+            // Flashcard mode - use flashcards instead of quiz questions
+            filtered = courseFlashcards;
+            name = '\uD83D\uDCDA Flashcards';
           }
 
           var shuffled = filtered.slice().sort(function() { return Math.random() - 0.5; });
@@ -3881,53 +4103,68 @@
           var day = now.getDay();
 
           setProgress(function(prev) {
-            var newProgress = {
-              totalAnswered: prev.totalAnswered + 1,
-              totalCorrect: prev.totalCorrect + (isCorrect ? 1 : 0),
-              categoryStats: { ...prev.categoryStats },
-              chapterStats: { ...(prev.chapterStats || {}) },
-              questionHistory: { ...prev.questionHistory },
-              hintsUsed: prev.hintsUsed + (usedHint ? 1 : 0),
-              correctWithoutHint: prev.correctWithoutHint + (isCorrect && !usedHint ? 1 : 0),
-              currentNoHintStreak: (isCorrect && !usedHint) ? prev.currentNoHintStreak + 1 : 0,
-              bestNoHintStreak: prev.bestNoHintStreak,
-              currentStreak: isCorrect ? (prev.currentStreak || 0) + 1 : 0,
-              bestStreak: prev.bestStreak || 0,
-              examFocusCorrect: (prev.examFocusCorrect || 0) + (isCorrect && question.examFocus ? 1 : 0),
-              studiedEarly: prev.studiedEarly || (hour < 7),
-              studiedLate: prev.studiedLate || (hour >= 22),
-              studiedWeekend: prev.studiedWeekend || (day === 0 || day === 6)
+            var allProgress = migrateProgress(JSON.parse(JSON.stringify(prev)));
+            var cp = allProgress[activeCourse] || emptyProgress();
+
+            var newCp = {
+              totalAnswered: cp.totalAnswered + 1,
+              totalCorrect: cp.totalCorrect + (isCorrect ? 1 : 0),
+              categoryStats: { ...cp.categoryStats },
+              chapterStats: { ...(cp.chapterStats || {}) },
+              topicStats: { ...(cp.topicStats || {}) },
+              questionHistory: { ...cp.questionHistory },
+              hintsUsed: cp.hintsUsed + (usedHint ? 1 : 0),
+              correctWithoutHint: cp.correctWithoutHint + (isCorrect && !usedHint ? 1 : 0),
+              currentNoHintStreak: (isCorrect && !usedHint) ? cp.currentNoHintStreak + 1 : 0,
+              bestNoHintStreak: cp.bestNoHintStreak,
+              currentStreak: isCorrect ? (cp.currentStreak || 0) + 1 : 0,
+              bestStreak: cp.bestStreak || 0,
+              examFocusCorrect: (cp.examFocusCorrect || 0) + (isCorrect && question.examFocus ? 1 : 0),
+              flashcardsReviewed: cp.flashcardsReviewed || 0,
+              studiedEarly: cp.studiedEarly || (hour < 7),
+              studiedLate: cp.studiedLate || (hour >= 22),
+              studiedWeekend: cp.studiedWeekend || (day === 0 || day === 6)
             };
 
-            if (newProgress.currentNoHintStreak > newProgress.bestNoHintStreak) {
-              newProgress.bestNoHintStreak = newProgress.currentNoHintStreak;
+            if (newCp.currentNoHintStreak > newCp.bestNoHintStreak) {
+              newCp.bestNoHintStreak = newCp.currentNoHintStreak;
             }
-            if (newProgress.currentStreak > newProgress.bestStreak) {
-              newProgress.bestStreak = newProgress.currentStreak;
+            if (newCp.currentStreak > newCp.bestStreak) {
+              newCp.bestStreak = newCp.currentStreak;
             }
 
-            if (!newProgress.categoryStats[question.category]) {
-              newProgress.categoryStats[question.category] = { correct: 0, total: 0 };
+            if (!newCp.categoryStats[question.category]) {
+              newCp.categoryStats[question.category] = { correct: 0, total: 0 };
             }
-            newProgress.categoryStats[question.category].total += 1;
+            newCp.categoryStats[question.category].total += 1;
             if (isCorrect) {
-              newProgress.categoryStats[question.category].correct += 1;
+              newCp.categoryStats[question.category].correct += 1;
             }
 
-            var chapter = question.chapter || 1;
-            if (!newProgress.chapterStats[chapter]) {
-              newProgress.chapterStats[chapter] = { correct: 0, answered: 0 };
+            // Track chapter stats (CUL-104) or topic stats (CUL-105)
+            if (question.chapter) {
+              var chapter = question.chapter;
+              if (!newCp.chapterStats[chapter]) {
+                newCp.chapterStats[chapter] = { correct: 0, answered: 0 };
+              }
+              newCp.chapterStats[chapter].answered += 1;
+              if (isCorrect) newCp.chapterStats[chapter].correct += 1;
             }
-            newProgress.chapterStats[chapter].answered += 1;
-            if (isCorrect) {
-              newProgress.chapterStats[chapter].correct += 1;
+            if (question.topic) {
+              var topic = question.topic;
+              if (!newCp.topicStats[topic]) {
+                newCp.topicStats[topic] = { correct: 0, answered: 0 };
+              }
+              newCp.topicStats[topic].answered += 1;
+              if (isCorrect) newCp.topicStats[topic].correct += 1;
             }
 
-            saveProgress(newProgress);
+            allProgress[activeCourse] = newCp;
+            saveProgress(allProgress);
             updateLastActive();
 
             // Check for new badges
-            var badgeResult = checkForNewBadges(newProgress, badges);
+            var badgeResult = checkForNewBadges(newCp, badges);
             if (badgeResult.newBadges.length > 0) {
               setBadges(function(prevBadges) {
                 var updated = {
@@ -3935,42 +4172,42 @@
                   newlyEarned: prevBadges.newlyEarned.concat(badgeResult.newBadges)
                 };
                 saveBadges(updated);
-                // Sync badges to cloud too
                 if (user) {
-                  syncProgressToCloud(user.userId, newProgress, updated.earned);
+                  syncProgressToCloud(user.userId, allProgress, updated.earned);
                 }
                 return updated;
               });
             } else if (user) {
-              // Sync progress to cloud (debounced)
-              syncProgressToCloud(user.userId, newProgress, badges.earned);
+              syncProgressToCloud(user.userId, allProgress, badges.earned);
             }
 
-            return newProgress;
+            return allProgress;
+          });
+        }
+
+        // Handle flashcard review
+        function handleFlashcardReview(question) {
+          setProgress(function(prev) {
+            var allProgress = migrateProgress(JSON.parse(JSON.stringify(prev)));
+            var cp = allProgress[activeCourse] || emptyProgress();
+            cp.flashcardsReviewed = (cp.flashcardsReviewed || 0) + 1;
+            allProgress[activeCourse] = cp;
+            saveProgress(allProgress);
+            if (user) {
+              syncProgressToCloud(user.userId, allProgress, badges.earned);
+            }
+            return allProgress;
           });
         }
 
         function handleResetProgress() {
-          if (confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
-            var emptyProgress = {
-              totalAnswered: 0,
-              totalCorrect: 0,
-              categoryStats: {},
-              chapterStats: {},
-              questionHistory: {},
-              hintsUsed: 0,
-              correctWithoutHint: 0,
-              currentNoHintStreak: 0,
-              bestNoHintStreak: 0,
-              currentStreak: 0,
-              bestStreak: 0,
-              examFocusCorrect: 0,
-              studiedEarly: false,
-              studiedLate: false,
-              studiedWeekend: false
-            };
-            setProgress(emptyProgress);
-            saveProgress(emptyProgress);
+          if (confirm('Are you sure you want to reset ' + courseConfig.shortName + ' progress? This cannot be undone.')) {
+            setProgress(function(prev) {
+              var allProgress = migrateProgress(JSON.parse(JSON.stringify(prev)));
+              allProgress[activeCourse] = emptyProgress();
+              saveProgress(allProgress);
+              return allProgress;
+            });
 
             // Also ask about resetting badges
             var resetBadges = badges.earned.length > 0 && confirm('Also reset your ' + badges.earned.length + ' earned badges?');
@@ -4270,10 +4507,12 @@
             createElement('div', { style: { paddingTop: '24px' } },
               createElement(QuizScreen, {
                 questions: quizQuestions,
-                progress: progress,
+                progress: courseProgress,
                 modeName: modeName,
                 onAnswer: handleAnswer,
-                onBack: handleBack
+                onFlashcardReview: handleFlashcardReview,
+                onBack: handleBack,
+                isFlashcardMode: modeName === '\uD83D\uDCDA Flashcards'
               })
             )
           );
@@ -4288,14 +4527,16 @@
           createElement(NetworkStatus, { status: networkStatus }),
           createElement('div', { style: { paddingTop: '24px' } },
             createElement(HomeScreen, {
-              progress: progress,
+              progress: courseProgress,
               badges: badges,
               onSelectMode: handleSelectMode,
               onResetProgress: handleResetProgress,
               theme: theme,
               onCycleTheme: cycleTheme,
               user: user,
-              classStats: classStats
+              classStats: classStats,
+              activeCourse: activeCourse,
+              onSwitchCourse: switchCourse
             })
           )
         );
