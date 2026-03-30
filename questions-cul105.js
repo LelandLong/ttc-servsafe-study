@@ -7809,5 +7809,57 @@ var questionsCUL105 = [
     chapter: null,
     examFocus: false,
     type: "flashcard"
-  }
+  },
+
+  // ============ MEASUREMENT FLASHCARDS (from Measurement Study Guides) ============
+  // Every conversion from the study guides — midterm material
+
+  // --- Volume Conversions ---
+  { id: 2191, question: "1 Gallon = ? ounces", options: [], correct: -1, hint: "", explanation: "1 Gallon = 128 ounces", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2192, question: "1 Quart = ? ounces", options: [], correct: -1, hint: "", explanation: "1 Quart = 32 ounces", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2193, question: "1 Pint = ? ounces", options: [], correct: -1, hint: "", explanation: "1 Pint = 16 ounces", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2194, question: "1 Cup = ? ounces", options: [], correct: -1, hint: "", explanation: "1 Cup = 8 ounces", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2195, question: "1 Tablespoon = ? ounce(s)", options: [], correct: -1, hint: "", explanation: "1 Tablespoon = \u00BD ounce (0.5 oz)", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2196, question: "1 Tablespoon = ? teaspoons", options: [], correct: -1, hint: "", explanation: "1 Tablespoon = 3 teaspoons", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+
+  // --- Tablespoons to Cups ---
+  { id: 2197, question: "4 Tablespoons = ? cup", options: [], correct: -1, hint: "", explanation: "4 Tablespoons = 2 ounces = \u00BC cup", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2198, question: "8 Tablespoons = ? cup", options: [], correct: -1, hint: "", explanation: "8 Tablespoons = 4 ounces = \u00BD cup", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2199, question: "12 Tablespoons = ? cup", options: [], correct: -1, hint: "", explanation: "12 Tablespoons = 6 ounces = \u00BE cup", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2200, question: "16 Tablespoons = ? cup", options: [], correct: -1, hint: "", explanation: "16 Tablespoons = 8 ounces = 1 cup", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+
+  // --- Cups to Gallons ---
+  { id: 2201, question: "2 cups = ? pint(s)", options: [], correct: -1, hint: "", explanation: "2 cups = 1 pint = 16 ounces", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2202, question: "4 cups = ? quart(s)", options: [], correct: -1, hint: "", explanation: "4 cups = 2 pints = 1 Quart = 32 ounces = \u00BC Gallon", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2203, question: "8 cups = ? quart(s)", options: [], correct: -1, hint: "", explanation: "8 cups = 4 pints = 2 Quarts = 64 ounces = \u00BD Gallon", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2204, question: "12 cups = ? quart(s)", options: [], correct: -1, hint: "", explanation: "12 cups = 6 pints = 3 Quarts = 96 ounces = \u00BE Gallon", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2205, question: "16 cups = ? gallon(s)", options: [], correct: -1, hint: "", explanation: "16 cups = 8 pints = 4 Quarts = 128 ounces = 1 Gallon", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+
+  // --- Weight Conversions ---
+  { id: 2206, question: "1 pound = ? ounces", options: [], correct: -1, hint: "", explanation: "1 pound = 16 ounces", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2207, question: "\u00BE pound = ? ounces", options: [], correct: -1, hint: "", explanation: "\u00BE pound (0.75 lb) = 12 ounces", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2208, question: "\u00BD pound = ? ounces", options: [], correct: -1, hint: "", explanation: "\u00BD pound (0.5 lb) = 8 ounces", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2209, question: "\u00BC pound = ? ounces", options: [], correct: -1, hint: "", explanation: "\u00BC pound (0.25 lb) = 4 ounces", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+
+  // --- Metric Conversions ---
+  { id: 2210, question: "1 ounce = ? grams", options: [], correct: -1, hint: "", explanation: "1 ounce = 28.3 grams", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2211, question: "1 Kilogram = ? pounds", options: [], correct: -1, hint: "", explanation: "1 Kilogram = 2.2 pounds", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+
+  // --- Pint-a-Pound Conversions ---
+  { id: 2212, question: "A Pint a Pound the World Around", options: [], correct: -1, hint: "", explanation: "1 pint of water-like liquid (16 fl oz) weighs approximately 1 pound (16 oz by weight). This applies to stocks, vinegars, and similar viscosity liquids.", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2213, question: "1 Quart of water = ? pounds", options: [], correct: -1, hint: "", explanation: "1 Quart = 32 oz by volume = 2 pounds by weight", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2214, question: "1 Gallon of water = ? pounds", options: [], correct: -1, hint: "", explanation: "1 Gallon = 128 oz by volume = 8 pounds by weight (4 Quarts \u00D7 2 lbs each)", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2215, question: "20 Gallons of water = ? pounds", options: [], correct: -1, hint: "", explanation: "20 Gallons \u00D7 8 pounds per gallon = 160 pounds", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+
+  // --- Teaspoon Quick Math ---
+  { id: 2216, question: "How to convert Tablespoons to teaspoons?", options: [], correct: -1, hint: "", explanation: "Multiply Tablespoons \u00D7 3 to get teaspoons. Example: 4 Tbsp = 12 tsp.", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+
+  // --- Key Ratios (from study guide) ---
+  { id: 2217, question: "Mirepoix Ratio", options: [], correct: -1, hint: "", explanation: "50% onions : 25% celery : 25% carrots (2:1:1)", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2218, question: "Bones to Mirepoix Ratio (for stock)", options: [], correct: -1, hint: "", explanation: "10:1 \u2014 10 lbs bones to 1 lb mirepoix", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2219, question: "Hollandaise Ratio", options: [], correct: -1, hint: "", explanation: "1 egg yolk : 3 oz clarified butter", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2220, question: "Basic Vinaigrette Ratio", options: [], correct: -1, hint: "", explanation: "3:1 \u2014 3 parts oil to 1 part vinegar/acid", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2221, question: "Rice Pilaf Ratio", options: [], correct: -1, hint: "", explanation: "1:2 \u2014 1 part rice to 2 parts stock", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2222, question: "Pasta to Water Ratio", options: [], correct: -1, hint: "", explanation: "1:1 \u2014 1 gallon of water per 1 pound of pasta", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" },
+  { id: 2223, question: "Roux Ratio (flour to butter)", options: [], correct: -1, hint: "", explanation: "Usually 2:1 (2 parts flour to 1 part butter) or 1:1 equal parts", category: "Measurements & Math", topic: "Measurements & Math", chapter: null, examFocus: true, type: "flashcard" }
 ];
