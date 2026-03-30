@@ -1,8 +1,8 @@
-# Chef's Kitchen - ServSafe PWA Study App
+# Chef's Kitchen - Multi-Course Study PWA
 
-A Progressive Web App (PWA) for CUL 104 ServSafe exam preparation at Trident Technical College. Features a Ratatouille-inspired rat chef theme with gamified learning, cloud sync, live tests, and professor dashboard.
+A Progressive Web App (PWA) for culinary course study at Trident Technical College. Supports CUL-104 (ServSafe) and CUL-105 (Kitchen Fundamentals) with quiz questions, flashcards, gamified learning, cloud sync, live tests, and professor dashboard. Ratatouille-inspired rat chef theme.
 
-**Version:** 02-21-2026-3
+**Version:** 03-29-2026-7
 **Deployment:** GitHub Pages
 **Backend:** Convex Cloud (`https://cautious-monitor-526.convex.cloud`)
 
@@ -24,7 +24,8 @@ A Progressive Web App (PWA) for CUL 104 ServSafe exam preparation at Trident Tec
 ## ✨ Features
 
 ### Student Features
-- **342 Study Questions** across 15 ServSafe chapters
+- **Multi-Course Support:** CUL-104 (ServSafe) and CUL-105 (Kitchen Fundamentals)
+- **905 Total Study Items** (342 CUL-104 quiz + 340 CUL-105 quiz + 223 CUL-105 flashcards)
 - **Multiple Study Modes:**
   - Exam Focus (professor-curated)
   - Single Chapter
@@ -121,10 +122,12 @@ A Progressive Web App (PWA) for CUL 104 ServSafe exam preparation at Trident Tec
 ServSafePWA/
 ├── index.html              # Student study app (main PWA)
 ├── admin.html              # Professor dashboard
-├── questions.js            # Main question bank (342 questions, var questionsDB)
-├── questions-original.js   # Backup for reset (var originalQuestionsDB)
-├── version.js              # Shared APP_VERSION constant
-├── manifest.json           # PWA manifest
+├── questions.js                # CUL-104 question bank (342 questions, var questionsDB)
+├── questions-original.js       # CUL-104 backup (var originalQuestionsDB)
+├── questions-cul105.js         # CUL-105 question bank (563 items, var questionsCUL105)
+├── questions-cul105-original.js # CUL-105 backup (var originalQuestionsCUL105)
+├── version.js                  # Shared APP_VERSION constant
+├── manifest.json               # PWA manifest
 ├── assets/                 # Images (chef-greeting.jpg, headshot_20260210.png, icons)
 ├── convex/
 │   ├── schema.ts           # Database schema (8 tables)
@@ -277,22 +280,23 @@ npx convex deploy --yes
 
 See [CHANGELOG.md](./CHANGELOG.md) for detailed version history.
 
-**Latest:** 02-21-2026-3
-- Offline resilience (pending sync, auto-retry on reconnect)
-- PWA version checking & auto-update banner
-- 342 total questions (up from 195 as of Feb 12)
-- Category consolidation (19 → 7 categories)
-- Multiple bug fixes and quality improvements
+**Latest:** 03-29-2026-7
+- Multi-course support: CUL-104 (ServSafe) + CUL-105 (Kitchen Fundamentals)
+- CUL-105: 563 items (340 quiz + 223 flashcards) across 18 topics
+- Flashcard mode with topic-based decks and tap-to-flip UI
+- Per-course progress tracking, badges, and exam focus
+- Course selector at top of home screen
+- 905 total study items across both courses
 
 ---
 
 ## 🎓 Course Information
 
-- **Course:** CUL 104 - ServSafe
+- **Courses:** CUL-104 (ServSafe) and CUL-105 (Kitchen Fundamentals)
 - **Institution:** Trident Technical College
-- **Target:** ServSafe Manager Certification Exam
-- **Chapters:** 1-15 (full curriculum coverage)
-- **Question Bank:** 342 questions (as of 02-20-2026)
+- **CUL-104 Target:** ServSafe Manager Certification Exam (15 chapters, 342 questions)
+- **CUL-105 Target:** Midterm + Final Exam (18 topics, 563 items including flashcards)
+- **Total Study Items:** 905 (as of 03-29-2026)
 
 ---
 
@@ -330,12 +334,12 @@ Inspired by Pixar's *Ratatouille*, featuring a chef rat character learning food 
 
 ## 📝 License
 
-Educational project for Trident Technical College CUL 104.
+Educational project for Trident Technical College (CUL-104 and CUL-105).
 
 ---
 
 ## 👨‍💻 Maintenance
 
 **Primary Developer:** Leland Long
-**AI Assistant:** Claude (Anthropic)
+**AI Assistant:** Claude (Anthropic) — VS Code Claude Code extension
 **Last Updated:** March 29, 2026

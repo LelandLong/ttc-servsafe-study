@@ -1,7 +1,7 @@
-# Chef's Kitchen ServSafe PWA - Development Plan
+# Chef's Kitchen Multi-Course Study PWA - Development Plan
 
 **Last Updated:** March 29, 2026
-**Current Version:** 02-21-2026-3
+**Current Version:** 03-29-2026-7
 
 ---
 
@@ -17,14 +17,14 @@
 ## Current Status
 
 ### Recent Versions
-- **02-21-2026-3** - Offline resilience (pending sync, auto-retry) + PWA version checking & auto-update
-- **02-21-2026-2** - Fixed Q254/Q255 swapped correct answers
-- **02-21-2026-1** - Avg accuracy excludes inactive students
-- **02-20-2026-2** - 44 new questions from Class #11 & Mock Exam (total: 342)
-- **02-20-2026-1** - 47 new questions from Class #10 exam review (total: 298)
-- **02-15-2026-2** - 32 new questions from Quiz #3 & #4 (total: 251)
-- **02-15-2026-1** - 24 new questions from Class 8 & 9 + category consolidation (total: 219)
-- **02-12-2026-2** - Documentation standardization (CLAUDE.md rewrite, plan.md created)
+- **03-29-2026-7** - Measurement flashcards expanded (4→37), flashcard topic decks, Food Costing split
+- **03-29-2026-6** - Flashcard decks by topic instead of single 190-card deck
+- **03-29-2026-5** - Split Measurements & Math from Food Costing & Purchasing
+- **03-29-2026-4** - Course-specific badges (shared + CUL-104-only + CUL-105-only)
+- **03-29-2026-3** - Per-course badges, course numbers in selector, midterm label, 530 questions
+- **03-29-2026-2** - Course selector moved to top of home screen for visibility
+- **03-29-2026-1** - Multi-course support (CUL-104 + CUL-105), 200 CUL-105 questions, flashcard mode
+- **02-21-2026-3** - Offline resilience + PWA version checking & auto-update
 
 ---
 
@@ -137,15 +137,21 @@
 
 ## Active Work Items
 
-### Recently Completed
-- [x] Offline resilience with pending sync protection
-- [x] PWA version checking & auto-update banner
-- [x] 147 new questions added (195 → 342) from Classes 8-11, Quizzes 3-4, Mock Exam
-- [x] Category consolidation (19 → 7 categories)
-- [x] Multiple bug fixes (dark mode, badge tap, chapter stats, Q254/Q255, inactive avg)
+### Recently Completed (March 29, 2026)
+- [x] Multi-course support: CUL-104 (ServSafe) + CUL-105 (Kitchen Fundamentals)
+- [x] Course selector at top of home screen with course numbers
+- [x] CUL-105 question bank: 563 items (340 quiz + 223 flashcards) across 18 topics
+- [x] All 15 CUL-105 PowerPoints extracted via olefile binary parsing
+- [x] Flashcard mode with tap-to-flip UI and topic-based decks
+- [x] Per-course progress tracking (nested format, auto-migration)
+- [x] Per-course badges (shared + course-specific badges)
+- [x] Midterm Focus button for CUL-105 (200 exam items from study guide)
+- [x] Measurement flashcards expanded from 4 to 37 (every conversion from study guides)
+- [x] Food Costing & Purchasing split from Measurements & Math
+- [x] Convex schema + functions updated for course/topic/type fields
 
-### No Active Development
-The app is feature-complete for the Spring 2026 semester. Exam is approaching — professor may still request additional questions or corrections.
+### Current Focus
+CUL-105 midterm is approaching. App has comprehensive coverage of all study materials. Professor demo planned.
 
 ---
 
@@ -227,6 +233,13 @@ The app is stable and in active use by students.
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| 03-29-2026-7 | Mar 29, 2026 | Measurement flashcards (4→37), flashcard topic decks |
+| 03-29-2026-6 | Mar 29, 2026 | Flashcard decks by topic |
+| 03-29-2026-5 | Mar 29, 2026 | Split Measurements from Food Costing |
+| 03-29-2026-4 | Mar 29, 2026 | Course-specific badges |
+| 03-29-2026-3 | Mar 29, 2026 | 530 CUL-105 questions from all PPTs |
+| 03-29-2026-2 | Mar 29, 2026 | Course selector visibility fix |
+| 03-29-2026-1 | Mar 29, 2026 | Multi-course support + CUL-105 + flashcards |
 | 02-21-2026-3 | Feb 21, 2026 | Offline resilience + PWA version checking & auto-update |
 | 02-21-2026-2 | Feb 21, 2026 | Fixed Q254/Q255 swapped answers |
 | 02-21-2026-1 | Feb 21, 2026 | Avg accuracy excludes inactive students |
@@ -260,9 +273,10 @@ See [CHANGELOG.md](./CHANGELOG.md) for detailed change descriptions.
 
 ## Notes
 
-- The app is **feature-complete** for the Spring 2026 semester
-- 342 questions covering all 15 chapters across 7 consolidated categories
-- Professor may request new questions or corrections as the exam approaches
+- The app now supports **two courses**: CUL-104 (342 questions) and CUL-105 (563 items)
+- **905 total study items** across both courses
+- CUL-105 midterm approaching — study guide material marked as Exam Focus
+- Professor may request additional questions or corrections for either course
 - Live test feature is actively used during class sessions
 - All student progress is backed up in Convex cloud
 - GitHub Pages deployment is instant after push to main branch
