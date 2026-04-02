@@ -6,6 +6,17 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [04-01-2026-4] - April 1, 2026
+
+### Fixed
+- **Convex is now source of truth for questions** — Student app loads questions from Convex cloud for both CUL-104 and CUL-105, not just static JS files. Admin edits now appear for students immediately on reload.
+- **CUL-105 questions synced to Convex** — All 563 CUL-105 items (340 quiz + 223 flashcards) now live in Convex alongside CUL-104's 342 questions.
+- **COURSES references preserved on Convex sync** — Arrays mutated in place instead of reassigned, so COURSES object always reflects latest Convex data.
+- **Live test resilient to connection issues** — Poll failures no longer reset test state (students stay on their current test screen). Answer submissions retry once on failure.
+- **CUL-105 localStorage caching** — Student app caches CUL-105 questions in localStorage for fast offline reload.
+
+---
+
 ## [04-01-2026-2] - April 1, 2026
 
 ### Fixed

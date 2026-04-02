@@ -382,6 +382,7 @@
       // Start with questions.js as immediate default (no loading delay)
       var liveQuestionsDB = questionsDB;
       var liveCategories = categories;
+      var liveQuestionsCUL105 = (typeof questionsCUL105 !== 'undefined') ? questionsCUL105 : [];
 
       // Check localStorage for any cached data (from admin or previous Convex sync)
       try {
@@ -391,6 +392,10 @@
           liveQuestionsDB = JSON.parse(savedQuestions);
           liveCategories = savedCategories ? JSON.parse(savedCategories) : categories;
         }
+        var savedCUL105 = localStorage.getItem(ADMIN_STORAGE_KEY + '_cul105');
+        if (savedCUL105) {
+          liveQuestionsCUL105 = JSON.parse(savedCUL105);
+        }
       } catch (e) {
         console.log('Could not load from localStorage, using file defaults');
       }
@@ -398,6 +403,11 @@
       // Replace the global references so the rest of the app uses live data
       questionsDB = liveQuestionsDB;
       categories = liveCategories;
+      if (typeof questionsCUL105 !== 'undefined') {
+        questionsCUL105 = liveQuestionsCUL105;
+      } else {
+        var questionsCUL105 = liveQuestionsCUL105;
+      }
 
       // ============ CONVEX SYNC (if configured) ============
       // This will update questions in the background once Convex responds
@@ -654,29 +664,51 @@
       }
 
       if (CONVEX_URL) {
-        // Fetch questions from Convex and update localStorage cache
+        // Fetch ALL questions from Convex and split by course
         convexQuery("questions:getAll").then(function(convexQuestions) {
           if (convexQuestions && convexQuestions.length > 0) {
-            // Convert Convex format to app format
-            var formatted = convexQuestions.map(function(q) {
-              return {
+            // Split into CUL-104 and CUL-105
+            var cul104 = [];
+            var cul105 = [];
+            convexQuestions.forEach(function(q) {
+              var formatted = {
                 id: q.questionId,
                 question: q.question,
                 options: q.options,
                 correct: q.correct,
-                hint: q.hint,
+                hint: q.hint || '',
                 explanation: q.explanation,
                 category: q.category,
                 examFocus: q.examFocus,
-                chapter: q.chapter || 1
+                chapter: q.chapter || null
               };
+              if (q.course === 'CUL-105') {
+                formatted.topic = q.topic || '';
+                formatted.type = q.type || 'quiz';
+                formatted.course = 'CUL-105';
+                cul105.push(formatted);
+              } else {
+                formatted.chapter = q.chapter || 1;
+                cul104.push(formatted);
+              }
             });
-            // Cache in localStorage for offline/fast reload
-            localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(formatted));
-            // Update global questions
-            questionsDB = formatted;
-            liveQuestionsDB = formatted;
-            console.log('Synced ' + formatted.length + ' questions from Convex cloud');
+
+            // Update CUL-104 — mutate in place to preserve COURSES references
+            if (cul104.length > 0) {
+              questionsDB.length = 0;
+              cul104.forEach(function(q) { questionsDB.push(q); });
+              try { localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(cul104)); } catch(e) {}
+              console.log('Synced ' + cul104.length + ' CUL-104 questions from Convex');
+            }
+
+            // Update CUL-105 — mutate in place to preserve COURSES references
+            if (cul105.length > 0) {
+              questionsCUL105.length = 0;
+              cul105.forEach(function(q) { questionsCUL105.push(q); });
+              try { localStorage.setItem(ADMIN_STORAGE_KEY + '_cul105', JSON.stringify(cul105)); } catch(e) {}
+              console.log('Synced ' + cul105.length + ' CUL-105 questions from Convex');
+            }
+
             updateConvexStatus('connected');
           } else {
             // Connected but empty - still counts as connected
@@ -1833,7 +1865,7 @@
           shortName: 'CUL-105: Kitchen Fund.',
           icon: '\uD83D\uDD2A',
           description: 'Culinary Techniques & Knowledge',
-          questions: (typeof questionsCUL105 !== 'undefined') ? questionsCUL105 : [],
+          questions: questionsCUL105,
           orgType: 'topics',
           orgLabel: 'Topic',
           topics: [
@@ -4003,12 +4035,18 @@
                     }
                   }
                 } else if (!test && testScreen === 'waiting') {
-                  // Test was cancelled
+                  // Test was cancelled — only reset if we're in waiting state
                   setTestScreen(null);
                   setActiveTest(null);
                 }
+                // Note: if !test and testScreen is 'active' or 'finished', do NOT reset
+                // This prevents connection hiccups from kicking students out mid-test
               })
-              .catch(function() {});
+              .catch(function(err) {
+                // Connection error — do NOT reset test state
+                // Students keep their current test screen, will retry on next poll
+                console.log('Test poll failed (will retry):', err.message);
+              });
           }, 3000);
           return function() { clearInterval(interval); };
         }, [user ? user.userId : null, testScreen]);
@@ -4126,15 +4164,22 @@
           newAnsweredIds[question.id] = { selectedAnswer: selectedAnswer, correct: correct };
           setTestAnsweredIds(newAnsweredIds);
 
-          // Submit to cloud immediately
-          convexMutation("tests:submitAnswer", {
+          // Submit to cloud immediately, retry on failure
+          var submitArgs = {
             testId: activeTest.testId,
             userId: user.userId,
             questionId: question.id,
             selectedAnswer: selectedAnswer,
             correct: correct
-          }).catch(function(err) {
-            console.log('Test answer sync failed:', err.message);
+          };
+          convexMutation("tests:submitAnswer", submitArgs).catch(function(err) {
+            console.log('Test answer sync failed, retrying:', err.message);
+            // Retry once after 2 seconds
+            setTimeout(function() {
+              convexMutation("tests:submitAnswer", submitArgs).catch(function(err2) {
+                console.log('Test answer retry failed:', err2.message);
+              });
+            }, 2000);
           });
 
           // Auto-advance after brief delay
