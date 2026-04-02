@@ -379,83 +379,143 @@
       // Local storage key for admin changes - shared with index.html for LIVE updates
       const ADMIN_STORAGE_KEY = 'chefKitchenAdminQuestions';
       const ADMIN_CATEGORIES_KEY = 'chefKitchenAdminCategories';
+      const ADMIN_COURSE_KEY = 'chefKitchenAdminCourse';
+
+      // ============ COURSE CONFIGURATION ============
+      var ADMIN_COURSES = {
+        'CUL-104': {
+          name: 'CUL-104: ServSafe',
+          shortName: 'ServSafe',
+          questionsVar: 'questionsDB',
+          originalVar: 'originalQuestionsDB',
+          orgType: 'chapters',
+          orgLabel: 'Chapter',
+          chapters: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
+          hasQuizGroups: true,
+          quizGroups: { '1-4': [1,2,3,4], '5-7': [5,6,7], '8-10': [8,9,10], '11-14': [11,12,13,14], '15': [15] },
+          examLabel: 'Exam Focus',
+          storageKeySuffix: ''
+        },
+        'CUL-105': {
+          name: 'CUL-105: Kitchen Fundamentals',
+          shortName: 'Kitchen Fund.',
+          questionsVar: 'questionsCUL105',
+          originalVar: 'originalQuestionsCUL105',
+          orgType: 'topics',
+          orgLabel: 'Topic',
+          hasQuizGroups: false,
+          examLabel: 'Midterm Focus',
+          storageKeySuffix: '_cul105'
+        }
+      };
+
+      function getAdminCourse() {
+        try {
+          var saved = localStorage.getItem(ADMIN_COURSE_KEY);
+          if (saved && ADMIN_COURSES[saved]) return saved;
+        } catch (e) {}
+        return 'CUL-104';
+      }
 
       // Check if user has made any edits (localStorage has data)
-      function hasLocalEdits() {
+      function hasLocalEdits(course) {
         try {
-          return localStorage.getItem(ADMIN_STORAGE_KEY) !== null;
+          var suffix = ADMIN_COURSES[course || 'CUL-104'].storageKeySuffix;
+          return localStorage.getItem(ADMIN_STORAGE_KEY + suffix) !== null;
         } catch (e) {
           return false;
         }
       }
 
-      // Load questions - check localStorage first for admin edits, fall back to questions.js
-      function loadQuestions() {
+      // Load questions for a specific course
+      function loadQuestions(course) {
+        var config = ADMIN_COURSES[course || 'CUL-104'];
+        var suffix = config.storageKeySuffix;
         try {
-          const saved = localStorage.getItem(ADMIN_STORAGE_KEY);
+          var saved = localStorage.getItem(ADMIN_STORAGE_KEY + suffix);
           if (saved) {
             return JSON.parse(saved);
           }
         } catch (err) {
           console.log('Could not load saved questions:', err);
         }
-        // Fall back to questions.js data
-        return typeof questionsDB !== 'undefined' ? [...questionsDB] : [];
+        // Fall back to questions JS variable
+        var qVar = window[config.questionsVar];
+        return typeof qVar !== 'undefined' ? [...qVar] : [];
       }
 
       // Load original questions from backup file (for reset functionality)
-      function loadOriginalQuestions() {
-        return typeof originalQuestionsDB !== 'undefined' ? [...originalQuestionsDB] : [];
+      function loadOriginalQuestions(course) {
+        var config = ADMIN_COURSES[course || 'CUL-104'];
+        var origVar = window[config.originalVar];
+        return typeof origVar !== 'undefined' ? [...origVar] : [];
       }
 
-      function loadOriginalCategories() {
+      function loadOriginalCategories(course) {
+        if (course === 'CUL-105') {
+          // Extract categories from CUL-105 original questions
+          var orig = loadOriginalQuestions('CUL-105');
+          var cats = [];
+          orig.forEach(function(q) {
+            if (q.category && cats.indexOf(q.category) === -1) cats.push(q.category);
+          });
+          return cats.sort();
+        }
         return typeof originalCategories !== 'undefined' ? [...originalCategories] : [];
       }
 
-      // Load categories
-      function loadCategories() {
+      // Load categories for a specific course
+      function loadCategories(course) {
+        var suffix = ADMIN_COURSES[course || 'CUL-104'].storageKeySuffix;
         try {
-          const saved = localStorage.getItem(ADMIN_CATEGORIES_KEY);
+          var saved = localStorage.getItem(ADMIN_CATEGORIES_KEY + suffix);
           if (saved) {
             return JSON.parse(saved);
           }
         } catch (err) {
           console.log('Could not load saved categories:', err);
         }
-        // Fall back to questions.js categories
-        return typeof categories !== 'undefined' ? [...categories] : [];
+        // Fall back — extract from questions
+        var questions = loadQuestions(course);
+        var cats = [];
+        questions.forEach(function(q) {
+          if (q.category && cats.indexOf(q.category) === -1) cats.push(q.category);
+        });
+        return cats.sort();
       }
 
       // Save questions to localStorage (and sync to Convex if configured)
-      function saveQuestions(questions) {
+      function saveQuestions(questions, course) {
+        var suffix = ADMIN_COURSES[course || 'CUL-104'].storageKeySuffix;
         try {
-          localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(questions));
+          localStorage.setItem(ADMIN_STORAGE_KEY + suffix, JSON.stringify(questions));
         } catch (err) {
           console.log('Could not save questions to localStorage:', err);
         }
 
         // Sync to Convex if configured
         if (useConvex) {
-          syncToConvex(questions);
+          syncToConvex(questions, course);
         }
       }
 
       // Save categories to localStorage
-      function saveCategories(cats) {
+      function saveCategories(cats, course) {
+        var suffix = ADMIN_COURSES[course || 'CUL-104'].storageKeySuffix;
         try {
-          localStorage.setItem(ADMIN_CATEGORIES_KEY, JSON.stringify(cats));
+          localStorage.setItem(ADMIN_CATEGORIES_KEY + suffix, JSON.stringify(cats));
         } catch (err) {
           console.log('Could not save categories:', err);
         }
       }
 
       // Sync all questions to Convex (bulk update)
-      function syncToConvex(questions) {
+      function syncToConvex(questions, course) {
         if (!useConvex) return;
 
         // Convert app format to Convex format
         var convexQuestions = questions.map(function(q) {
-          return {
+          var obj = {
             questionId: q.id,
             question: q.question,
             options: q.options,
@@ -464,13 +524,19 @@
             explanation: q.explanation,
             category: q.category,
             examFocus: q.examFocus,
-            chapter: q.chapter || 1
+            chapter: q.chapter || (course === 'CUL-105' ? 0 : 1)
           };
+          if (course === 'CUL-105' || q.course === 'CUL-105') {
+            obj.course = 'CUL-105';
+            obj.topic = q.topic || '';
+            obj.type = q.type || 'quiz';
+          }
+          return obj;
         });
 
-        convexMutation("questions:bulkImport", { questions: convexQuestions })
+        convexMutation("questions:bulkImport", { questions: convexQuestions, course: course || 'CUL-104' })
           .then(function(count) {
-            console.log('Synced ' + count + ' questions to Convex cloud');
+            console.log('Synced ' + count + ' questions to Convex cloud (' + (course || 'CUL-104') + ')');
           })
           .catch(function(err) {
             console.log('Convex sync failed (will retry on next save):', err.message);
@@ -478,29 +544,46 @@
       }
 
       // Load questions from Convex (async)
-      function loadFromConvex(callback, errorCallback) {
+      function loadFromConvex(callback, errorCallback, course) {
         if (!useConvex) {
           callback(null);
           return;
         }
 
-        convexQuery("questions:getAll")
+        convexQuery("questions:getAll", { course: course || undefined })
           .then(function(convexQuestions) {
             if (convexQuestions && convexQuestions.length > 0) {
-              var formatted = convexQuestions.map(function(q) {
-                return {
-                  id: q.questionId,
-                  question: q.question,
-                  options: q.options,
-                  correct: q.correct,
-                  hint: q.hint,
-                  explanation: q.explanation,
-                  category: q.category,
-                  examFocus: q.examFocus,
-                  chapter: q.chapter || 1
-                };
-              });
-              callback(formatted);
+              // Filter to this course only
+              var courseFiltered = convexQuestions;
+              if (course === 'CUL-105') {
+                courseFiltered = convexQuestions.filter(function(q) { return q.course === 'CUL-105'; });
+              } else if (course === 'CUL-104') {
+                courseFiltered = convexQuestions.filter(function(q) { return !q.course || q.course === 'CUL-104'; });
+              }
+              if (courseFiltered.length > 0) {
+                var formatted = courseFiltered.map(function(q) {
+                  var obj = {
+                    id: q.questionId,
+                    question: q.question,
+                    options: q.options,
+                    correct: q.correct,
+                    hint: q.hint || '',
+                    explanation: q.explanation,
+                    category: q.category,
+                    examFocus: q.examFocus,
+                    chapter: q.chapter || (course === 'CUL-105' ? null : 1)
+                  };
+                  if (course === 'CUL-105' || q.course === 'CUL-105') {
+                    obj.topic = q.topic || '';
+                    obj.type = q.type || 'quiz';
+                    obj.course = 'CUL-105';
+                  }
+                  return obj;
+                });
+                callback(formatted);
+              } else {
+                callback(null);
+              }
             } else {
               callback(null);
             }
@@ -547,6 +630,8 @@
         var theme = props.theme || 'system';
         var themeIcon = theme === 'system' ? '\uD83D\uDDA5\uFE0F' : theme === 'light' ? '\u2600\uFE0F' : '\uD83C\uDF19';
         var themeLabel = theme === 'system' ? 'System' : theme === 'light' ? 'Light' : 'Dark';
+        var activeCourse = props.activeCourse || 'CUL-104';
+        var courseConfig = ADMIN_COURSES[activeCourse];
         var statusBanner;
 
         if (convexStatus === 'connected') {
@@ -596,8 +681,25 @@
                   e('p', { className: 'text-gray-400 text-sm' }, "Chef's Kitchen Admin Panel")
                 ),
                 e('div', { className: 'flex items-center gap-3' },
+                  // Course selector
+                  e('div', { className: 'flex rounded-lg overflow-hidden', style: { border: '1px solid rgba(255,255,255,0.3)' } },
+                    Object.keys(ADMIN_COURSES).map(function(courseId) {
+                      var isActive = courseId === activeCourse;
+                      return e('button', {
+                        key: courseId,
+                        onClick: function() { props.onCourseChange(courseId); },
+                        className: 'px-3 py-2 text-sm font-medium transition-colors',
+                        style: {
+                          backgroundColor: isActive ? 'rgba(249, 115, 22, 0.9)' : 'transparent',
+                          color: 'white',
+                          cursor: 'pointer',
+                          border: 'none'
+                        }
+                      }, courseId);
+                    })
+                  ),
                   e('span', { className: 'text-sm text-gray-400' },
-                    props.questionCount + ' questions'
+                    props.questionCount + ' items'
                   ),
                   e('span', { className: 'text-xs text-gray-500' }, 'v' + APP_VERSION),
                   e('button', {
@@ -621,9 +723,33 @@
       // Stats Bar Component
       function StatsBar(props) {
         const questions = props.questions;
+        var activeCourse = props.activeCourse || 'CUL-104';
+        var courseConfig = ADMIN_COURSES[activeCourse];
         const examFocusCount = questions.filter(function(q) { return q.examFocus; }).length;
         const basicCount = questions.length - examFocusCount;
         const categoryCount = props.categories.length;
+        var quizCount = questions.filter(function(q) { return !q.type || q.type === 'quiz'; }).length;
+        var flashcardCount = questions.filter(function(q) { return q.type === 'flashcard'; }).length;
+
+        // For CUL-105, count topics; for CUL-104, show chapters
+        var orgInfo;
+        if (courseConfig.orgType === 'topics') {
+          var topics = [];
+          questions.forEach(function(q) {
+            if (q.topic && topics.indexOf(q.topic) === -1) topics.push(q.topic);
+          });
+          orgInfo = e('div', { className: 'flex items-center gap-2' },
+            e('span', { className: 'text-2xl' }, '📑'),
+            e('span', { className: 'text-gray-600' }, 'Topics: '),
+            e('span', { className: 'font-semibold text-green-600' }, topics.length)
+          );
+        } else {
+          orgInfo = e('div', { className: 'flex items-center gap-2' },
+            e('span', { className: 'text-2xl' }, '📗'),
+            e('span', { className: 'text-gray-600' }, 'Chapters: '),
+            e('span', { className: 'font-semibold text-green-600' }, '1-15')
+          );
+        }
 
         return e('div', { className: 'bg-white border-b shadow-sm' },
           e('div', { className: 'max-w-7xl mx-auto px-4 py-3' },
@@ -631,11 +757,12 @@
               e('div', { className: 'flex items-center gap-2' },
                 e('span', { className: 'text-2xl' }, '📊'),
                 e('span', { className: 'text-gray-600' }, 'Total: '),
-                e('span', { className: 'font-semibold' }, questions.length)
+                e('span', { className: 'font-semibold' }, questions.length),
+                flashcardCount > 0 && e('span', { className: 'text-xs text-gray-400' }, '(' + quizCount + ' quiz + ' + flashcardCount + ' flashcards)')
               ),
               e('div', { className: 'flex items-center gap-2' },
                 e('span', { className: 'text-2xl' }, '⭐'),
-                e('span', { className: 'text-gray-600' }, 'Exam Focus: '),
+                e('span', { className: 'text-gray-600' }, courseConfig.examLabel + ': '),
                 e('span', { className: 'font-semibold text-red-600' }, examFocusCount)
               ),
               e('div', { className: 'flex items-center gap-2' },
@@ -648,11 +775,7 @@
                 e('span', { className: 'text-gray-600' }, 'Categories: '),
                 e('span', { className: 'font-semibold' }, categoryCount)
               ),
-              e('div', { className: 'flex items-center gap-2' },
-                e('span', { className: 'text-2xl' }, '📗'),
-                e('span', { className: 'text-gray-600' }, 'Chapters: '),
-                e('span', { className: 'font-semibold text-green-600' }, '1-15')
-              )
+              orgInfo
             )
           )
         );
@@ -660,6 +783,18 @@
 
       // Filter Bar Component
       function FilterBar(props) {
+        var activeCourse = props.activeCourse || 'CUL-104';
+        var courseConfig = ADMIN_COURSES[activeCourse];
+
+        // Build topic list for CUL-105
+        var topicList = [];
+        if (courseConfig.orgType === 'topics' && props.questions) {
+          props.questions.forEach(function(q) {
+            if (q.topic && topicList.indexOf(q.topic) === -1) topicList.push(q.topic);
+          });
+          topicList.sort();
+        }
+
         return e('div', { className: 'bg-white border-b shadow-sm sticky top-0 z-10' },
           e('div', { className: 'max-w-7xl mx-auto px-4 py-4' },
             e('div', { className: 'flex flex-col md:flex-row gap-4' },
@@ -684,17 +819,28 @@
                   return e('option', { key: cat, value: cat }, cat);
                 })
               ),
-              // Chapter Filter
-              e('select', {
-                value: props.chapterFilter,
-                onChange: function(ev) { props.onChapterChange(ev.target.value); },
-                className: 'px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
-              },
-                e('option', { value: '' }, 'All Chapters'),
-                [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(function(ch) {
-                  return e('option', { key: ch, value: ch }, 'Ch ' + ch);
-                })
-              ),
+              // Chapter/Topic Filter (dynamic based on course)
+              courseConfig.orgType === 'chapters'
+                ? e('select', {
+                    value: props.chapterFilter,
+                    onChange: function(ev) { props.onChapterChange(ev.target.value); },
+                    className: 'px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                  },
+                    e('option', { value: '' }, 'All Chapters'),
+                    [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(function(ch) {
+                      return e('option', { key: ch, value: ch }, 'Ch ' + ch);
+                    })
+                  )
+                : e('select', {
+                    value: props.topicFilter || '',
+                    onChange: function(ev) { props.onTopicChange(ev.target.value); },
+                    className: 'px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                  },
+                    e('option', { value: '' }, 'All Topics'),
+                    topicList.map(function(t) {
+                      return e('option', { key: t, value: t }, t);
+                    })
+                  ),
               // Exam Focus Filter
               e('select', {
                 value: props.examFocusFilter,
@@ -702,8 +848,18 @@
                 className: 'px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
               },
                 e('option', { value: '' }, 'All Questions'),
-                e('option', { value: 'true' }, '⭐ Exam Focus'),
+                e('option', { value: 'true' }, '⭐ ' + courseConfig.examLabel),
                 e('option', { value: 'false' }, '📖 Basic Knowledge')
+              ),
+              // Type filter (CUL-105 only)
+              activeCourse === 'CUL-105' && e('select', {
+                value: props.typeFilter || '',
+                onChange: function(ev) { props.onTypeChange(ev.target.value); },
+                className: 'px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+              },
+                e('option', { value: '' }, 'All Types'),
+                e('option', { value: 'quiz' }, 'Quiz'),
+                e('option', { value: 'flashcard' }, 'Flashcard')
               ),
               // Add Question Button
               e('button', {
@@ -721,7 +877,9 @@
       // Question Row Component
       function QuestionRow(props) {
         const q = props.question;
-        const correctLetter = String.fromCharCode(65 + q.correct);
+        var activeCourse = props.activeCourse || 'CUL-104';
+        var isFlashcard = q.type === 'flashcard';
+        const correctLetter = isFlashcard ? '-' : String.fromCharCode(65 + q.correct);
 
         return e('div', {
           className: 'question-row bg-white border-b px-4 py-4 hover:bg-gray-50 transition-colors'
@@ -730,15 +888,16 @@
             // ID Column
             e('div', { className: 'w-16 flex-shrink-0 text-center' },
               e('span', { className: 'text-gray-400 text-sm' }, '#' + q.id),
-              e('div', { className: 'text-xs text-green-600 font-medium' }, 'Ch ' + (q.chapter || 1)),
+              activeCourse === 'CUL-104' && e('div', { className: 'text-xs text-green-600 font-medium' }, 'Ch ' + (q.chapter || 1)),
+              activeCourse === 'CUL-105' && e('div', { className: 'text-xs text-blue-600 font-medium' }, isFlashcard ? '🃏' : '📝'),
               q.examFocus && e('div', { className: 'text-yellow-500 text-lg' }, '⭐')
             ),
             // Main Content
             e('div', { className: 'flex-1 min-w-0' },
               // Question text
               e('p', { className: 'font-medium text-gray-900 mb-2' }, q.question),
-              // Options
-              e('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-1 mb-2' },
+              // Options (only for quiz questions)
+              !isFlashcard && e('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-1 mb-2' },
                 q.options.map(function(opt, i) {
                   const letter = String.fromCharCode(65 + i);
                   const isCorrect = i === q.correct;
@@ -752,11 +911,17 @@
                   );
                 })
               ),
+              // Flashcard answer (explanation)
+              isFlashcard && e('div', { className: 'mb-2 text-sm text-gray-600 italic' },
+                'Answer: ', q.explanation.length > 100 ? q.explanation.substring(0, 100) + '...' : q.explanation
+              ),
               // Metadata row
               e('div', { className: 'flex flex-wrap items-center gap-2 text-xs' },
                 e('span', { className: 'category-tag ' + getCategoryColor(q.category) }, q.category),
+                q.topic && e('span', { className: 'text-gray-400' }, '|'),
+                q.topic && e('span', { className: 'text-blue-500' }, q.topic),
                 e('span', { className: 'text-gray-400' }, '|'),
-                e('span', { className: 'text-gray-500' }, 'Hint: ' + (q.hint.length > 50 ? q.hint.substring(0, 50) + '...' : q.hint))
+                !isFlashcard && e('span', { className: 'text-gray-500' }, 'Hint: ' + (q.hint.length > 50 ? q.hint.substring(0, 50) + '...' : q.hint))
               )
             ),
             // Actions
@@ -781,8 +946,10 @@
         const question = props.question;
         const isNew = props.isNew;
         const categories = props.categories;
+        var activeCourse = props.activeCourse || 'CUL-104';
+        var courseConfig = ADMIN_COURSES[activeCourse];
 
-        const [formData, setFormData] = useState(question || {
+        var defaultData = {
           id: 0,
           question: '',
           options: ['', '', '', ''],
@@ -791,8 +958,13 @@
           explanation: '',
           category: categories[0] || '',
           examFocus: false,
-          chapter: 1
-        });
+          chapter: activeCourse === 'CUL-104' ? 1 : null,
+          topic: '',
+          type: 'quiz'
+        };
+
+        const [formData, setFormData] = useState(question || defaultData);
+        var isFlashcard = formData.type === 'flashcard';
 
         function updateField(field, value) {
           setFormData(function(prev) {
@@ -814,16 +986,18 @@
             alert('Question text is required');
             return;
           }
-          if (formData.options.some(function(o) { return !o.trim(); })) {
-            alert('All four options are required');
-            return;
-          }
-          if (!formData.hint.trim()) {
-            alert('Hint is required');
-            return;
+          if (!isFlashcard) {
+            if (formData.options.some(function(o) { return !o.trim(); })) {
+              alert('All four options are required');
+              return;
+            }
+            if (!formData.hint.trim()) {
+              alert('Hint is required');
+              return;
+            }
           }
           if (!formData.explanation.trim()) {
-            alert('Explanation is required');
+            alert((isFlashcard ? 'Answer/definition' : 'Explanation') + ' is required');
             return;
           }
           if (!formData.category) {
@@ -848,9 +1022,37 @@
             ),
             // Form
             e('div', { className: 'p-6 space-y-6' },
+              // Type selector (CUL-105 only)
+              activeCourse === 'CUL-105' && e('div', { className: 'flex gap-3' },
+                e('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Type:'),
+                e('label', { className: 'flex items-center gap-2 cursor-pointer' },
+                  e('input', {
+                    type: 'radio',
+                    name: 'qtype',
+                    checked: formData.type !== 'flashcard',
+                    onChange: function() { updateField('type', 'quiz'); },
+                    className: 'w-4 h-4'
+                  }),
+                  e('span', { className: 'text-sm' }, 'Quiz Question')
+                ),
+                e('label', { className: 'flex items-center gap-2 cursor-pointer' },
+                  e('input', {
+                    type: 'radio',
+                    name: 'qtype',
+                    checked: formData.type === 'flashcard',
+                    onChange: function() {
+                      setFormData(function(prev) {
+                        return Object.assign({}, prev, { type: 'flashcard', options: [], correct: -1, hint: '' });
+                      });
+                    },
+                    className: 'w-4 h-4'
+                  }),
+                  e('span', { className: 'text-sm' }, 'Flashcard')
+                )
+              ),
               // Question Text
               e('div', null,
-                e('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Question *'),
+                e('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, isFlashcard ? 'Term / Front of Card *' : 'Question *'),
                 e('textarea', {
                   value: formData.question,
                   onChange: function(ev) { updateField('question', ev.target.value); },
@@ -858,8 +1060,8 @@
                   className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                 })
               ),
-              // Options
-              e('div', null,
+              // Options (quiz only)
+              !isFlashcard && e('div', null,
                 e('label', { className: 'block text-sm font-medium text-gray-700 mb-2' }, 'Answer Options *'),
                 e('div', { className: 'space-y-3' },
                   [0, 1, 2, 3].map(function(i) {
@@ -886,7 +1088,7 @@
                 ),
                 e('p', { className: 'text-xs text-gray-500 mt-2' }, 'Click a letter button to mark it as the correct answer')
               ),
-              // Category, Chapter, and Exam Focus
+              // Category, Chapter/Topic, and Exam Focus
               e('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-4' },
                 e('div', null,
                   e('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Category *'),
@@ -901,7 +1103,7 @@
                     })
                   )
                 ),
-                e('div', null,
+                activeCourse === 'CUL-104' ? e('div', null,
                   e('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '📗 Chapter *'),
                   e('select', {
                     value: formData.chapter || 1,
@@ -912,6 +1114,15 @@
                       return e('option', { key: ch, value: ch }, 'Chapter ' + ch);
                     })
                   )
+                ) : e('div', null,
+                  e('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '📑 Topic'),
+                  e('input', {
+                    type: 'text',
+                    value: formData.topic || '',
+                    onChange: function(ev) { updateField('topic', ev.target.value); },
+                    placeholder: 'e.g. Knife Skills & Cuts',
+                    className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                  })
                 ),
                 e('div', { className: 'flex items-center' },
                   e('label', { className: 'flex items-center gap-3 cursor-pointer' },
@@ -927,8 +1138,8 @@
                   )
                 )
               ),
-              // Hint
-              e('div', null,
+              // Hint (quiz only)
+              !isFlashcard && e('div', null,
                 e('label', { className: 'block text-sm font-medium text-gray-700 mb-1' },
                   'Hint * ',
                   e('span', { className: 'font-normal text-gray-500' }, '(should NOT give away the answer)')
@@ -941,11 +1152,11 @@
                   className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                 })
               ),
-              // Explanation
+              // Explanation / Definition
               e('div', null,
                 e('label', { className: 'block text-sm font-medium text-gray-700 mb-1' },
-                  'Explanation * ',
-                  e('span', { className: 'font-normal text-gray-500' }, '(shown after answering)')
+                  isFlashcard ? 'Definition / Back of Card * ' : 'Explanation * ',
+                  e('span', { className: 'font-normal text-gray-500' }, isFlashcard ? '(shown when card is flipped)' : '(shown after answering)')
                 ),
                 e('textarea', {
                   value: formData.explanation,
@@ -1057,6 +1268,8 @@
         const [importText, setImportText] = useState('');
         const [showImport, setShowImport] = useState(false);
         const [showAdvanced, setShowAdvanced] = useState(false);
+        var activeCourse = props.activeCourse || 'CUL-104';
+        var courseConfig = ADMIN_COURSES[activeCourse];
 
         // Create timestamped backup filename
         function getTimestamp() {
@@ -1074,10 +1287,10 @@
           var url = URL.createObjectURL(blob);
           var a = document.createElement('a');
           a.href = url;
-          a.download = 'questions-backup-' + getTimestamp() + '.json';
+          a.download = activeCourse.toLowerCase() + '-questions-backup-' + getTimestamp() + '.json';
           a.click();
           URL.revokeObjectURL(url);
-          alert('Backup saved! Keep this file safe - you can restore from it anytime using the Import feature.');
+          alert('Backup saved for ' + activeCourse + '! Keep this file safe.');
         }
 
         function handleExportJSON() {
@@ -1086,22 +1299,23 @@
           var url = URL.createObjectURL(blob);
           var a = document.createElement('a');
           a.href = url;
-          a.download = 'servsafe-questions.json';
+          a.download = activeCourse.toLowerCase() + '-questions.json';
           a.click();
           URL.revokeObjectURL(url);
         }
 
         function handleExportJS() {
-          var header = '// ============ CUL 104 SERVSAFE QUESTIONS DATABASE ============\n';
+          var varName = activeCourse === 'CUL-105' ? 'questionsCUL105' : 'questionsDB';
+          var header = '// ============ ' + activeCourse + ' QUESTIONS DATABASE ============\n';
           header += '// Generated from Admin Panel on ' + new Date().toLocaleDateString() + '\n';
           header += '// Total questions: ' + props.questions.length + '\n\n';
-          header += 'var questionsDB = ';
+          header += 'var ' + varName + ' = ';
 
           var dataStr = JSON.stringify(props.questions, null, 2);
 
           var footer = ';\n\n// Get unique categories from questions\n';
           footer += 'var categories = [];\n';
-          footer += 'questionsDB.forEach(function(q) {\n';
+          footer += varName + '.forEach(function(q) {\n';
           footer += '  if (categories.indexOf(q.category) === -1) {\n';
           footer += '    categories.push(q.category);\n';
           footer += '  }\n';
@@ -1113,7 +1327,7 @@
           var url = URL.createObjectURL(blob);
           var a = document.createElement('a');
           a.href = url;
-          a.download = 'questions.js';
+          a.download = activeCourse === 'CUL-105' ? 'questions-cul105.js' : 'questions.js';
           a.click();
           URL.revokeObjectURL(url);
         }
@@ -1151,7 +1365,7 @@
             var content = e.target.result;
             // Try to extract JSON from .js file
             if (file.name.endsWith('.js')) {
-              var match = content.match(/var\s+questionsDB\s*=\s*(\[[\s\S]*?\]);/);
+              var match = content.match(/var\s+(?:questionsDB|questionsCUL105)\s*=\s*(\[[\s\S]*?\]);/);
               if (match) {
                 content = match[1];
               }
@@ -1162,8 +1376,9 @@
         }
 
         function handleResetToOriginal() {
-          var originalCount = loadOriginalQuestions().length;
-          if (confirm('⚠️ RESET TO ORIGINAL ⚠️\n\nThis will restore the original ' + originalCount + ' questions from when the app was first set up.\n\nALL your changes will be lost!\n\nAre you absolutely sure?')) {
+          var originalQuestions = loadOriginalQuestions(activeCourse);
+          var originalCount = originalQuestions.length;
+          if (confirm('⚠️ RESET ' + activeCourse + ' TO ORIGINAL ⚠️\n\nThis will restore the original ' + originalCount + ' questions for ' + activeCourse + '.\n\nALL your changes to ' + activeCourse + ' will be lost!\n\nAre you absolutely sure?')) {
             if (confirm('Last chance! Create a backup first?\n\nClick OK to create a backup before resetting.\nClick Cancel to reset without backup.')) {
               handleCreateBackup();
             }
@@ -1203,7 +1418,7 @@
                 className: 'px-5 py-2.5 border-2 border-red-300 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center gap-2'
               },
                 e('span', null, '↩️'),
-                'Reset to Original (' + (typeof questionsDB !== 'undefined' ? questionsDB.length : '?') + ' questions)'
+                'Reset ' + activeCourse + ' to Original (' + loadOriginalQuestions(activeCourse).length + ' items)'
               )
             ),
 
@@ -1277,7 +1492,9 @@
       }
 
       // ============ STUDENT DASHBOARD ============
-      function StudentDashboard() {
+      function StudentDashboard(props) {
+        var activeCourse = props.activeCourse || 'CUL-104';
+        var courseConfig = ADMIN_COURSES[activeCourse];
         var studentsState = useState([]);
         var students = studentsState[0];
         var setStudents = studentsState[1];
@@ -1620,7 +1837,9 @@
       }
 
       // ============ LIVE TEST PANEL ============
-      function LiveTestPanel() {
+      function LiveTestPanel(props) {
+        var activeCourse = props.activeCourse || 'CUL-104';
+        var courseConfig = ADMIN_COURSES[activeCourse];
         var testNameState = useState('');
         var testName = testNameState[0];
         var setTestName = testNameState[1];
@@ -1696,16 +1915,20 @@
         }, [currentTest ? currentTest.testId : null, currentTest ? currentTest.status : null]);
 
         function getQuestionIdsForMode(mode, modeValue) {
-          var questions = typeof questionsDB !== 'undefined' ? questionsDB : [];
-          var filtered = questions;
+          var qVar = window[courseConfig.questionsVar];
+          var questions = typeof qVar !== 'undefined' ? qVar : [];
+          // Only quiz questions for tests (no flashcards)
+          var filtered = questions.filter(function(q) { return !q.type || q.type === 'quiz'; });
           if (mode === 'examFocus') {
-            filtered = questions.filter(function(q) { return q.examFocus; });
+            filtered = filtered.filter(function(q) { return q.examFocus; });
           } else if (mode === 'chapter' && modeValue) {
-            filtered = questions.filter(function(q) { return q.chapter === parseInt(modeValue); });
+            filtered = filtered.filter(function(q) { return q.chapter === parseInt(modeValue); });
+          } else if (mode === 'topic' && modeValue) {
+            filtered = filtered.filter(function(q) { return q.topic === modeValue; });
           } else if (mode === 'quizGroup' && modeValue) {
             var ranges = { '1-4': [1,2,3,4], '5-7': [5,6,7], '8-10': [8,9,10], '11-14': [11,12,13,14], '15': [15] };
             var chList = ranges[modeValue] || [];
-            filtered = questions.filter(function(q) { return chList.indexOf(q.chapter) !== -1; });
+            filtered = filtered.filter(function(q) { return chList.indexOf(q.chapter) !== -1; });
           }
           return filtered.map(function(q) { return q.id; });
         }
@@ -1720,7 +1943,8 @@
             mode: testMode,
             modeValue: testModeValue || undefined,
             questionIds: qIds,
-            timerMinutes: timer
+            timerMinutes: timer,
+            course: activeCourse
           }).then(function(result) {
             convexQuery("tests:getActiveTest").then(function(t) {
               setCurrentTest(t);
@@ -1794,10 +2018,11 @@
                       onChange: function(ev) { setTestMode(ev.target.value); setTestModeValue(''); },
                       className: 'w-full px-4 py-2 border rounded-lg text-sm'
                     },
-                      e('option', { value: 'examFocus' }, 'Exam Focus'),
+                      e('option', { value: 'examFocus' }, courseConfig.examLabel),
                       e('option', { value: 'all' }, 'All Questions'),
-                      e('option', { value: 'chapter' }, 'Single Chapter'),
-                      e('option', { value: 'quizGroup' }, 'Quiz Group')
+                      courseConfig.orgType === 'chapters' && e('option', { value: 'chapter' }, 'Single Chapter'),
+                      courseConfig.orgType === 'topics' && e('option', { value: 'topic' }, 'Single Topic'),
+                      courseConfig.hasQuizGroups && e('option', { value: 'quizGroup' }, 'Quiz Group')
                     )
                   ),
                   (testMode === 'chapter') && e('div', null,
@@ -1811,6 +2036,27 @@
                       [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(function(ch) {
                         return e('option', { key: ch, value: ch }, 'Chapter ' + ch);
                       })
+                    )
+                  ),
+                  (testMode === 'topic') && e('div', null,
+                    e('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Topic'),
+                    e('select', {
+                      value: testModeValue,
+                      onChange: function(ev) { setTestModeValue(ev.target.value); },
+                      className: 'w-full px-4 py-2 border rounded-lg text-sm'
+                    },
+                      e('option', { value: '' }, 'Select...'),
+                      (function() {
+                        var qVar = window[courseConfig.questionsVar];
+                        var qs = typeof qVar !== 'undefined' ? qVar : [];
+                        var topics = [];
+                        qs.forEach(function(q) {
+                          if (q.topic && topics.indexOf(q.topic) === -1) topics.push(q.topic);
+                        });
+                        return topics.sort().map(function(t) {
+                          return e('option', { key: t, value: t }, t);
+                        });
+                      })()
                     )
                   ),
                   (testMode === 'quizGroup') && e('div', null,
@@ -1978,16 +2224,53 @@
       function AdminApp() {
         const [theme, setTheme] = useState(getInitialTheme);
         const [activeTab, setActiveTab] = useState('questions');
-        const [questions, setQuestions] = useState(loadQuestions);
-        const [allCategories, setAllCategories] = useState(loadCategories);
+        const [activeCourse, setActiveCourse] = useState(getAdminCourse);
+        const [questions, setQuestions] = useState(function() { return loadQuestions(getAdminCourse()); });
+        const [allCategories, setAllCategories] = useState(function() { return loadCategories(getAdminCourse()); });
         const [searchTerm, setSearchTerm] = useState('');
         const [categoryFilter, setCategoryFilter] = useState('');
         const [chapterFilter, setChapterFilter] = useState('');
+        const [topicFilter, setTopicFilter] = useState('');
+        const [typeFilter, setTypeFilter] = useState('');
         const [examFocusFilter, setExamFocusFilter] = useState('');
         const [editingQuestion, setEditingQuestion] = useState(null);
         const [isAddingQuestion, setIsAddingQuestion] = useState(false);
         const [showCategoryManager, setShowCategoryManager] = useState(false);
         const [convexStatus, setConvexStatus] = useState(useConvex ? 'connecting' : 'not-configured');
+
+        // Handle course switch
+        function handleCourseChange(newCourse) {
+          if (newCourse === activeCourse) return;
+          setActiveCourse(newCourse);
+          try { localStorage.setItem(ADMIN_COURSE_KEY, newCourse); } catch (e) {}
+          // Reset filters
+          setSearchTerm('');
+          setCategoryFilter('');
+          setChapterFilter('');
+          setTopicFilter('');
+          setTypeFilter('');
+          setExamFocusFilter('');
+          // Load questions and categories for new course
+          var newQuestions = loadQuestions(newCourse);
+          setQuestions(newQuestions);
+          setAllCategories(loadCategories(newCourse));
+          // Try to load from Convex too
+          if (useConvex) {
+            loadFromConvex(function(convexQuestions) {
+              if (convexQuestions && convexQuestions.length > 0) {
+                setQuestions(convexQuestions);
+                var suffix = ADMIN_COURSES[newCourse].storageKeySuffix;
+                try { localStorage.setItem(ADMIN_STORAGE_KEY + suffix, JSON.stringify(convexQuestions)); } catch (err) {}
+                var cats = [];
+                convexQuestions.forEach(function(q) {
+                  if (q.category && cats.indexOf(q.category) === -1) cats.push(q.category);
+                });
+                cats.sort();
+                setAllCategories(cats);
+              }
+            }, null, newCourse);
+          }
+        }
 
         // Load from Convex on startup (if configured)
         useEffect(function() {
@@ -1999,28 +2282,29 @@
                 // Convex has data - use it
                 setQuestions(convexQuestions);
                 // Also update localStorage as cache
+                var suffix = ADMIN_COURSES[activeCourse].storageKeySuffix;
                 try {
-                  localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(convexQuestions));
+                  localStorage.setItem(ADMIN_STORAGE_KEY + suffix, JSON.stringify(convexQuestions));
                 } catch (err) {}
                 // Extract categories
                 var cats = [];
                 convexQuestions.forEach(function(q) {
-                  if (cats.indexOf(q.category) === -1) cats.push(q.category);
+                  if (q.category && cats.indexOf(q.category) === -1) cats.push(q.category);
                 });
                 cats.sort();
                 setAllCategories(cats);
                 try {
-                  localStorage.setItem(ADMIN_CATEGORIES_KEY, JSON.stringify(cats));
+                  localStorage.setItem(ADMIN_CATEGORIES_KEY + suffix, JSON.stringify(cats));
                 } catch (err) {}
                 setConvexStatus('connected');
-                console.log('Loaded ' + convexQuestions.length + ' questions from Convex');
+                console.log('Loaded ' + convexQuestions.length + ' questions from Convex (' + activeCourse + ')');
               } else {
-                // Convex is empty - offer to seed it
+                // Convex is empty for this course - offer to seed it
                 setConvexStatus('connected');
-                var localQuestions = loadQuestions();
+                var localQuestions = loadQuestions(activeCourse);
                 if (localQuestions.length > 0) {
-                  if (confirm('Convex database is empty. Would you like to upload your current ' + localQuestions.length + ' questions to the cloud?\n\nThis will enable cross-device sync.')) {
-                    syncToConvex(localQuestions);
+                  if (confirm('Convex database has no ' + activeCourse + ' questions. Would you like to upload your current ' + localQuestions.length + ' questions to the cloud?\n\nThis will enable cross-device sync.')) {
+                    syncToConvex(localQuestions, activeCourse);
                   }
                 }
               }
@@ -2029,7 +2313,8 @@
               // Error connecting to Convex
               console.log('Convex connection error:', err.message);
               setConvexStatus('error');
-            }
+            },
+            activeCourse
           );
         }, []);
 
@@ -2050,6 +2335,11 @@
           if (categoryFilter && q.category !== categoryFilter) return false;
           // Chapter filter
           if (chapterFilter && (q.chapter || 1) !== parseInt(chapterFilter)) return false;
+          // Topic filter
+          if (topicFilter && q.topic !== topicFilter) return false;
+          // Type filter
+          if (typeFilter === 'quiz' && q.type === 'flashcard') return false;
+          if (typeFilter === 'flashcard' && q.type !== 'flashcard') return false;
           // Exam focus filter
           if (examFocusFilter === 'true' && !q.examFocus) return false;
           if (examFocusFilter === 'false' && q.examFocus) return false;
@@ -2065,6 +2355,11 @@
             // Generate new ID
             var maxId = questions.reduce(function(max, q) { return Math.max(max, q.id); }, 0);
             formData.id = maxId + 1;
+            // Add course-specific fields
+            if (activeCourse === 'CUL-105') {
+              formData.course = 'CUL-105';
+              if (!formData.type) formData.type = 'quiz';
+            }
             updated = questions.concat([formData]);
           } else {
             updated = questions.map(function(q) {
@@ -2072,7 +2367,7 @@
             });
           }
           setQuestions(updated);
-          saveQuestions(updated);
+          saveQuestions(updated, activeCourse);
           setEditingQuestion(null);
           setIsAddingQuestion(false);
         }
@@ -2081,19 +2376,19 @@
           if (!confirm('Are you sure you want to delete question #' + id + '?')) return;
           var updated = questions.filter(function(q) { return q.id !== id; });
           setQuestions(updated);
-          saveQuestions(updated);
+          saveQuestions(updated, activeCourse);
         }
 
         function handleAddCategory(name) {
           var updated = allCategories.concat([name]).sort();
           setAllCategories(updated);
-          saveCategories(updated);
+          saveCategories(updated, activeCourse);
         }
 
         function handleDeleteCategory(name) {
           var updated = allCategories.filter(function(c) { return c !== name; });
           setAllCategories(updated);
-          saveCategories(updated);
+          saveCategories(updated, activeCourse);
         }
 
         function getQuestionCountForCategory(cat) {
@@ -2102,35 +2397,36 @@
 
         function handleImport(importedQuestions) {
           // Re-assign IDs to be sequential
+          var startId = activeCourse === 'CUL-105' ? 1001 : 1;
           var withIds = importedQuestions.map(function(q, i) {
-            return Object.assign({}, q, { id: i + 1 });
+            return Object.assign({}, q, { id: startId + i });
           });
           setQuestions(withIds);
-          saveQuestions(withIds);
+          saveQuestions(withIds, activeCourse);
           // Update categories
           var newCats = [];
           withIds.forEach(function(q) {
-            if (newCats.indexOf(q.category) === -1) {
+            if (q.category && newCats.indexOf(q.category) === -1) {
               newCats.push(q.category);
             }
           });
           newCats.sort();
           setAllCategories(newCats);
-          saveCategories(newCats);
-          alert('Successfully imported ' + withIds.length + ' questions!');
+          saveCategories(newCats, activeCourse);
+          alert('Successfully imported ' + withIds.length + ' questions for ' + activeCourse + '!');
         }
 
         function handleResetToOriginal() {
-          // Load from the original backup file (questions-original.js)
-          var originalQuestions = loadOriginalQuestions();
-          var originalCats = loadOriginalCategories();
+          // Load from the original backup file
+          var originalQuestions = loadOriginalQuestions(activeCourse);
+          var originalCats = loadOriginalCategories(activeCourse);
 
           setQuestions(originalQuestions);
           setAllCategories(originalCats);
-          saveQuestions(originalQuestions);
-          saveCategories(originalCats);
+          saveQuestions(originalQuestions, activeCourse);
+          saveCategories(originalCats, activeCourse);
 
-          alert('Successfully reset to original ' + originalQuestions.length + ' questions!\n\nThe study app will now show the original questions.');
+          alert('Successfully reset ' + activeCourse + ' to original ' + originalQuestions.length + ' items!\n\nThe study app will now show the original questions.');
         }
 
         function cycleTheme() {
@@ -2142,7 +2438,7 @@
 
         return e('div', { className: 'min-h-screen', style: { backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' } },
           // Header
-          e(Header, { questionCount: questions.length, convexStatus: convexStatus, theme: theme, onCycleTheme: cycleTheme }),
+          e(Header, { questionCount: questions.length, convexStatus: convexStatus, theme: theme, onCycleTheme: cycleTheme, activeCourse: activeCourse, onCourseChange: handleCourseChange }),
 
           // Tab Navigation
           e('div', { style: { backgroundColor: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' } },
@@ -2168,7 +2464,7 @@
           // Tab Content
           activeTab === 'questions' && e('div', null,
             // Stats
-            e(StatsBar, { questions: questions, categories: allCategories }),
+            e(StatsBar, { questions: questions, categories: allCategories, activeCourse: activeCourse }),
             // Main content
             e('div', { className: 'max-w-7xl mx-auto p-4 space-y-4' },
               // Tools row
@@ -2177,7 +2473,8 @@
                   e(ExportImportPanel, {
                     questions: questions,
                     onImport: handleImport,
-                    onResetToOriginal: handleResetToOriginal
+                    onResetToOriginal: handleResetToOriginal,
+                    activeCourse: activeCourse
                   })
                 ),
                 e('div', { className: 'md:w-64' },
@@ -2197,11 +2494,17 @@
                 searchTerm: searchTerm,
                 categoryFilter: categoryFilter,
                 chapterFilter: chapterFilter,
+                topicFilter: topicFilter,
+                typeFilter: typeFilter,
                 examFocusFilter: examFocusFilter,
                 categories: allCategories,
+                questions: questions,
+                activeCourse: activeCourse,
                 onSearchChange: setSearchTerm,
                 onCategoryChange: setCategoryFilter,
                 onChapterChange: setChapterFilter,
+                onTopicChange: setTopicFilter,
+                onTypeChange: setTypeFilter,
                 onExamFocusChange: setExamFocusFilter,
                 onAddQuestion: function() { setIsAddingQuestion(true); }
               }),
@@ -2218,6 +2521,7 @@
                     return e(QuestionRow, {
                       key: q.id,
                       question: q,
+                      activeCourse: activeCourse,
                       onEdit: function(q) { setEditingQuestion(q); },
                       onDelete: handleDeleteQuestion
                     });
@@ -2226,15 +2530,16 @@
             )
           ),
 
-          activeTab === 'students' && e(StudentDashboard, null),
+          activeTab === 'students' && e(StudentDashboard, { activeCourse: activeCourse }),
 
-          activeTab === 'livetest' && e(LiveTestPanel, null),
+          activeTab === 'livetest' && e(LiveTestPanel, { activeCourse: activeCourse }),
 
           // Modals (always available)
           editingQuestion && e(QuestionEditor, {
             question: editingQuestion,
             isNew: false,
             categories: allCategories,
+            activeCourse: activeCourse,
             onSave: handleSaveQuestion,
             onCancel: function() { setEditingQuestion(null); }
           }),
@@ -2242,6 +2547,7 @@
             question: null,
             isNew: true,
             categories: allCategories,
+            activeCourse: activeCourse,
             onSave: handleSaveQuestion,
             onCancel: function() { setIsAddingQuestion(false); }
           }),

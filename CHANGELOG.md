@@ -6,6 +6,26 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [04-01-2026-1] - April 1, 2026
+
+### Added
+- **Admin course switching** — Professor can now switch between CUL-104 and CUL-105 in the admin panel
+  - Course selector toggle in admin header (CUL-104 | CUL-105 buttons)
+  - Questions tab filters to show only selected course's questions
+  - Stats bar adapts: shows Chapters for CUL-104, Topics for CUL-105
+  - Filter bar adapts: Chapter dropdown for CUL-104, Topic dropdown for CUL-105
+  - Type filter for CUL-105 (Quiz vs Flashcard)
+  - Question editor shows Topic field for CUL-105, Chapter for CUL-104
+  - Question editor supports flashcard type (term/definition) for CUL-105
+  - Question rows show topic and type indicators for CUL-105
+  - Export/Import scoped to active course (separate backup files, correct variable names)
+  - Reset to Original scoped to active course (won't affect other course's data)
+  - Live Test creation uses active course's questions and modes (Topic mode for CUL-105)
+  - Course selection persisted in localStorage (`chefKitchenAdminCourse`)
+  - Separate localStorage keys per course for questions and categories
+
+---
+
 ## [03-29-2026-1] - March 29, 2026
 
 ### Added

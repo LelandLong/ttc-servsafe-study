@@ -1,7 +1,7 @@
 # Chef's Kitchen Multi-Course Study PWA - Development Plan
 
-**Last Updated:** March 29, 2026
-**Current Version:** 03-29-2026-7
+**Last Updated:** April 1, 2026
+**Current Version:** 04-01-2026-1
 
 ---
 
@@ -17,6 +17,7 @@
 ## Current Status
 
 ### Recent Versions
+- **04-01-2026-1** - Admin course switching (CUL-104/CUL-105 toggle in admin panel)
 - **03-29-2026-7** - Measurement flashcards expanded (4→37), flashcard topic decks, Food Costing split
 - **03-29-2026-6** - Flashcard decks by topic instead of single 190-card deck
 - **03-29-2026-5** - Split Measurements & Math from Food Costing & Purchasing
@@ -137,7 +138,14 @@
 
 ## Active Work Items
 
-### Recently Completed (March 29, 2026)
+### Recently Completed (April 1, 2026)
+- [x] Admin course switching: CUL-104/CUL-105 toggle in admin header
+- [x] Questions tab, filters, stats bar adapt to selected course
+- [x] Export/Import/Reset scoped to active course
+- [x] Live Test creation uses active course's questions and modes
+- [x] Question editor supports flashcard type and Topic field for CUL-105
+
+### Previously Completed (March 29, 2026)
 - [x] Multi-course support: CUL-104 (ServSafe) + CUL-105 (Kitchen Fundamentals)
 - [x] Course selector at top of home screen with course numbers
 - [x] CUL-105 question bank: 563 items (340 quiz + 223 flashcards) across 18 topics
@@ -233,6 +241,7 @@ The app is stable and in active use by students.
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| 04-01-2026-1 | Apr 1, 2026 | Admin course switching (CUL-104/CUL-105) |
 | 03-29-2026-7 | Mar 29, 2026 | Measurement flashcards (4→37), flashcard topic decks |
 | 03-29-2026-6 | Mar 29, 2026 | Flashcard decks by topic |
 | 03-29-2026-5 | Mar 29, 2026 | Split Measurements from Food Costing |

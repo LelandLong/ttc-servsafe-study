@@ -69,7 +69,7 @@ Ratatouille-inspired rat chef character. The mascot appears on the login screen 
 
 ## Technical Overview
 
-- **Current Version:** 03-29-2026-7
+- **Current Version:** 04-01-2026-1
 - **Framework:** React 18 via CDN (no build step, no JSX)
 - **Styling:** Tailwind CSS via CDN + CSS variables for theming
 - **Backend:** Convex Cloud (production: `cautious-monitor-526.convex.cloud`)
@@ -246,12 +246,15 @@ npx convex deploy --yes
 - PWA version checking & auto-update banner
 
 ### Admin App (`admin.html`)
+- **Course selector** in header (CUL-104 | CUL-105 toggle), persisted in localStorage
 - 3-tab interface: Questions | Students | Live Test
-- Full question CRUD with search/filter
+- Full question CRUD with search/filter (course-scoped)
+- Dynamic filters: Chapters for CUL-104, Topics + Type for CUL-105
+- Question editor adapts to course (Chapter vs Topic, Quiz vs Flashcard type)
 - Student dashboard with stats, detail modal, CSV export
 - Professor account flagging (excluded from stats)
-- Live test creation/management with real-time leaderboard
-- Backup & Recovery (JSON export/import, reset to original)
+- Live test creation/management with real-time leaderboard (course-scoped)
+- Backup & Recovery (JSON export/import, reset to original — per course)
 - Dark/light/system themes
 
 ---
@@ -341,4 +344,4 @@ The developer works from multiple devices using VSCode with Claude Code extensio
 
 **Primary Developer:** Leland Long
 **AI Assistant:** Claude (Anthropic) — VS Code Claude Code extension
-**Last Updated:** March 29, 2026
+**Last Updated:** April 1, 2026
