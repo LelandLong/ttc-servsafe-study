@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [04-01-2026-2] - April 1, 2026
+
+### Fixed
+- **Live test questions not loading for CUL-105** — Student app only searched `questionsDB` (CUL-104) when looking up test question IDs. CUL-105 question IDs (1001+) were not found, resulting in empty test and student falling back to home screen. Now searches both `questionsDB` and `questionsCUL105`.
+
+---
+
 ## [04-01-2026-1] - April 1, 2026
 
 ### Added

@@ -3972,10 +3972,11 @@
                 if (test && test.status === 'waiting') {
                   setActiveTest(test);
                   setTestScreen('waiting');
-                  // Prepare test questions from our local questionsDB
+                  // Prepare test questions from all question banks
+                  var allQs = (typeof questionsDB !== 'undefined' ? questionsDB : []).concat(typeof questionsCUL105 !== 'undefined' ? questionsCUL105.filter(function(q) { return q.type !== 'flashcard'; }) : []);
                   var tqs = [];
                   test.questionIds.forEach(function(qid) {
-                    var q = questionsDB.find(function(qq) { return qq.id === qid; });
+                    var q = allQs.find(function(qq) { return qq.id === qid; });
                     if (q) tqs.push(q);
                   });
                   // Shuffle them
@@ -3991,9 +3992,10 @@
                     setTestScreen('active');
                     // Prepare questions if not already prepared
                     if (testQuestions.length === 0) {
+                      var allQs2 = (typeof questionsDB !== 'undefined' ? questionsDB : []).concat(typeof questionsCUL105 !== 'undefined' ? questionsCUL105.filter(function(q) { return q.type !== 'flashcard'; }) : []);
                       var tqs2 = [];
                       test.questionIds.forEach(function(qid) {
-                        var q = questionsDB.find(function(qq) { return qq.id === qid; });
+                        var q = allQs2.find(function(qq) { return qq.id === qid; });
                         if (q) tqs2.push(q);
                       });
                       tqs2.sort(function() { return Math.random() - 0.5; });
