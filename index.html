@@ -3998,9 +3998,21 @@
         useEffect(function() {
           if (!user || !CONVEX_URL) return;
           var interval = setInterval(function() {
-            if (testScreen === 'active') return; // Don't poll while actively testing
             convexQuery("tests:getActiveTest")
               .then(function(test) {
+                // If student is mid-test, only check if professor ended it
+                if (testScreen === 'active') {
+                  if (!test || test.status === 'finished') {
+                    // Professor ended the test — show results
+                    setTestScreen('finished');
+                    if (activeTest) {
+                      convexQuery("tests:getTestLeaderboard", { testId: activeTest.testId })
+                        .then(function(lb) { setTestLeaderboard(lb); })
+                        .catch(function() {});
+                    }
+                  }
+                  return;
+                }
                 if (test && test.status === 'waiting') {
                   setActiveTest(test);
                   setTestScreen('waiting');
@@ -4039,8 +4051,8 @@
                   setTestScreen(null);
                   setActiveTest(null);
                 }
-                // Note: if !test and testScreen is 'active' or 'finished', do NOT reset
-                // This prevents connection hiccups from kicking students out mid-test
+                // Note: if !test and testScreen is 'finished', do NOT reset
+                // This lets students see their results after the test ends
               })
               .catch(function(err) {
                 // Connection error — do NOT reset test state
