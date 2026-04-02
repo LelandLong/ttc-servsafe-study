@@ -2299,14 +2299,9 @@
                 setConvexStatus('connected');
                 console.log('Loaded ' + convexQuestions.length + ' questions from Convex (' + activeCourse + ')');
               } else {
-                // Convex is empty for this course - offer to seed it
+                // Convex is empty for this course - just use local questions silently
                 setConvexStatus('connected');
-                var localQuestions = loadQuestions(activeCourse);
-                if (localQuestions.length > 0) {
-                  if (confirm('Convex database has no ' + activeCourse + ' questions. Would you like to upload your current ' + localQuestions.length + ' questions to the cloud?\n\nThis will enable cross-device sync.')) {
-                    syncToConvex(localQuestions, activeCourse);
-                  }
-                }
+                console.log('No ' + activeCourse + ' questions in Convex - using local questions.js file');
               }
             },
             function(err) {
