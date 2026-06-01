@@ -349,6 +349,8 @@
   <script src="questions-original.js"></script>
   <script src="questions-cul105.js"></script>
   <script src="questions-cul105-original.js"></script>
+  <script src="questions-cul112.js"></script>
+  <script src="questions-cul112-original.js"></script>
   <script src="version.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -667,9 +669,10 @@
         // Fetch ALL questions from Convex and split by course
         convexQuery("questions:getAll").then(function(convexQuestions) {
           if (convexQuestions && convexQuestions.length > 0) {
-            // Split into CUL-104 and CUL-105
+            // Split into CUL-104, CUL-105, and CUL-112
             var cul104 = [];
             var cul105 = [];
+            var cul112 = [];
             convexQuestions.forEach(function(q) {
               var formatted = {
                 id: q.questionId,
@@ -687,6 +690,13 @@
                 formatted.type = q.type || 'quiz';
                 formatted.course = 'CUL-105';
                 cul105.push(formatted);
+              } else if (q.course === 'CUL-112') {
+                formatted.topic = q.topic || '';
+                formatted.type = q.type || 'quiz';
+                formatted.course = 'CUL-112';
+                if (q.flashFront) formatted.flashFront = q.flashFront;
+                if (q.flashBack) formatted.flashBack = q.flashBack;
+                cul112.push(formatted);
               } else {
                 formatted.chapter = q.chapter || 1;
                 cul104.push(formatted);
@@ -707,6 +717,14 @@
               cul105.forEach(function(q) { questionsCUL105.push(q); });
               try { localStorage.setItem(ADMIN_STORAGE_KEY + '_cul105', JSON.stringify(cul105)); } catch(e) {}
               console.log('Synced ' + cul105.length + ' CUL-105 questions from Convex');
+            }
+
+            // Update CUL-112 — mutate in place to preserve COURSES references
+            if (cul112.length > 0) {
+              questionsCUL112.length = 0;
+              cul112.forEach(function(q) { questionsCUL112.push(q); });
+              try { localStorage.setItem(ADMIN_STORAGE_KEY + '_cul112', JSON.stringify(cul112)); } catch(e) {}
+              console.log('Synced ' + cul112.length + ' CUL-112 questions from Convex');
             }
 
             updateConvexStatus('connected');
@@ -1883,6 +1901,26 @@
           hasFlashcards: true,
           examLabel: 'Midterm Focus',
           examDescription: 'questions from the midterm study guide.'
+        },
+        'CUL-112': {
+          name: 'CUL-112: Classical Cooking Foundations',
+          shortName: 'CUL-112: Classical Foundations',
+          icon: '🍲',
+          description: 'Stocks, Sauces & Soups',
+          questions: questionsCUL112,
+          orgType: 'topics',
+          orgLabel: 'Topic',
+          topics: [
+            'Stocks', 'Sauces', 'Soups', 'Cooking Principles'
+          ],
+          quizGroups: {
+            'quiz1': { label: 'Quiz 1: Stocks & Sauces', chapters: [1] }
+          },
+          hasExamFocus: true,
+          hasQuizGroups: true,
+          hasFlashcards: true,
+          examLabel: 'Quiz Focus',
+          examDescription: 'questions from completed quizzes.'
         }
       };
 
@@ -3349,11 +3387,33 @@
               )
             ),
 
-            // Topic-Based Study Modes (CUL-105)
+            // Topic-Based Study Modes (CUL-105, CUL-112)
             courseConfig.orgType === 'topics' && createElement('div', null,
+              // Quiz Groups (hybrid topics courses, e.g. CUL-112)
+              courseConfig.hasQuizGroups && createElement('div', { className: 'mb-6' },
+                createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '\u270F\uFE0F Study by Quiz'),
+                createElement('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-3' },
+                  Object.keys(courseConfig.quizGroups).map(function(groupId) {
+                    var group = courseConfig.quizGroups[groupId];
+                    var count = getCourseQuestions(activeCourse).filter(function(q) { return group.chapters.indexOf(q.chapter) !== -1; }).length;
+                    return createElement('button', {
+                      key: groupId,
+                      onClick: function() { onSelectMode('quizGroup', groupId); },
+                      disabled: count === 0,
+                      className: 'mode-card card-bg rounded-xl p-3 border-2 text-left transition-all ' +
+                        (count === 0 ? 'border-gray-200 opacity-50 cursor-not-allowed' : 'border-blue-200 hover:border-blue-400 hover:shadow-md')
+                    },
+                      createElement('div', { className: 'text-lg font-bold text-primary' }, group.label),
+                      createElement('div', { className: 'text-xs text-muted' }, count + ' questions')
+                    );
+                  })
+                )
+              ),
               createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '\uD83D\uDCD7 Study by Topic'),
               createElement('div', { className: 'grid grid-cols-2 md:grid-cols-3 gap-3 mb-6' },
-                getCourseTopics(activeCourse).map(function(topic) {
+                getCourseTopics(activeCourse).filter(function(topic) {
+                  return getCourseQuestions(activeCourse).filter(function(q) { return q.topic === topic; }).length > 0;
+                }).map(function(topic) {
                   var count = getCourseQuestions(activeCourse).filter(function(q) { return q.topic === topic; }).length;
                   var topicStats = progress.topicStats ? progress.topicStats[topic] : null;
                   return createElement('button', {

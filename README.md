@@ -2,7 +2,7 @@
 
 A Progressive Web App (PWA) for culinary course study at Trident Technical College. Supports CUL-104 (ServSafe) and CUL-105 (Kitchen Fundamentals) with quiz questions, flashcards, gamified learning, cloud sync, live tests, and professor dashboard. Ratatouille-inspired rat chef theme.
 
-**Version:** 03-29-2026-7
+**Version:** 05-31-2026-1
 **Deployment:** GitHub Pages
 **Backend:** Convex Cloud (`https://cautious-monitor-526.convex.cloud`)
 
@@ -280,13 +280,15 @@ npx convex deploy --yes
 
 See [CHANGELOG.md](./CHANGELOG.md) for detailed version history.
 
-**Latest:** 03-29-2026-7
+**Latest:** 04-01-2026-5
 - Multi-course support: CUL-104 (ServSafe) + CUL-105 (Kitchen Fundamentals)
 - CUL-105: 563 items (340 quiz + 223 flashcards) across 18 topics
 - Flashcard mode with topic-based decks and tap-to-flip UI
 - Per-course progress tracking, badges, and exam focus
 - Course selector at top of home screen
 - 905 total study items across both courses
+- Admin course switching (CUL-104/CUL-105 toggle)
+- Convex is source of truth for questions; live test reliability fixes
 
 ---
 
@@ -342,4 +344,4 @@ Educational project for Trident Technical College (CUL-104 and CUL-105).
 
 **Primary Developer:** Leland Long
 **AI Assistant:** Claude (Anthropic) — VS Code Claude Code extension
-**Last Updated:** March 29, 2026
+**Last Updated:** May 31, 2026

@@ -311,6 +311,10 @@
   <script src="questions-original.js"></script>
   <script src="questions-cul105.js"></script>
   <script src="questions-cul105-original.js"></script>
+  <script src="questions-cul112.js"></script>
+  <script src="questions-cul112-original.js"></script>
+  <script src="questions-cul112.js"></script>
+  <script src="questions-cul112-original.js"></script>
   <script src="version.js"></script>
 
   <script>
@@ -406,6 +410,17 @@
           hasQuizGroups: false,
           examLabel: 'Midterm Focus',
           storageKeySuffix: '_cul105'
+        },
+        'CUL-112': {
+          name: 'CUL-112: Classical Cooking Foundations',
+          shortName: 'Classical Foundations',
+          questionsVar: 'questionsCUL112',
+          originalVar: 'originalQuestionsCUL112',
+          orgType: 'topics',
+          orgLabel: 'Topic',
+          hasQuizGroups: false,
+          examLabel: 'Quiz Focus',
+          storageKeySuffix: '_cul112'
         }
       };
 
@@ -524,13 +539,13 @@
             explanation: q.explanation,
             category: q.category,
             examFocus: q.examFocus,
-            chapter: q.chapter || (course === 'CUL-105' ? 0 : 1)
+            chapter: q.chapter || (course && course !== 'CUL-104' ? 0 : 1)
           };
-          if (course === 'CUL-105' || q.course === 'CUL-105') {
-            obj.course = 'CUL-105';
-            obj.topic = q.topic || '';
-            obj.type = q.type || 'quiz';
-          }
+          if (course && course !== 'CUL-104') {
+              obj.course = course;
+              obj.topic = q.topic || '';
+              obj.type = q.type || 'quiz';
+            }
           return obj;
         });
 
@@ -555,8 +570,8 @@
             if (convexQuestions && convexQuestions.length > 0) {
               // Filter to this course only
               var courseFiltered = convexQuestions;
-              if (course === 'CUL-105') {
-                courseFiltered = convexQuestions.filter(function(q) { return q.course === 'CUL-105'; });
+              if (course && course !== 'CUL-104') {
+                courseFiltered = convexQuestions.filter(function(q) { return q.course === course; });
               } else if (course === 'CUL-104') {
                 courseFiltered = convexQuestions.filter(function(q) { return !q.course || q.course === 'CUL-104'; });
               }
@@ -571,12 +586,12 @@
                     explanation: q.explanation,
                     category: q.category,
                     examFocus: q.examFocus,
-                    chapter: q.chapter || (course === 'CUL-105' ? null : 1)
+                    chapter: q.chapter || (course && course !== 'CUL-104' ? null : 1)
                   };
-                  if (course === 'CUL-105' || q.course === 'CUL-105') {
+                  if (course && course !== 'CUL-104') {
                     obj.topic = q.topic || '';
                     obj.type = q.type || 'quiz';
-                    obj.course = 'CUL-105';
+                    obj.course = course;
                   }
                   return obj;
                 });

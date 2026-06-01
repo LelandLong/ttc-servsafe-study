@@ -6,6 +6,34 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [05-31-2026-1] - May 31, 2026
+
+### Added
+- **CUL-112: Classical Cooking Foundations** — third course added to the app (Summer 1 2026 term)
+  - 72 study items: 49 quiz questions + 23 flashcards
+  - **Quiz 1 "Stocks & Sauces"** — all 25 real quiz questions, with correct answers verified against the student's 100% retake (`Quiz - 1b.pdf`). Marked `examFocus: true` and grouped under the "Quiz 1: Stocks & Sauces" quiz group.
+  - **24 supplementary study questions** generated from the Stock & Sauces, Soups, and Principles of Cooking PowerPoints (mirepoix ratios, stock types, mother sauces, thickening agents, roux types, soup categories, clarification, heat transfer, etc.)
+  - **23 Classical Cooking vocabulary flashcards** from `VOCABULARY.pdf` (clarified butter, fond, deglaze, remouillage, braising, sauté, cartouche, scaloppini, and more)
+  - Topics: Stocks, Sauces, Soups, Cooking Principles, Culinary Vocabulary
+  - **Hybrid organization** (like CUL-104): browse by topic AND by quiz group; "Quiz Focus" button drills the real quiz questions; flashcard deck for vocabulary
+  - Question IDs: quiz 3001-3049, flashcards 4001-4023
+  - New files: `questions-cul112.js` (`var questionsCUL112`), `questions-cul112-original.js` (`var originalQuestionsCUL112`)
+  - Appears automatically in both the student course selector and admin course toggle (both iterate `Object.keys(COURSES)`)
+  - Convex-safe: the runtime question loader guards against empty results, so CUL-112's static questions display correctly until pushed to Convex via admin "Reset to Original"
+
+### Notes
+- Scope is Phase 1: Quiz 1 + vocabulary + the three quiz-relevant decks. The 8 protein-cookery PowerPoints (Beef, Pork, Lamb, Veal, Poultry, Game, Fish & Shellfish, Meat Cookery) are held until those quizzes approach.
+- To push CUL-112 questions to Convex cloud: open `admin.html`, select CUL-112, click "Reset to Original".
+
+---
+
+## [04-01-2026-5] - April 1, 2026
+
+### Fixed
+- **Student app not detecting professor ending test early** — Poll now continues during an active test to check whether the professor ended it. When that's detected, the student transitions to the finished screen with the leaderboard instead of staying stuck mid-test.
+
+---
+
 ## [04-01-2026-4] - April 1, 2026
 
 ### Fixed

@@ -1,7 +1,7 @@
 # Chef's Kitchen Multi-Course Study PWA - Development Plan
 
-**Last Updated:** April 1, 2026
-**Current Version:** 04-01-2026-1
+**Last Updated:** May 31, 2026
+**Current Version:** 05-31-2026-1
 
 ---
 
@@ -17,6 +17,10 @@
 ## Current Status
 
 ### Recent Versions
+- **05-31-2026-1** - Added CUL-112 Classical Cooking Foundations (3rd course): Quiz 1 verified + vocab + study questions (72 items)
+- **04-01-2026-5** - Fix student app not detecting professor ending live test early
+- **04-01-2026-4** - Convex is source of truth for questions (both courses); live test resilience; CUL-105 cached in localStorage
+- **04-01-2026-2** - Fix live test not loading CUL-105 questions (search both question banks)
 - **04-01-2026-1** - Admin course switching (CUL-104/CUL-105 toggle in admin panel)
 - **03-29-2026-7** - Measurement flashcards expanded (4→37), flashcard topic decks, Food Costing split
 - **03-29-2026-6** - Flashcard decks by topic instead of single 190-card deck
@@ -158,8 +162,16 @@
 - [x] Food Costing & Purchasing split from Measurements & Math
 - [x] Convex schema + functions updated for course/topic/type fields
 
+### Recently Completed (May 31, 2026)
+- [x] Added **CUL-112 Classical Cooking Foundations** as a third course (Summer 1 2026 term)
+- [x] Quiz 1 "Stocks & Sauces" — 25 real quiz questions, answers verified from student's 100% retake
+- [x] 24 supplementary study questions from Stock & Sauces / Soups / Principles of Cooking PowerPoints
+- [x] 23 Classical Cooking vocabulary flashcards from VOCABULARY.pdf
+- [x] Hybrid topic + quiz-group organization (like CUL-104)
+- [x] Wired into both student selector and admin toggle (auto via Object.keys(COURSES))
+
 ### Current Focus
-CUL-105 midterm is approaching. App has comprehensive coverage of all study materials. Professor demo planned.
+CUL-104 and CUL-105 are complete. CUL-112 (Summer 1) is in progress: Phase 1 (Quiz 1 + vocab + 3 quiz-relevant decks) done. Next CUL-112 work: add new quizzes as taken, and mine the 8 protein-cookery PowerPoints (Beef, Pork, Lamb, Veal, Poultry, Game, Fish & Shellfish, Meat Cookery) when those quizzes approach. Remember to push CUL-112 to Convex via admin "Reset to Original".
 
 ---
 
@@ -241,6 +253,10 @@ The app is stable and in active use by students.
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| 05-31-2026-1 | May 31, 2026 | Added CUL-112 Classical Cooking Foundations (3rd course) |
+| 04-01-2026-5 | Apr 1, 2026 | Fix student app not detecting professor ending test early |
+| 04-01-2026-4 | Apr 1, 2026 | Convex source of truth for questions; live test resilience |
+| 04-01-2026-2 | Apr 1, 2026 | Fix live test not loading CUL-105 questions |
 | 04-01-2026-1 | Apr 1, 2026 | Admin course switching (CUL-104/CUL-105) |
 | 03-29-2026-7 | Mar 29, 2026 | Measurement flashcards (4→37), flashcard topic decks |
 | 03-29-2026-6 | Mar 29, 2026 | Flashcard decks by topic |
