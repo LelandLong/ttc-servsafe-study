@@ -6,6 +6,20 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-09-2026-1] - June 9, 2026
+
+### Added
+- **CUL-112 Quiz 2 "Poultry"** — all 25 real quiz questions, correct answers verified against the student's 100% submission (`Quiz - 2.pdf`). New **Poultry** topic, grouped under "Quiz 2: Poultry" (chapter 2).
+- **CUL-112 Quiz 4 "Fish and Shellfish"** — all 20 real quiz questions, verified against the 100% submission (`Quiz - 3.pdf`, which D2L titles "Q4"). New **Fish & Shellfish** topic, grouped under "Quiz 4: Fish & Shellfish" (chapter 4).
+- CUL-112 now has **117 study items** (94 quiz + 23 flashcards) across 6 topics; question IDs extended to 3050-3094.
+- Category icons for Poultry (🐔), Fish & Shellfish (🐟), Stocks & Sauces, Soups, Cooking Methods & Principles, Culinary Terms.
+
+### Notes
+- Quiz 3 is intentionally absent — that quiz hasn't been taken/provided yet. The quiz numbering follows D2L's labels (Quiz 1, 2, 4), so a future Quiz 3 slots in cleanly at chapter 3.
+- To push the new questions to Convex cloud: open `admin.html`, select CUL-112, click "Reset to Original".
+
+---
+
 ## [05-31-2026-1] - May 31, 2026
 
 ### Added

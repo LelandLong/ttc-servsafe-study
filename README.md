@@ -344,4 +344,4 @@ Educational project for Trident Technical College (CUL-104 and CUL-105).
 
 **Primary Developer:** Leland Long
 **AI Assistant:** Claude (Anthropic) — VS Code Claude Code extension
-**Last Updated:** May 31, 2026
+**Last Updated:** June 9, 2026
