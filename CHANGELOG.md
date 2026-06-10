@@ -6,6 +6,15 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-09-2026-4] - June 9, 2026
+
+### Added
+- **CUL-112 "Final: Vocabulary" quiz** — 23 testable multiple-choice questions covering all 23 terms in `VOCABULARY.pdf` (clarified butter, fond, au sec, deglaze, depouillage, remouillage, caramelize, roux, glace, compound butter, roasting, sauté, braising, pan-frying, shallow poaching, searing, flambé, grilling, standard breading procedure, cartouche, supreme/airline breast, paupiette, scaloppini). Vocabulary is part of the final exam, so these are now **scored and tracked** (not just flashcards). Grouped under "Final: Vocabulary" (chapter 6) and added as the **Culinary Vocabulary** study topic; marked examFocus.
+  - The same terms remain available as the existing tap-to-flip flashcard deck.
+- CUL-112 now has **180 study items** (157 quiz + 23 flashcards); question IDs extended to 3135-3157.
+
+---
+
 ## [06-09-2026-3] - June 9, 2026
 
 ### Added

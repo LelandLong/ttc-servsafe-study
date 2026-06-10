@@ -1,7 +1,7 @@
 # Chef's Kitchen Multi-Course Study PWA - Development Plan
 
 **Last Updated:** June 9, 2026
-**Current Version:** 06-09-2026-3
+**Current Version:** 06-09-2026-4
 
 ---
 
@@ -17,6 +17,7 @@
 ## Current Status
 
 ### Recent Versions
+- **06-09-2026-4** - CUL-112 "Final: Vocabulary" quiz (23 testable Q from VOCABULARY.pdf); now 180 items, 9 topics
 - **06-09-2026-3** - CUL-112 Quiz 3 (Pork, 15 Q) verified — fills Quiz 3 gap; now 157 items, 8 topics
 - **06-09-2026-2** - CUL-112 Quiz 5 (Beef, 25 Q) verified; now 142 items, 7 topics
 - **06-09-2026-1** - CUL-112 Quiz 2 (Poultry, 25 Q) + Quiz 4 (Fish & Shellfish, 20 Q) verified; now 117 items, 6 topics
@@ -166,6 +167,7 @@
 - [x] Convex schema + functions updated for course/topic/type fields
 
 ### Recently Completed (June 9, 2026)
+- [x] CUL-112 **"Final: Vocabulary"** — 23 testable MCQs from VOCABULARY.pdf (vocab is on the final). Scored/tracked, examFocus, new "Culinary Vocabulary" topic + "Final: Vocabulary" quiz group (chapter 6). Terms still available as flashcards too.
 - [x] CUL-112 **Quiz 3 "Pork"** — 15 questions verified from 100% submission (`Quiz - 5.pdf` / D2L "Q3 Pork"); 2 pig-diagram matching Qs converted to 5 MCQs. Fills the Quiz 3 gap.
 - [x] CUL-112 **Quiz 5 "Beef"** — 25 real quiz questions, verified from 100% submission (`Quiz - 4.pdf` / D2L "Q5 Beef 2018")
 - [x] CUL-112 **Quiz 2 "Poultry"** — 25 real quiz questions, answers verified from 100% submission (`Quiz - 2.pdf`)
@@ -265,6 +267,7 @@ The app is stable and in active use by students.
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| 06-09-2026-4 | Jun 9, 2026 | CUL-112 "Final: Vocabulary" quiz (23 testable Q) |
 | 06-09-2026-3 | Jun 9, 2026 | CUL-112 Quiz 3 (Pork) verified — fills Quiz 3 gap |
 | 06-09-2026-2 | Jun 9, 2026 | CUL-112 Quiz 5 (Beef) verified |
 | 06-09-2026-1 | Jun 9, 2026 | CUL-112 Quiz 2 (Poultry) + Quiz 4 (Fish & Shellfish) verified |

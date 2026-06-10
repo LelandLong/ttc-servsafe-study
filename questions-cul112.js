@@ -11,6 +11,8 @@
 //     - Pork Q11/Q12 were pig-diagram MATCHING questions; converted to MCQs (IDs 3130-3134).
 //   ALWAYS open the PDF and use the D2L title for the quiz number - student file names do NOT
 //   reliably map to D2L numbers (e.g. Quiz - 4.pdf = "Q5", Quiz - 5.pdf = "Q3").
+//   Final "Vocabulary"            (IDs 3135-3157, chapter:6) - testable MCQs from VOCABULARY.pdf
+//     - grouped as "Final: Vocabulary"; vocab is on the final exam. Same terms also exist as flashcards.
 // Supplementary study questions (IDs 3026-3049): chapter:null, examFocus:false (from PowerPoints)
 // Flashcards (IDs 4001+): Classical Cooking vocabulary (VOCABULARY.pdf)
 var questionsCUL112 = [
@@ -1825,6 +1827,418 @@ var questionsCUL112 = [
     category: "Pork",
     topic: "Pork",
     chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+
+  // ===== FINAL: VOCABULARY QUIZ (testable MCQ versions of the vocab flashcards) =====
+  // From VOCABULARY.pdf — chapter:6 groups these as "Final: Vocabulary"; examFocus:true.
+  {
+    id: 3135,
+    question: "What is clarified butter?",
+    options: [
+      "Butter from which the milk solids and water have been removed, leaving only butterfat",
+      "Whole butter blended with herbs and served on a grilled protein",
+      "Butter cooked with flour to thicken a sauce",
+      "Butter reduced until it is nearly dry"
+    ],
+    correct: 0,
+    hint: "Only the pure fat is left behind.",
+    explanation: "Clarified butter has had the milk solids and water removed, leaving only butterfat (which raises its smoke point).",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3136,
+    question: "In cooking, what is \"fond\"?",
+    options: [
+      "A parchment-paper lid used to cover poaching food",
+      "The flavorful browned bits of food stuck to a pan after cooking",
+      "A dramatically reduced stock",
+      "A cooked mixture of flour and fat"
+    ],
+    correct: 1,
+    hint: "You deglaze it to build a sauce.",
+    explanation: "Fond is the flavorful browned bits left in the pan after cooking; deglazing dissolves it to make a stock, broth, or sauce.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3137,
+    question: "What does \"au sec\" mean?",
+    options: [
+      "Cooked over an open flame",
+      "Coated in a standard breading",
+      "A liquid that has been reduced until nearly dry",
+      "Cooked in plenty of fat until crisp"
+    ],
+    correct: 2,
+    hint: "It's French for \"nearly dry.\"",
+    explanation: "Au sec describes a liquid reduced until it is nearly dry (\"nearly dry\" in French).",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3138,
+    question: "What does it mean to deglaze a pan?",
+    options: [
+      "To skim foam and scum off the surface",
+      "To reduce a stock until it is syrupy",
+      "To remove the milk solids from butter",
+      "To add liquid to a hot pan to dissolve the browned food particles (fond)"
+    ],
+    correct: 3,
+    hint: "You're rescuing the fond.",
+    explanation: "Deglazing adds liquid to a hot pan to dissolve the fond stuck to the bottom and sides, capturing its flavor.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3139,
+    question: "What is \"depouillage\"?",
+    options: [
+      "The process of skimming the foam or scum from a stock, broth, or sauce",
+      "Rewetting used bones to make a second stock",
+      "Reducing a sauce until nearly dry",
+      "Tying a roast to hold its shape"
+    ],
+    correct: 0,
+    hint: "It keeps a stock clear.",
+    explanation: "Depouillage is skimming the foam/scum (impurities) off the surface of a simmering stock, broth, or sauce.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3140,
+    question: "What is \"remouillage\"?",
+    options: [
+      "Skimming scum from a stock",
+      "The process of rewetting used stock bones to make a second, lighter stock",
+      "A dramatically reduced stock",
+      "An emulsified butter sauce"
+    ],
+    correct: 1,
+    hint: "French for \"rewetting.\"",
+    explanation: "Remouillage is rewetting already-used stock bones to make a second, lighter stock.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3141,
+    question: "What does it mean to caramelize?",
+    options: [
+      "To cook food gently below boiling",
+      "To cook flour and fat together",
+      "To convert sugars with heat to develop a brown color and nutty flavor",
+      "To reduce a stock by half"
+    ],
+    correct: 2,
+    hint: "It's all about the sugars browning.",
+    explanation: "Caramelizing converts sugars with heat to develop the characteristic brown color and nutty flavor of caramel.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3142,
+    question: "What is a roux?",
+    options: [
+      "A dramatically reduced stock",
+      "Egg yolks and cream used to enrich a sauce",
+      "A cornstarch and cold water mixture",
+      "A cooked mixture of flour and fat used as a thickening agent"
+    ],
+    correct: 3,
+    hint: "Flour plus fat, cooked.",
+    explanation: "A roux is a cooked mixture of flour and fat used to thicken soups and sauces.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3143,
+    question: "What is a glace (glaze)?",
+    options: [
+      "A dramatically reduced stock",
+      "A parchment lid for poaching",
+      "A thin slice of rolled, stuffed meat",
+      "Butter with the milk solids removed"
+    ],
+    correct: 0,
+    hint: "Concentrated stock.",
+    explanation: "A glace is a stock that has been dramatically reduced to concentrate flavor and body.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3144,
+    question: "What is compound butter?",
+    options: [
+      "Butter cooked until the solids brown",
+      "Whole butter mixed with other ingredients to create or accompany a protein, usually grilled",
+      "Butter with the milk solids and water removed",
+      "Equal parts butter and flour kneaded together"
+    ],
+    correct: 1,
+    hint: "Flavored butter, often on a steak.",
+    explanation: "Compound butter is whole butter blended with flavorings, typically served on a grilled protein.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3145,
+    question: "Roasting is best described as:",
+    options: [
+      "A moist-heat method using simmering liquid",
+      "Cooking the surface at high heat for a crust",
+      "Cooking something in an oven (a dry-heat method)",
+      "Cooking food directly over a heat source on a grate"
+    ],
+    correct: 2,
+    hint: "It happens in the oven.",
+    explanation: "Roasting is a dry-heat cooking method done in an oven.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3146,
+    question: "The term \"sauté\" literally means:",
+    options: ["\"to flame\"", "\"to jump\"", "\"nearly dry\"", "\"to brown\""],
+    correct: 1,
+    hint: "Think of food tossing in the pan.",
+    explanation: "Sauté literally means \"to jump\" — a dry-heat method cooking food in a small amount of fat while tossing it.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3147,
+    question: "Braising is a cooking method that:",
+    options: [
+      "Uses both moist and dry heat to cook tougher proteins until tender (similar to stewing but with less liquid)",
+      "Cooks food gently in liquid below boiling",
+      "Cooks the surface of food at high heat for a crust",
+      "Cooks food in an oven with no added liquid"
+    ],
+    correct: 0,
+    hint: "Sear first, then simmer in a little liquid.",
+    explanation: "Braising combines dry heat (searing) and moist heat (simmering in a small amount of liquid) to tenderize tough cuts; it's like stewing but with less liquid.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3148,
+    question: "How does pan-frying differ from sautéing?",
+    options: [
+      "It uses no fat at all",
+      "It cooks food in an oven",
+      "It uses more oil (coming about halfway up the food), often for a breaded item",
+      "It fully submerges the food in oil"
+    ],
+    correct: 2,
+    hint: "More oil than a sauté, but not deep-fried.",
+    explanation: "Pan-frying uses more oil than sautéing — about halfway up the (often breaded) food — but does not submerge it.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3149,
+    question: "Shallow poaching cooks food in liquid at what temperature, and to what depth?",
+    options: [
+      "A rolling boil, fully submerged",
+      "Below boiling (140-180°F), with liquid coming up about 1/3 the depth of the protein",
+      "High heat, with just a film of oil",
+      "In an oven with no liquid"
+    ],
+    correct: 1,
+    hint: "Gentle heat, liquid only partway up.",
+    explanation: "Shallow poaching gently cooks food in liquid below boiling (140-180°F), with the liquid coming up only about one-third the depth of the protein.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3150,
+    question: "What is searing?",
+    options: [
+      "Gently cooking food in liquid below boiling",
+      "Reducing a stock until syrupy",
+      "Cooking the surface of food at high heat to create a browned crust (Maillard reaction)",
+      "Skimming impurities from a sauce"
+    ],
+    correct: 2,
+    hint: "High heat, browned crust.",
+    explanation: "Searing cooks the surface of food at high temperature to form a browned crust via the Maillard reaction.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3151,
+    question: "What is the purpose of flambéing a dish?",
+    options: [
+      "To reduce the alcohol content while retaining the liquor's flavor",
+      "To form a parchment lid over the food",
+      "To thicken a sauce with egg yolks",
+      "To tenderize a tough cut of meat"
+    ],
+    correct: 0,
+    hint: "French for \"flaming.\"",
+    explanation: "Flambé (French for \"flame\") ignites added alcohol to burn off its content while keeping the liquor's flavor.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3152,
+    question: "Grilling is a dry-heat method that cooks food:",
+    options: [
+      "Submerged in hot oil",
+      "Directly over a heat source, usually on a metal grate, for a smoky, charred flavor",
+      "In an enclosed oven",
+      "Gently in liquid below boiling"
+    ],
+    correct: 1,
+    hint: "Think of the grates and char marks.",
+    explanation: "Grilling cooks food directly over a heat source on a grate, producing a smoky, charred flavor.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3153,
+    question: "What are the three steps of the standard breading procedure, in order?",
+    options: [
+      "Egg, flour, breadcrumbs",
+      "Breadcrumbs, flour, egg",
+      "Flour, egg, breadcrumbs",
+      "Flour, breadcrumbs, egg"
+    ],
+    correct: 2,
+    hint: "Dry, wet, dry.",
+    explanation: "The standard breading procedure is flour → egg → breadcrumbs.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3154,
+    question: "What is a cartouche?",
+    options: [
+      "A rolled, stuffed slice of fish or meat",
+      "A parchment-paper lid used to cover food while poaching/stewing or to keep a skin from forming on a sauce",
+      "A thinly sliced, floured, sautéed cut of meat",
+      "A cut of chicken with the wing joint attached"
+    ],
+    correct: 1,
+    hint: "A paper \"false lid.\"",
+    explanation: "A cartouche is a parchment-paper lid (false lid) used to cover poaching/stewing food or to prevent a skin forming on a sauce.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3155,
+    question: "A supreme (airline) breast of chicken is:",
+    options: [
+      "A breast that includes the first wing joint (drumette), often skin-on",
+      "A boneless, skinless breast cutlet",
+      "A breast rolled around a stuffing",
+      "A thinly pounded breast for frying"
+    ],
+    correct: 0,
+    hint: "The little wing bone is left on.",
+    explanation: "A supreme/airline breast is a chicken breast with the first wing joint (drumette) still attached, often prepared skin-on.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3156,
+    question: "What is a paupiette?",
+    options: [
+      "A thinly sliced, floured, sautéed cut of meat",
+      "A parchment lid for poaching",
+      "A long, thin slice of fish or meat rolled and usually stuffed with a filling",
+      "A cut of chicken with the wing joint attached"
+    ],
+    correct: 2,
+    hint: "It's rolled around a filling.",
+    explanation: "A paupiette is a thin slice of fish or meat rolled around a filling.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3157,
+    question: "What is scaloppini?",
+    options: [
+      "A long, thin slice of fish rolled and stuffed",
+      "A thinly sliced cut of meat (usually veal, beef, or chicken) dredged in flour and sautéed",
+      "A whole bird tied for roasting",
+      "A breast of chicken with the wing joint attached"
+    ],
+    correct: 1,
+    hint: "Thin, floured, and sautéed.",
+    explanation: "Scaloppini are thin slices of meat (often veal, beef, or chicken) dredged in flour and sautéed, served with a sauce.",
+    category: "Culinary Terms",
+    topic: "Culinary Vocabulary",
+    chapter: 6,
     examFocus: true,
     type: "quiz"
   },

@@ -22,7 +22,7 @@ This file provides context and rules for Claude Code when working on the Chef's 
 |--------|---------|-----------|
 | **CUL-104: ServSafe** | Food Safety Manager Certification — 15 chapters, 7 categories | 342 quiz questions |
 | **CUL-105: Kitchen Fundamentals** | Culinary techniques, ingredients, history — 18 topics, 6 categories | 340 quiz + 223 flashcards (563 total) |
-| **CUL-112: Classical Foundations** | Stocks, sauces, soups, cooking principles, poultry, pork, fish & shellfish, beef — 8 topics, hybrid topic+quiz (Summer 1 2026, in progress) | 134 quiz + 23 flashcards (157 total) |
+| **CUL-112: Classical Foundations** | Stocks, sauces, soups, cooking principles, poultry, pork, fish & shellfish, beef, vocabulary — 9 topics, hybrid topic+quiz (Summer 1 2026, in progress) | 157 quiz + 23 flashcards (180 total) |
 
 ### The Users
 
@@ -70,14 +70,14 @@ Ratatouille-inspired rat chef character. The mascot appears on the login screen 
 
 ## Technical Overview
 
-- **Current Version:** 06-09-2026-3
+- **Current Version:** 06-09-2026-4
 - **Framework:** React 18 via CDN (no build step, no JSX)
 - **Styling:** Tailwind CSS via CDN + CSS variables for theming
 - **Backend:** Convex Cloud (production: `cautious-monitor-526.convex.cloud`)
 - **Deployment:** GitHub Pages (static hosting)
 - **Database:** 8 Convex tables (questions, categories, metadata, users, userProgress, progressArchives, liveTests, testResults)
 - **User Base:** College classroom (~30 students)
-- **Total Questions:** 1062 (342 CUL-104 + 563 CUL-105 + 157 CUL-112)
+- **Total Questions:** 1085 (342 CUL-104 + 563 CUL-105 + 180 CUL-112)
 
 ---
 
