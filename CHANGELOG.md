@@ -6,6 +6,18 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-09-2026-2] - June 9, 2026
+
+### Added
+- **CUL-112 Quiz 5 "Beef"** — all 25 real quiz questions, correct answers verified against the student's 100% submission (`Quiz - 4.pdf`, which D2L titles "Q5 Beef 2018"). New **Beef** topic (🥩), grouped under "Quiz 5: Beef" (chapter 5).
+- CUL-112 now has **142 study items** (119 quiz + 23 flashcards) across 7 topics; question IDs extended to 3095-3119.
+
+### Notes
+- File names lag D2L quiz numbers by one (`Quiz - 4.pdf` = D2L "Q5"). Quiz numbering in the app follows D2L's labels (Quiz 1, 2, 4, 5); Quiz 3 remains the only gap, reserved at chapter 3.
+- To push the new questions to Convex cloud: open `admin.html`, select CUL-112, click "Reset to Original".
+
+---
+
 ## [06-09-2026-1] - June 9, 2026
 
 ### Added
