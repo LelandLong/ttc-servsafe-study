@@ -4329,6 +4329,8 @@
             });
             name = '\uD83D\uDCD7 ' + category;
           } else if (mode === 'quizGroup' && category) {
+            // Prefer the active course's quizGroups config (chapters + label).
+            // Fall back to the legacy hardcoded CUL-104 ranges for safety.
             var ranges = {
               '1-4': [1, 2, 3, 4],
               '5-7': [5, 6, 7],
@@ -4336,11 +4338,14 @@
               '11-14': [11, 12, 13, 14],
               '15': [15]
             };
-            var chapterList = ranges[category] || [];
+            var groupConfig = (courseConfig.quizGroups && courseConfig.quizGroups[category]) || null;
+            var chapterList = (groupConfig && groupConfig.chapters) || ranges[category] || [];
             filtered = qs.filter(function(q) {
               return chapterList.indexOf(q.chapter) !== -1;
             });
-            name = '\uD83D\uDCDD Quiz ' + (category === '15' ? '(Ch 15)' : '(Ch ' + category + ')');
+            name = groupConfig
+              ? '\uD83D\uDCDD ' + groupConfig.label
+              : '\uD83D\uDCDD Quiz ' + (category === '15' ? '(Ch 15)' : '(Ch ' + category + ')');
           } else if (mode === 'chapterRange' && category) {
             filtered = qs.filter(function(q) {
               return q.chapter >= 1 && q.chapter <= category;

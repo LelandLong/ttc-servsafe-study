@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-09-2026-5] - June 9, 2026
+
+### Fixed
+- **"Study by Quiz" showed no questions for CUL-112 (and any non-CUL-104 course).** The quiz-group quiz starter used a hardcoded chapter map containing only CUL-104's group ids (`1-4`, `5-7`, …). CUL-112's group ids (`quiz1`, `quiz3`, `finalvocab`, …) weren't in that map, so the filter returned an empty list and every CUL-112 quiz reported "no questions available." The starter now reads the chapter list (and label) from the active course's `quizGroups` config, falling back to the legacy map for CUL-104. All quiz groups for both courses now resolve correctly, and CUL-112 quizzes display their proper labels (e.g. "Quiz 3: Pork", "Final: Vocabulary").
+
+---
+
 ## [06-09-2026-4] - June 9, 2026
 
 ### Added
