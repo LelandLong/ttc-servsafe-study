@@ -1,7 +1,7 @@
 # Chef's Kitchen Multi-Course Study PWA - Development Plan
 
 **Last Updated:** June 9, 2026
-**Current Version:** 06-09-2026-2
+**Current Version:** 06-09-2026-3
 
 ---
 
@@ -17,6 +17,7 @@
 ## Current Status
 
 ### Recent Versions
+- **06-09-2026-3** - CUL-112 Quiz 3 (Pork, 15 Q) verified — fills Quiz 3 gap; now 157 items, 8 topics
 - **06-09-2026-2** - CUL-112 Quiz 5 (Beef, 25 Q) verified; now 142 items, 7 topics
 - **06-09-2026-1** - CUL-112 Quiz 2 (Poultry, 25 Q) + Quiz 4 (Fish & Shellfish, 20 Q) verified; now 117 items, 6 topics
 - **05-31-2026-1** - Added CUL-112 Classical Cooking Foundations (3rd course): Quiz 1 verified + vocab + study questions (72 items)
@@ -165,6 +166,7 @@
 - [x] Convex schema + functions updated for course/topic/type fields
 
 ### Recently Completed (June 9, 2026)
+- [x] CUL-112 **Quiz 3 "Pork"** — 15 questions verified from 100% submission (`Quiz - 5.pdf` / D2L "Q3 Pork"); 2 pig-diagram matching Qs converted to 5 MCQs. Fills the Quiz 3 gap.
 - [x] CUL-112 **Quiz 5 "Beef"** — 25 real quiz questions, verified from 100% submission (`Quiz - 4.pdf` / D2L "Q5 Beef 2018")
 - [x] CUL-112 **Quiz 2 "Poultry"** — 25 real quiz questions, answers verified from 100% submission (`Quiz - 2.pdf`)
 - [x] CUL-112 **Quiz 4 "Fish and Shellfish"** — 20 real quiz questions, verified from 100% submission (`Quiz - 3.pdf` / D2L "Q4")
@@ -181,7 +183,7 @@
 - [x] Wired into both student selector and admin toggle (auto via Object.keys(COURSES))
 
 ### Current Focus
-CUL-104 and CUL-105 are complete. CUL-112 (Summer 1) is in progress: Quizzes 1, 2, 4, and 5 are in the app, verified. **Quiz 3 is still outstanding** (not yet taken/provided — slots in at chapter 3 when it arrives). Note: the student's quiz file names lag D2L's quiz numbers by one (e.g. `Quiz - 4.pdf` = D2L "Q5"). Remaining protein-cookery PowerPoints not yet mined into questions: Pork, Lamb, Veal, Game, Meat Cookery (Poultry, Fish & Shellfish, and Beef now covered by their quizzes). Remember to push CUL-112 to Convex via admin "Reset to Original".
+CUL-104 and CUL-105 are complete. CUL-112 (Summer 1) is in progress: **Quizzes 1–5 are all in the app, verified** (Stocks & Sauces, Poultry, Pork, Fish & Shellfish, Beef). Note: the student's quiz file names do NOT reliably map to D2L's quiz numbers (e.g. `Quiz - 4.pdf` = D2L "Q5 Beef", `Quiz - 5.pdf` = D2L "Q3 Pork") — always read the PDF's D2L title. Remaining protein-cookery PowerPoints not yet mined into questions: Lamb, Veal, Game, Meat Cookery (Poultry, Fish & Shellfish, Beef, and Pork now covered by their quizzes). Remember to push CUL-112 to Convex via admin "Reset to Original".
 
 ---
 
@@ -263,6 +265,7 @@ The app is stable and in active use by students.
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| 06-09-2026-3 | Jun 9, 2026 | CUL-112 Quiz 3 (Pork) verified — fills Quiz 3 gap |
 | 06-09-2026-2 | Jun 9, 2026 | CUL-112 Quiz 5 (Beef) verified |
 | 06-09-2026-1 | Jun 9, 2026 | CUL-112 Quiz 2 (Poultry) + Quiz 4 (Fish & Shellfish) verified |
 | 05-31-2026-1 | May 31, 2026 | Added CUL-112 Classical Cooking Foundations (3rd course) |

@@ -7,7 +7,10 @@
 //   Quiz 2 "Poultry"              (IDs 3050-3074, chapter:2) - Quiz - 2.pdf
 //   Quiz 4 "Fish and Shellfish"   (IDs 3075-3094, chapter:4) - Quiz - 3.pdf (D2L titles it "Q4")
 //   Quiz 5 "Beef"                 (IDs 3095-3119, chapter:5) - Quiz - 4.pdf (D2L titles it "Q5 Beef 2018")
-//   (Quiz 3 not yet taken/provided - gap is intentional. Note: file names lag D2L quiz numbers by 1.)
+//   Quiz 3 "Pork"                 (IDs 3120-3134, chapter:3) - Quiz - 5.pdf (D2L titles it "Q3 Pork")
+//     - Pork Q11/Q12 were pig-diagram MATCHING questions; converted to MCQs (IDs 3130-3134).
+//   ALWAYS open the PDF and use the D2L title for the quiz number - student file names do NOT
+//   reliably map to D2L numbers (e.g. Quiz - 4.pdf = "Q5", Quiz - 5.pdf = "Q3").
 // Supplementary study questions (IDs 3026-3049): chapter:null, examFocus:false (from PowerPoints)
 // Flashcards (IDs 4001+): Classical Cooking vocabulary (VOCABULARY.pdf)
 var originalQuestionsCUL112 = [
@@ -1624,6 +1627,204 @@ var originalQuestionsCUL112 = [
     category: "Beef",
     topic: "Beef",
     chapter: 5,
+    examFocus: true,
+    type: "quiz"
+  },
+
+  // ===== QUIZ 3: PORK (verified, Quiz - 5.pdf / D2L "Q3 Pork", 100%) =====
+  // Q11 & Q12 in the original were pig-diagram matching questions; converted here to MCQs (IDs 3130-3134).
+  {
+    id: 3120,
+    question: "Which primal cut is located behind the Boston Butt?",
+    options: ["Fresh Ham", "Picnic Ham", "Belly", "Loin"],
+    correct: 3,
+    hint: "It runs along the back.",
+    explanation: "The loin is located behind (along the back from) the Boston Butt.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3121,
+    question: "Which pork cut has large muscles and a relatively small amount of connective tissue?",
+    options: ["Shoulder", "Hock", "Tenderloin", "Fresh Ham"],
+    correct: 3,
+    hint: "It's the rear leg.",
+    explanation: "The fresh ham (leg) has large muscles with relatively little connective tissue.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3122,
+    question: "It is recommended to make gravy from a brining solution after pork is brined?",
+    options: ["True", "False"],
+    correct: 1,
+    hint: "Think about how salty that liquid is.",
+    explanation: "False — the brining solution is far too salty to use for gravy.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3123,
+    question: "Generally, what makes pork generally very tender?",
+    options: ["It is the other white meat", "Butchered at a young age", "Wet aging", "Butchered at an older age", "None of the above"],
+    correct: 1,
+    hint: "Younger animals have more tender meat.",
+    explanation: "Pork is generally very tender because hogs are butchered at a young age.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3124,
+    question: "Pork is high in B vitamins?",
+    options: ["True", "False"],
+    correct: 0,
+    hint: "Especially thiamine.",
+    explanation: "True — pork is a good source of B vitamins, particularly thiamine.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3125,
+    question: "Pork is usually _______ before smoking?",
+    options: ["Pounded", "Aged", "Brined", "Steamed"],
+    correct: 2,
+    hint: "A salt-water soak.",
+    explanation: "Pork is usually brined before smoking to add moisture and flavor.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3126,
+    question: "What cut accounts for 7% of the carcass weight and has a good fat to lean ratio?",
+    options: ["Belly", "Boston Butt", "Loin", "Shank"],
+    correct: 1,
+    hint: "Upper part of the shoulder.",
+    explanation: "The Boston Butt is about 7% of the carcass weight and has a good fat-to-lean ratio.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3127,
+    question: "What can affect the taste of pork and the quality of its meat while it is being raised?",
+    options: ["Diet and restraint", "Diet and able to range free", "Lighting and atmosphere", "None of the above"],
+    correct: 1,
+    hint: "What it eats and how it moves.",
+    explanation: "A hog's diet and its ability to range free affect the taste and quality of its meat.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3128,
+    question: "The loin is approximately 20% of the carcass weight?",
+    options: ["True", "False"],
+    correct: 0,
+    hint: "About a fifth of the carcass.",
+    explanation: "True — the loin makes up approximately 20% of the pork carcass weight.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3129,
+    question: "Which primal cut of pork is approximately 24% of the carcass weight?",
+    options: ["Ham", "Loin", "Side", "Shoulder"],
+    correct: 0,
+    hint: "The largest primal — the rear leg.",
+    explanation: "The ham (leg) is the largest pork primal, about 24% of the carcass weight.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3130,
+    question: "Which pork primal cut yields bacon and pancetta?",
+    options: ["Belly", "Loin", "Boston Butt", "Fresh Ham"],
+    correct: 0,
+    hint: "The underside of the hog.",
+    explanation: "The belly yields bacon and pancetta.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3131,
+    question: "Pulled BBQ, goulash, stews, and sausage are commonly made from which pork primal?",
+    options: ["Loin", "Boston Butt", "Belly", "Fresh Ham"],
+    correct: 1,
+    hint: "The well-worked upper shoulder.",
+    explanation: "The Boston Butt (upper shoulder) is used for pulled BBQ, goulash, stews, and sausage.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3132,
+    question: "Tenderloin, Canadian bacon, and baby back ribs all come from which pork primal?",
+    options: ["Belly", "Loin", "Fresh Ham", "Boston Butt"],
+    correct: 1,
+    hint: "The tender cut along the back.",
+    explanation: "The loin provides the tenderloin, Canadian bacon, and baby back ribs.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3133,
+    question: "Prosciutto, Serrano ham, and country ham are products of which pork primal?",
+    options: ["Belly", "Loin", "Fresh Ham", "Boston Butt"],
+    correct: 2,
+    hint: "Cured products from the rear leg.",
+    explanation: "The fresh ham (rear leg) is cured into prosciutto, Serrano ham, and country ham.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
+    examFocus: true,
+    type: "quiz"
+  },
+  {
+    id: 3134,
+    question: "The picnic ham comes from which region of the hog?",
+    options: ["Leg/rear", "Shoulder", "Loin", "Belly"],
+    correct: 1,
+    hint: "It's the lower part of the front quarter.",
+    explanation: "The picnic ham comes from the shoulder (the lower portion), not the rear leg despite the \"ham\" name.",
+    category: "Pork",
+    topic: "Pork",
+    chapter: 3,
     examFocus: true,
     type: "quiz"
   },

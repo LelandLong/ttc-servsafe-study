@@ -6,6 +6,19 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-09-2026-3] - June 9, 2026
+
+### Added
+- **CUL-112 Quiz 3 "Pork"** — all 15 questions, correct answers verified against the student's 100% submission (`Quiz - 5.pdf`, which D2L titles "Q3 Pork"). New **Pork** topic (🐷), grouped under "Quiz 3: Pork" (chapter 3). **This fills the previously-outstanding Quiz 3 gap.**
+  - The original quiz's two image-based pig-diagram *matching* questions (Q11, Q12) were converted into 5 standard multiple-choice questions (the app supports MCQ/flashcards only), preserving the primal-cut knowledge (belly→bacon, Boston Butt→pulled BBQ, loin→tenderloin/baby back ribs, fresh ham→prosciutto, picnic ham→shoulder).
+- CUL-112 now has **157 study items** (134 quiz + 23 flashcards) across 8 topics; question IDs extended to 3120-3134.
+
+### Notes
+- Quizzes 1–5 are now all present and verified. Student file names do NOT reliably map to D2L quiz numbers (e.g. `Quiz - 4.pdf` = D2L "Q5 Beef", `Quiz - 5.pdf` = D2L "Q3 Pork") — always read the PDF's D2L title.
+- To push the new questions to Convex cloud: open `admin.html`, select CUL-112, click "Reset to Original".
+
+---
+
 ## [06-09-2026-2] - June 9, 2026
 
 ### Added
