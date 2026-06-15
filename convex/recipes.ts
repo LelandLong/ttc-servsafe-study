@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, action } from "./_generated/server";
 import { v } from "convex/values";
 
 // ============ RECIPES — Phase R1 CRUD (per-user library) ============
@@ -672,5 +672,222 @@ export const adminDeleteGlobalRecipe = mutation({
 
     await ctx.db.delete(args.recipeId);
     return { ok: true };
+  },
+});
+
+// ============ R3: URL IMPORT (AI-assisted, server-side) ============
+// A Convex action fetches the page server-side (bypassing CORS) and parses it.
+// Primary path: schema.org/Recipe JSON-LD (no API key needed). Fallback: send the
+// page text to the Claude API. The action returns structured fields for the client
+// to review and save — it does NOT save anything itself.
+
+// resolveApiKey seam (R3/R7): global env key now; per-user override reserved.
+function resolveApiKey(): string | null {
+  return process.env.ANTHROPIC_API_KEY || null;
+}
+
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&deg;/gi, "°")
+    .replace(/&frac12;/gi, "½")
+    .replace(/&frac14;/gi, "¼")
+    .replace(/&frac34;/gi, "¾");
+}
+function stripHtml(s: any): string {
+  if (s == null) return "";
+  return decodeEntities(String(s).replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
+}
+// ISO-8601 duration ("PT1H30M") -> minutes, or null.
+function durationToMinutes(iso: any): number | null {
+  if (!iso || typeof iso !== "string") return null;
+  const m = iso.match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?/);
+  if (!m) return null;
+  const total = parseInt(m[1] || "0", 10) * 1440 + parseInt(m[2] || "0", 10) * 60 + parseInt(m[3] || "0", 10);
+  return total > 0 ? total : null;
+}
+function firstImageUrl(image: any): string | null {
+  if (!image) return null;
+  if (typeof image === "string") return image;
+  if (Array.isArray(image)) { for (const x of image) { const u = firstImageUrl(x); if (u) return u; } return null; }
+  if (typeof image === "object") return image.url || null;
+  return null;
+}
+function flattenSteps(instr: any): string[] {
+  const out: string[] = [];
+  function walk(node: any) {
+    if (node == null) return;
+    if (typeof node === "string") {
+      String(node).split(/\r?\n+/).forEach((line) => { const t = stripHtml(line); if (t) out.push(t); });
+      return;
+    }
+    if (Array.isArray(node)) { node.forEach(walk); return; }
+    if (typeof node === "object") {
+      if (node["@type"] === "HowToSection" || node.itemListElement) { walk(node.itemListElement); return; }
+      const text = node.text || node.name;
+      if (text) { const t = stripHtml(text); if (t) out.push(t); }
+    }
+  }
+  walk(instr);
+  return out;
+}
+function yieldToString(y: any): string {
+  if (y == null) return "";
+  if (Array.isArray(y)) y = y[0];
+  if (typeof y === "number") return String(y);
+  return stripHtml(y);
+}
+function tagsFrom(r: any): string[] {
+  const tags: string[] = [];
+  function add(v: any) {
+    if (!v) return;
+    if (Array.isArray(v)) { v.forEach(add); return; }
+    String(v).split(",").forEach((p) => { const t = stripHtml(p).toLowerCase(); if (t && tags.indexOf(t) === -1) tags.push(t); });
+  }
+  add(r.recipeCuisine); add(r.recipeCategory); add(r.keywords);
+  return tags.slice(0, 8);
+}
+// Find a schema.org Recipe node anywhere in parsed JSON-LD (handles @graph + arrays).
+function findRecipeNode(parsed: any): any {
+  const stack = [parsed];
+  while (stack.length) {
+    const node = stack.pop();
+    if (node == null) continue;
+    if (Array.isArray(node)) { node.forEach((x) => stack.push(x)); continue; }
+    if (typeof node === "object") {
+      const t = node["@type"];
+      if (t === "Recipe" || (Array.isArray(t) && t.indexOf("Recipe") !== -1)) return node;
+      if (node["@graph"]) stack.push(node["@graph"]);
+    }
+  }
+  return null;
+}
+function mapRecipe(r: any, url: string) {
+  const ingredients = (r.recipeIngredient || r.ingredients || [])
+    .map((x: any) => stripHtml(x)).filter((x: string) => x);
+  return {
+    title: stripHtml(r.name) || "Imported recipe",
+    description: stripHtml(r.description) || "",
+    ingredients,
+    steps: flattenSteps(r.recipeInstructions),
+    servings: yieldToString(r.recipeYield),
+    prepMinutes: durationToMinutes(r.prepTime),
+    cookMinutes: durationToMinutes(r.cookTime),
+    tags: tagsFrom(r),
+    imageUrl: firstImageUrl(r.image),
+    sourceType: "url",
+    sourceUrl: url,
+  };
+}
+
+const AI_PROMPT = `You extract a single recipe from the text of a web page. Return ONLY a JSON object (no markdown, no commentary) with exactly these keys:
+{"title": string, "description": string, "ingredients": string[], "steps": string[], "servings": string, "prepMinutes": number|null, "cookMinutes": number|null, "tags": string[]}
+- ingredients: one string per ingredient line, e.g. "2 cups flour".
+- steps: one string per instruction step, in order, with no leading numbers.
+- Exclude ads, navigation, comments, and life-story preambles.
+- Unknown text fields -> "", unknown minute fields -> null, unknown arrays -> [].
+Return the JSON object only.`;
+
+function htmlToText(html: string): string {
+  return decodeEntities(
+    html
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+  ).replace(/\s+/g, " ").trim();
+}
+
+// Claude fallback for pages without JSON-LD. Model default per the claude-api guide;
+// switch to "claude-haiku-4-5" here to cut cost if classroom usage grows.
+async function aiExtract(text: string, url: string, apiKey: string) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-opus-4-8",
+      max_tokens: 2000,
+      messages: [{ role: "user", content: AI_PROMPT + "\n\nPAGE CONTENT:\n" + text.slice(0, 16000) }],
+    }),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error("AI request failed (" + res.status + "): " + t.slice(0, 160));
+  }
+  const data: any = await res.json();
+  const block = (data.content || []).find((b: any) => b.type === "text");
+  const raw = block ? block.text : "";
+  const start = raw.indexOf("{"), end = raw.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("AI returned no JSON");
+  const obj = JSON.parse(raw.slice(start, end + 1));
+  return {
+    title: obj.title || "Imported recipe",
+    description: obj.description || "",
+    ingredients: Array.isArray(obj.ingredients) ? obj.ingredients : [],
+    steps: Array.isArray(obj.steps) ? obj.steps : [],
+    servings: obj.servings || "",
+    prepMinutes: typeof obj.prepMinutes === "number" ? obj.prepMinutes : null,
+    cookMinutes: typeof obj.cookMinutes === "number" ? obj.cookMinutes : null,
+    tags: Array.isArray(obj.tags) ? obj.tags : [],
+    imageUrl: null,
+    sourceType: "url",
+    sourceUrl: url,
+  };
+}
+
+export const importRecipeFromUrl = action({
+  args: { url: v.string() },
+  handler: async (_ctx, args) => {
+    const url = (args.url || "").trim();
+    if (!/^https?:\/\//i.test(url)) {
+      return { ok: false, error: "Please enter a full URL starting with http:// or https://" };
+    }
+    let html: string;
+    try {
+      const res = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+      });
+      if (!res.ok) return { ok: false, error: "Could not fetch the page (HTTP " + res.status + ")." };
+      html = await res.text();
+    } catch (e: any) {
+      return { ok: false, error: "Could not reach that URL." };
+    }
+
+    // Primary: schema.org/Recipe JSON-LD.
+    const blocks = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi) || [];
+    for (const block of blocks) {
+      const json = block.replace(/<script[^>]*>/i, "").replace(/<\/script>/i, "").trim();
+      let parsed: any;
+      try { parsed = JSON.parse(json); } catch (e) { continue; }
+      const node = findRecipeNode(parsed);
+      if (node) {
+        const recipe = mapRecipe(node, url);
+        if (recipe.ingredients.length || recipe.steps.length) {
+          return { ok: true, method: "json-ld", recipe };
+        }
+      }
+    }
+
+    // Fallback: AI extraction (requires the key on this deployment).
+    const apiKey = resolveApiKey();
+    if (!apiKey) {
+      return { ok: false, error: "No structured recipe data found on that page, and AI import isn't enabled yet (ANTHROPIC_API_KEY not set on this deployment)." };
+    }
+    try {
+      const recipe = await aiExtract(htmlToText(html), url, apiKey);
+      return { ok: true, method: "ai", recipe };
+    } catch (e: any) {
+      return { ok: false, error: "AI import failed: " + (e.message || "unknown error") };
+    }
   },
 });

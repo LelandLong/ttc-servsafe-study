@@ -484,6 +484,19 @@
         });
       }
 
+      function convexAction(functionName, args) {
+        return fetch(CONVEX_URL + '/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: functionName, args: args || {} })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.status === 'success') return data.value;
+          throw new Error(data.errorMessage || 'Action failed');
+        });
+      }
+
       // ============ USER SESSION MANAGEMENT ============
       var USER_KEY = 'chefKitchenUser';
       var USER_LAST_ACTIVE = 'chefKitchenLastActive';
@@ -4181,6 +4194,14 @@
         const [fImageIds, setFImageIds] = useState([]);       // storage ids
         const [fImageUrls, setFImageUrls] = useState([]);     // matching preview urls
         const [uploading, setUploading] = useState(false);
+        const [fSourceType, setFSourceType] = useState('manual'); // 'manual' | 'url' | 'photo'
+        const [fSourceUrl, setFSourceUrl] = useState('');
+
+        // URL import (R3)
+        const [showImport, setShowImport] = useState(false);
+        const [importUrl, setImportUrl] = useState('');
+        const [importing, setImporting] = useState(false);
+        const [importError, setImportError] = useState('');
 
         // Diner scores (R2) for the recipe currently open in detail
         const [scores, setScores] = useState([]);
@@ -4335,6 +4356,7 @@
           setFSteps('');
           setFServings(''); setFPrep(''); setFCook(''); setFTags('');
           setFImageIds([]); setFImageUrls([]);
+          setFSourceType('manual'); setFSourceUrl('');
           setErrorMsg('');
           setView('edit');
         }
@@ -4351,8 +4373,41 @@
           setFTags((r.tags || []).join(', '));
           setFImageIds((r.imageIds || []).slice());
           setFImageUrls((r.imageUrls || []).slice());
+          setFSourceType(r.sourceType || 'manual'); setFSourceUrl(r.sourceUrl || '');
           setErrorMsg('');
           setView('edit');
+        }
+
+        // URL import (R3): fetch+parse server-side, then open the edit form pre-filled
+        // for review-before-save.
+        function runImport() {
+          var url = importUrl.trim();
+          if (!url) { setImportError('Paste a recipe URL first.'); return; }
+          setImporting(true); setImportError('');
+          convexAction('recipes:importRecipeFromUrl', { url: url })
+            .then(function(res) {
+              setImporting(false);
+              if (!res || !res.ok) { setImportError((res && res.error) || 'Could not import that page.'); return; }
+              var r = res.recipe;
+              setActiveRecipe(null);
+              setFTitle(r.title || '');
+              setFDescription(r.description || '');
+              setFIngredients(ingredientsToRows(r.ingredients));
+              setFSteps((r.steps || []).join('\n'));
+              setFServings(r.servings || '');
+              setFPrep(r.prepMinutes != null ? String(r.prepMinutes) : '');
+              setFCook(r.cookMinutes != null ? String(r.cookMinutes) : '');
+              setFTags((r.tags || []).join(', '));
+              setFImageIds([]); setFImageUrls([]);
+              setFSourceType('url'); setFSourceUrl(r.sourceUrl || url);
+              setShowImport(false); setImportUrl('');
+              setErrorMsg('');
+              setView('edit');
+            })
+            .catch(function(err) {
+              setImporting(false);
+              setImportError('Import failed: ' + err.message);
+            });
         }
 
         function openDetail(r) {
@@ -4470,7 +4525,9 @@
             prepMinutes: fPrep.trim() ? Number(fPrep) : undefined,
             cookMinutes: fCook.trim() ? Number(fCook) : undefined,
             tags: fTags.split(',').map(function(s){return s.trim();}).filter(Boolean),
-            imageIds: fImageIds
+            imageIds: fImageIds,
+            sourceType: fSourceType || 'manual',
+            sourceUrl: (fSourceUrl && fSourceUrl.trim()) ? fSourceUrl.trim() : undefined
           };
           var p;
           if (activeRecipe && activeRecipe.isGlobal) {
@@ -4970,7 +5027,32 @@
                 value: search, onChange: function(e){ setSearch(e.target.value); },
                 placeholder: '🔍 Search by title or tag'
               }),
-              createElement('button', { onClick: startAdd, className: 'bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 rounded-lg' }, '+ Add')
+              createElement('button', { onClick: startAdd, className: 'bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 rounded-lg' }, '+ Add'),
+              createElement('button', {
+                onClick: function(){ setShowImport(!showImport); setImportError(''); },
+                className: 'px-3 rounded-lg border-2 font-bold',
+                style: { borderColor: '#fdba74', color: '#ea580c' },
+                title: 'Import a recipe from a URL'
+              }, '🔗')
+            ),
+            // ---- URL import panel (R3) ----
+            showImport && createElement('div', { className: 'card-bg rounded-xl p-4 mb-4 border-2 border-themed' },
+              createElement('label', { style: { display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px', color: 'var(--text-secondary)' } }, 'Import from a recipe URL'),
+              createElement('div', { className: 'flex gap-2' },
+                createElement('input', {
+                  className: 'flex-1 p-2 rounded-lg border', inputMode: 'url',
+                  style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                  value: importUrl, onChange: function(e){ setImportUrl(e.target.value); },
+                  placeholder: 'https://…',
+                  onKeyDown: function(e){ if (e.key === 'Enter' && !importing) runImport(); }
+                }),
+                createElement('button', {
+                  onClick: runImport, disabled: importing,
+                  className: 'bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 rounded-lg disabled:opacity-50'
+                }, importing ? 'Importing…' : 'Import')
+              ),
+              importError && createElement('p', { className: 'text-sm mt-2', style: { color: '#dc2626' } }, importError),
+              createElement('p', { className: 'text-xs text-muted mt-2' }, 'Paste a recipe link — we’ll pull the title, ingredients and steps for you to review before saving.')
             ),
             recipes === null
               ? createElement('p', { className: 'text-muted text-center py-10' }, 'Loading…')

@@ -1,6 +1,6 @@
 # Chef's Kitchen — Recipes Feature Plan
 
-**Status:** R1 + R2 + R8 + R9 + R10 shipped & verified; class filters shipped — R3–R7, R11 planned
+**Status:** R1 + R2 + R3 + R8 + R9 + R10 shipped & verified; class filters shipped — R4–R7, R11 planned
 **Created:** June 11, 2026
 **Owner:** Leland Long
 
@@ -174,12 +174,12 @@ Recipes has none of that. So:
 - Log diner scores (1–10) on a recipe; show avg + count
 - *Outcome: capture what people actually like.*
 
-**Phase R3 — URL import (AI)**
-- `npx convex env set ANTHROPIC_API_KEY` on this deployment
-- `resolveApiKey(user)` seam (global now; per-user-ready)
-- Convex action: fetch URL → JSON-LD parse → fields; Claude fallback for non-JSON-LD pages
-- Review-before-save UI
-- *Outcome: replaces the bookmark folder.*
+**Phase R3 — URL import (AI)** ✅ DONE (06-15-2026-9)
+- `ANTHROPIC_API_KEY` already set on this deployment (env var, server-side only)
+- `resolveApiKey()` seam (global now; per-user-ready for R7)
+- Convex action `importRecipeFromUrl`: fetch URL → JSON-LD `schema.org/Recipe` parse → fields; Claude API fallback for non-JSON-LD pages
+- 🔗 Import button → review-before-save (pre-fills the editor; saved with `sourceType: "url"` + `sourceUrl`)
+- *Outcome: replaces the bookmark folder.* Note: some sites (e.g. seriouseats, simplyrecipes) block server-side fetches with 403/Cloudflare — those won't import.
 
 **Phase R4 — Photo import (AI)**
 - Convex action: image → Claude vision → structured fields

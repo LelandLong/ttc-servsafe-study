@@ -6,6 +6,15 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-15-2026-9] - June 15, 2026
+
+### Added
+- **Recipes — Phase R3: import from a URL (AI-assisted).** A **🔗 Import** button on the recipe list opens a URL box; paste a recipe link and the app pulls the title, ingredients, steps, servings, prep/cook times, and tags into the editor for **review before saving** (saved as a normal personal recipe with `sourceType: "url"` + `sourceUrl`).
+  - Server-side **Convex action** `importRecipeFromUrl` fetches the page (bypassing browser CORS). **Primary path:** parse the embedded `schema.org/Recipe` **JSON-LD** (handles `@graph` and arrays; ISO-8601 durations → minutes; HowToStep/HowToSection instructions) — no AI needed, covers most major recipe sites. **Fallback:** if no JSON-LD, send the page text to the Claude API for structured extraction. `resolveApiKey()` seam reads the key from the deployment env (global now; per-user-ready for R7).
+  - The Anthropic key lives only as a Convex **env var**, read server-side in the action — it never appears in committed code or anything served to the browser. Verified with two live sites: budgetbytes (JSON-LD) and loveandlemons (AI fallback), plus the full in-app import → review → save flow. Deployed to prod + dev.
+
+---
+
 ## [06-15-2026-8] - June 15, 2026
 
 ### Changed
