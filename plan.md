@@ -201,11 +201,25 @@ The app is stable and in active use by students.
 
 ---
 
+## Major Initiative: Recipes Feature (planned)
+
+Chef's Kitchen is evolving from a pure study tool into a study tool **and** a working kitchen
+companion. The **Recipes** feature set adds a per-user recipe library with photo/URL import,
+diner scores, in-app sharing, and meal planning. Full design and phased roadmap (R1–R7) live in
+**[RECIPES-PLAN.md](./RECIPES-PLAN.md)**.
+
+- Placement: 4th course card → dedicated Recipes screen (separate from the quiz engine)
+- Audience: all users, optional
+- Enabling tech: Convex **actions** (server-side fetch + Claude API + file storage) — no new server needed
+- AI key: global Anthropic key on this deployment now, per-user-key seam built in for later (owner key → gamer name `rerun`)
+- Phases: R1 manual+images, R2 scores, R3 URL import, R4 photo import, R5 sharing, R6 meal planning, R7 per-user keys
+
 ## Short-Term Goals (Next Sprint)
 
 ### High Priority
 1. [ ] Add new questions as professor provides them (from upcoming quizzes/lectures)
 2. [ ] Monitor student usage and fix any reported issues
+3. [ ] Begin Recipes Phase R1 (foundation) — see RECIPES-PLAN.md
 
 ### Medium Priority
 1. [ ] Consider adding "Quiz of the Day" or daily challenge feature

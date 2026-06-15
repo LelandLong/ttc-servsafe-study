@@ -7,6 +7,7 @@ This file provides context and rules for Claude Code when working on the Chef's 
 > - [ARCHITECTURE.md](./ARCHITECTURE.md) — Technical deep dive (data flow, components, theming)
 > - [CHANGELOG.md](./CHANGELOG.md) — Version history
 > - [plan.md](./plan.md) — Current development roadmap and status
+> - [RECIPES-PLAN.md](./RECIPES-PLAN.md) — Design & phased roadmap for the planned Recipes feature (per-user recipe library, photo/URL import, scores, sharing, meal planning)
 
 ---
 

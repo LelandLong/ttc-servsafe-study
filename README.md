@@ -276,6 +276,16 @@ npx convex deploy --yes
 
 ---
 
+## 🛣️ Roadmap
+
+**Recipes** (planned) — Chef's Kitchen is growing from a pure study tool into a study tool **and** a
+working kitchen companion. The Recipes feature adds a per-user recipe library with photo/URL import
+(AI-assisted via Convex actions + Claude), diner scores (1–10), in-app sharing by gamer name, and
+mood/ingredient-based meal planning. It appears as a 4th course card and is optional for all users.
+See **[RECIPES-PLAN.md](./RECIPES-PLAN.md)** for the full design and phased roadmap (R1–R7).
+
+---
+
 ## 📚 Version History
 
 See [CHANGELOG.md](./CHANGELOG.md) for detailed version history.
