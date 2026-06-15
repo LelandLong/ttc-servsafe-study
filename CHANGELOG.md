@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-15-2026-14] - June 15, 2026
+
+### Fixed
+- **Home screen — version no longer hidden behind the account avatar.** Same fix as the recipes screen (06-15-2026-5): added right padding so the version number on the main Chef's Kitchen page sits beside the fixed account avatar instead of under it. (Verified: version right edge 310px vs avatar left 322px — no overlap.)
+
+---
+
 ## [06-15-2026-13] - June 15, 2026
 
 ### Changed

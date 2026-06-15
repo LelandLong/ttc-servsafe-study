@@ -3125,8 +3125,8 @@
           // Header
           createElement('header', { className: 'bg-gradient-to-r from-red-700 via-red-600 to-orange-600 text-white p-6 shadow-lg' },
             createElement('div', { className: 'max-w-4xl mx-auto' },
-              // Version in top right
-              createElement('div', { className: 'flex justify-end items-center gap-3 mb-2' },
+              // Version in top right (right padding keeps it clear of the fixed account avatar)
+              createElement('div', { className: 'flex justify-end items-center gap-3 mb-2', style: { paddingRight: '3.5rem' } },
                 createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION)
               ),
               createElement('div', { className: 'text-center' },
