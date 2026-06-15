@@ -87,4 +87,24 @@ export default defineSchema({
     finishedAt: v.optional(v.number()),
   }).index("by_testId", ["testId"])
     .index("by_testId_userId", ["testId", "userId"]),
+
+  // ============ RECIPES (Phase R1 — per-user recipe library) ============
+  // See RECIPES-PLAN.md. Each recipe is owned by one user (ownerId).
+  recipes: defineTable({
+    ownerId: v.id("users"),              // who owns this copy
+    title: v.string(),
+    description: v.optional(v.string()),
+    ingredients: v.array(v.string()),    // one line each
+    steps: v.array(v.string()),          // ordered instructions
+    imageIds: v.optional(v.array(v.id("_storage"))), // 1+ images; [0] is the cover
+    sourceType: v.optional(v.string()),  // "manual" | "url" | "photo"
+    sourceUrl: v.optional(v.string()),   // for url imports
+    prepMinutes: v.optional(v.number()),
+    cookMinutes: v.optional(v.number()),
+    servings: v.optional(v.string()),
+    tags: v.optional(v.array(v.string())),      // mood, cuisine, "kid-friendly", "quick", etc.
+    pickyFlags: v.optional(v.array(v.string())),// ingredients/people to avoid
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_owner", ["ownerId"]),
 });
