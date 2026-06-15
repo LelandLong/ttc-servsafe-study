@@ -4250,6 +4250,8 @@
 
         // Serving-size scaling (R8): target serving count for the open recipe (null = no base).
         const [scaleTarget, setScaleTarget] = useState(null);
+        // Image lightbox: URL of the image shown full-screen (null = closed).
+        const [lightboxUrl, setLightboxUrl] = useState(null);
 
         // Cook log (R10) for the recipe open in detail
         const [cookLog, setCookLog] = useState([]);
@@ -4489,6 +4491,7 @@
           setNoteText(r.myNote || '');
           setEditingNote(false);
           setScaleTarget(parseServingsBase(r.servings));
+          setLightboxUrl(null);
           setCookLog([]);
           setShowCookForm(false);
           setCDate(todayInputValue()); setCCount(''); setCNotes('');
@@ -4528,30 +4531,31 @@
         // Upload an image file: get a signed URL, POST the file, store its id.
         function handleImageUpload(ev) {
           var file = ev.target.files && ev.target.files[0];
+          ev.target.value = ''; // allow re-selecting the same file
           if (!file || !user) return;
           setUploading(true);
           setErrorMsg('');
-          convexMutation('recipes:generateUploadUrl', { ownerId: user.userId })
-            .then(function(uploadUrl) {
-              return fetch(uploadUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': file.type },
-                body: file
-              }).then(function(res) { return res.json(); });
-            })
-            .then(function(result) {
-              var storageId = result.storageId;
-              // Make a local preview URL for immediate display.
-              var previewUrl = URL.createObjectURL(file);
-              setFImageIds(function(prev) { return prev.concat([storageId]); });
-              setFImageUrls(function(prev) { return prev.concat([previewUrl]); });
-              setUploading(false);
+          // Downscale to a sensible cover size (≤1080px JPEG) before storing — we
+          // never display larger than this, so don't store multi-MB originals.
+          downscaleImage(file, 1080, 0.82)
+            .then(function(dataUrl) {
+              return convexMutation('recipes:generateUploadUrl', { ownerId: user.userId })
+                .then(function(uploadUrl) {
+                  return fetch(dataUrl).then(function(r){ return r.blob(); }).then(function(blob) {
+                    return fetch(uploadUrl, { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob });
+                  });
+                })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                  setFImageIds(function(prev) { return prev.concat([result.storageId]); });
+                  setFImageUrls(function(prev) { return prev.concat([dataUrl]); });
+                  setUploading(false);
+                });
             })
             .catch(function(err) {
               setErrorMsg('Image upload failed: ' + err.message);
               setUploading(false);
             });
-          ev.target.value = ''; // allow re-selecting the same file
         }
 
         function removeImageAt(idx) {
@@ -4786,11 +4790,22 @@
           var rCanScale = rBaseServ != null && scaleTarget != null && scaleTarget > 0;
           var rCf = rCanScale ? (scaleTarget / rBaseServ) : 1;
           return createElement('div', { className: 'min-h-screen' }, headerEl,
+            // Full-screen image lightbox (tap anywhere to close).
+            lightboxUrl && createElement('div', {
+              onClick: function(){ setLightboxUrl(null); },
+              style: { position: 'fixed', inset: 0, zIndex: 200, backgroundColor: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', cursor: 'zoom-out' }
+            },
+              createElement('img', { src: lightboxUrl, style: { maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px' } }),
+              createElement('button', { onClick: function(e){ e.stopPropagation(); setLightboxUrl(null); }, style: { position: 'absolute', top: '12px', right: '16px', color: '#fff', fontSize: '2.2rem', lineHeight: 1 } }, '×')
+            ),
             createElement('main', { className: 'max-w-2xl mx-auto p-6' },
               errorEl,
               (r.imageUrls && r.imageUrls.length > 0) && createElement('div', { className: 'flex gap-2 overflow-x-auto mb-4' },
                 r.imageUrls.map(function(url, i) {
-                  return createElement('img', { key: i, src: url, style: { height: '180px', borderRadius: '12px', objectFit: 'cover' } });
+                  return createElement('img', { key: i, src: url, loading: 'lazy',
+                    onClick: function(){ setLightboxUrl(url); },
+                    title: 'Tap to enlarge',
+                    style: { height: '180px', borderRadius: '12px', objectFit: 'cover', cursor: 'zoom-in' } });
                 })
               ),
               createElement('h2', { className: 'text-2xl font-bold text-primary mb-1' }, r.title),
@@ -5157,7 +5172,7 @@
                           className: 'mode-card card-bg rounded-xl p-3 border-2 border-themed text-left flex gap-3 items-center hover:border-orange-300'
                         },
                           cover
-                            ? createElement('img', { src: cover, style: { width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 } })
+                            ? createElement('img', { src: cover, loading: 'lazy', style: { width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 } })
                             : createElement('div', { style: { width: '60px', height: '60px', borderRadius: '8px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', backgroundColor: 'var(--bg-hover, #f3f4f6)' } }, '🍴'),
                           createElement('div', { className: 'flex-1 min-w-0' },
                             createElement('div', { className: 'font-bold text-primary truncate' }, r.title),

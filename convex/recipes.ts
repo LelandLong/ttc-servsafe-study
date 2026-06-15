@@ -928,3 +928,47 @@ export const importRecipeFromPhoto = action({
     }
   },
 });
+
+// ============ NOTES IMPORT (text parse, R3/R4 sibling) ============
+// Parse arbitrary note text into a recipe via Claude. Also CLASSIFIES — returns
+// isRecipe:false for non-recipes (shopping lists, quotes, addresses) so the
+// caller can skip them. Used to bulk-import macOS Notes recipes.
+const NOTE_PROMPT = `Decide whether the following note is a cooking recipe, then respond with ONLY a JSON object (no markdown):
+{"isRecipe": true|false, "title": string, "description": string, "ingredients": string[], "steps": string[], "servings": string, "prepMinutes": number|null, "cookMinutes": number|null, "tags": string[]}
+- If it is NOT a recipe (shopping list, address, phone number, quote, reminder, story), set "isRecipe": false and leave the other fields empty.
+- title: the dish name (clean it up; don't include emoji). ingredients: one string per line e.g. "2 cups flour". steps: ordered, no leading numbers.
+- Unknown text fields -> "", unknown minutes -> null, unknown arrays -> [].
+Return the JSON object only.`;
+
+export const importRecipeFromText = action({
+  args: { text: v.string() },
+  handler: async (_ctx, args) => {
+    const apiKey = resolveApiKey();
+    if (!apiKey) return { ok: false, error: "ANTHROPIC_API_KEY not set" };
+    const text = (args.text || "").trim();
+    if (!text) return { ok: false, error: "Empty note" };
+    try {
+      const raw = await callClaude(apiKey, NOTE_PROMPT + "\n\nNOTE:\n" + text.slice(0, 14000));
+      const start = raw.indexOf("{"), end = raw.lastIndexOf("}");
+      if (start === -1 || end === -1) throw new Error("no JSON");
+      const obj = JSON.parse(raw.slice(start, end + 1));
+      if (!obj.isRecipe) return { ok: true, isRecipe: false };
+      return {
+        ok: true,
+        isRecipe: true,
+        recipe: {
+          title: obj.title || "Untitled recipe",
+          description: obj.description || "",
+          ingredients: Array.isArray(obj.ingredients) ? obj.ingredients : [],
+          steps: Array.isArray(obj.steps) ? obj.steps : [],
+          servings: obj.servings || "",
+          prepMinutes: typeof obj.prepMinutes === "number" ? obj.prepMinutes : null,
+          cookMinutes: typeof obj.cookMinutes === "number" ? obj.cookMinutes : null,
+          tags: Array.isArray(obj.tags) ? obj.tags : [],
+        },
+      };
+    } catch (e: any) {
+      return { ok: false, error: "Parse failed: " + (e.message || "unknown") };
+    }
+  },
+});

@@ -6,6 +6,16 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-15-2026-13] - June 15, 2026
+
+### Changed
+- **Recipes — image optimization.** Manual photo uploads previously stored the **full-resolution original** (e.g. a multi-MB phone photo) but only ever displayed it at 60–180px. Uploads now **downscale to ≤1080px JPEG** before storing (~150–250KB) — that's the largest size we ever display (the lightbox), so one optimized image serves the thumbnail, detail, and enlarged views. List thumbnails also `loading="lazy"` so a long library doesn't fetch every image at once.
+
+### Added
+- **Recipes — tap-to-enlarge.** Tap a recipe photo on the detail screen to view it full-screen; tap anywhere (or ×) to close.
+
+---
+
 ## [06-15-2026-12] - June 15, 2026
 
 ### Changed
