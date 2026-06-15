@@ -216,8 +216,10 @@ Recipes has none of that. So:
   fractions (e.g. `0.75 cup` → `¾ cup`). Base yield comes from the recipe's `servings` field —
   portion-style yields (`1 portion`, `6 servings`) scale cleanly; volume yields (`1 pint`, `1 quart`)
   are a v2 nicety.
-- Optional polish: roll units up as they grow (3 tsp → 1 Tbsp, 16 Tbsp → 1 cup) via the existing
-  `UNIT_MAP`. Nice tie-in: this *is* the CUL-105/112 conversion-factor lesson made interactive.
+- ✅ Unit rollup shipped (06-15-2026-8): scaled quantities convert to the most sensible unit via
+  standard kitchen formulas (3 tsp → 1 Tbsp, 4 Tbsp → ¼ cup, 4 cups → 1 qt, 16 oz → 1 lb, metric too),
+  only when the result lands on a clean fraction. Nice tie-in: this *is* the CUL-105/112
+  conversion-factor lesson made interactive.
 
 **Phase R9 — Global recipes + per-user layer** *(free; architectural)* ✅ DONE (06-15-2026-3)
 The 282 imported class recipes should be visible to **every** student (the app is already shared with

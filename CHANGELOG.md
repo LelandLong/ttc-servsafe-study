@@ -6,6 +6,16 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-15-2026-8] - June 15, 2026
+
+### Changed
+- **Recipes — serving scaler now rolls up to sensible units.** When you scale a recipe, quantities convert using standard kitchen formulas instead of staying in the original unit: `3 tsp → 1 Tbsp`, `4 Tbsp → ¼ cup`, `2 cups → 1 pint`, `4 cups → 1 quart`, `16 oz → 1 lb` (and metric `1000 g → 1 kg`, `1000 ml → 1 l`). The largest unit that lands on a clean kitchen fraction wins; values that don't convert cleanly stay in the smaller unit (so 5 Tbsp shows as `5 Tbsp`, never a distorted `1/3 cup`). Count units (clove, each, pinch, slice…) and "to taste"/"as needed" are scaled but not unit-converted. Ranges scale both ends. Verified: 14/14 conversion unit cases + browser check on a real recipe.
+
+### Fixed
+- **Recipes header — version no longer hidden behind the account avatar.** On the recipes screen the version number sat directly under the fixed 52px account avatar in the top-right. Added right padding to the header row so the version and avatar sit **side-by-side** (verified: version right edge 310px vs avatar left 322px at iPhone width — no overlap).
+
+---
+
 ## [06-15-2026-7] - June 15, 2026
 
 ### Added

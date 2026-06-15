@@ -4068,6 +4068,75 @@
         return t; // unparseable compound qty — leave as written
       }
 
+      // ---- Measurement rollup (R8): convert a scaled qty to the most sensible
+      // unit using standard kitchen conversions (3 tsp → 1 Tbsp, 4 Tbsp → ¼ cup,
+      // 16 oz → 1 lb), the way a chef would write it.
+      var VOL_TSP = { 'tsp':1, 'tbsp':3, 'fl oz':6, 'cup':48, 'pt':96, 'qt':192, 'gal':768 };
+      var WT_OZ   = { 'oz':1, 'lb':16 };
+      var MVOL_ML = { 'ml':1, 'l':1000 };
+      var MWT_G   = { 'g':1, 'kg':1000 };
+      function unitKey(u) { return String(u || '').trim().toLowerCase(); }
+      function unitFamily(u) {
+        var k = unitKey(u);
+        if (VOL_TSP[k] != null) return 'vol';
+        if (WT_OZ[k] != null) return 'wt';
+        if (MVOL_ML[k] != null) return 'mvol';
+        if (MWT_G[k] != null) return 'mwt';
+        return null;
+      }
+      // Nearest common kitchen fraction within a tight tolerance (so we never
+      // misrepresent — 5 Tbsp won't round to "1/3 cup"), or null if none fits.
+      function niceFractionValue(x) {
+        var whole = Math.floor(x + 1e-9);
+        var frac = x - whole;
+        if (frac < 0.02) return whole;
+        if (frac > 0.98) return whole + 1;
+        var fr = [1/8, 1/6, 1/4, 1/3, 3/8, 1/2, 5/8, 2/3, 3/4, 5/6, 7/8];
+        for (var i = 0; i < fr.length; i++) { if (Math.abs(frac - fr[i]) < 0.02) return whole + fr[i]; }
+        return null;
+      }
+      // Walk a unit ladder (largest first); pick the biggest unit where the amount
+      // is at least its threshold AND lands on a clean fraction.
+      function rollLadder(base, ladder) {
+        for (var i = 0; i < ladder.length; i++) {
+          var name = ladder[i][0], f = ladder[i][1], minShow = ladder[i][2];
+          var v = base / f;
+          if (v + 1e-9 < minShow) continue;
+          var nv = niceFractionValue(v);
+          if (nv != null) return { qty: decimalToNice(nv), unit: name };
+        }
+        var last = ladder[ladder.length - 1];
+        return { qty: decimalToNice(base / last[1]), unit: last[0] };
+      }
+      var VOL_LADDER  = [['gal',768,1], ['qt',192,1], ['pt',96,1], ['cup',48,0.25], ['Tbsp',3,1], ['tsp',1,0]];
+      var WT_LADDER   = [['lb',16,1], ['oz',1,0]];
+      var MVOL_LADDER = [['l',1000,1], ['ml',1,0]];
+      var MWT_LADDER  = [['kg',1000,1], ['g',1,0]];
+
+      // Scale one ingredient's qty+unit by a conversion factor, rolling to the
+      // most sensible unit. Returns { qty, unit } display strings.
+      function scaleIngredient(qtyStr, unit, cf) {
+        var u = String(unit || '').trim();
+        if (cf === 1) return { qty: (qtyStr == null ? '' : String(qtyStr)), unit: u };
+        if (qtyStr == null || String(qtyStr).trim() === '') return { qty: '', unit: u };
+        var t = String(qtyStr).trim();
+        // Ranges ("2-3"): scale each end, keep the unit (no rollup).
+        var parts = t.split(/\s*[-–]\s*/);
+        if (parts.length === 2) {
+          var a = parseQtyNumber(parts[0]), b = parseQtyNumber(parts[1]);
+          if (a != null && b != null) return { qty: decimalToNice(a * cf) + '–' + decimalToNice(b * cf), unit: u };
+        }
+        var num = parseQtyNumber(t);
+        if (num == null) return { qty: t, unit: u }; // unparseable compound — leave as written
+        var scaled = num * cf;
+        var fam = unitFamily(u), k = unitKey(u);
+        if (fam === 'vol')  return rollLadder(scaled * VOL_TSP[k], VOL_LADDER);
+        if (fam === 'wt')   return rollLadder(scaled * WT_OZ[k],  WT_LADDER);
+        if (fam === 'mvol') return rollLadder(scaled * MVOL_ML[k], MVOL_LADDER);
+        if (fam === 'mwt')  return rollLadder(scaled * MWT_G[k],  MWT_LADDER);
+        return { qty: decimalToNice(scaled), unit: u }; // count units (clove, each, pinch…) — scale only
+      }
+
       // ---- Cook-log date helpers (R10) ----
       function todayInputValue() {
         var d = new Date();
@@ -4439,7 +4508,9 @@
         // ---- Render helpers ----
         var headerEl = createElement('header', { className: 'bg-gradient-to-r from-red-700 via-red-600 to-orange-600 text-white p-6 shadow-lg' },
           createElement('div', { className: 'max-w-4xl mx-auto' },
-            createElement('div', { className: 'flex justify-between items-center' },
+            // Right padding keeps the version number clear of the fixed 52px account
+            // avatar (top-right), so they sit side-by-side instead of overlapping.
+            createElement('div', { className: 'flex justify-between items-center', style: { paddingRight: '3.5rem' } },
               createElement('button', {
                 onClick: function() { if (view === 'list') { onBack(); } else { setView('list'); setErrorMsg(''); } },
                 className: 'text-white/90 hover:text-white text-sm font-medium'
@@ -4638,8 +4709,8 @@
                   var text;
                   if (typeof ing === 'string') { text = ing; }
                   else {
-                    var qd = scaleQtyDisplay(ing.qty, rCf);
-                    text = [qd, ing.unit, ing.item].filter(Boolean).join(' ');
+                    var si = scaleIngredient(ing.qty, ing.unit, rCf);
+                    text = [si.qty, si.unit, ing.item].filter(Boolean).join(' ');
                   }
                   return createElement('li', { key: i, className: 'mb-1' }, text);
                 })
