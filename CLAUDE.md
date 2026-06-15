@@ -249,8 +249,9 @@ npx convex deploy --yes
 
 ### Admin App (`admin.html`)
 - **Course selector** in header (CUL-104 | CUL-105 toggle), persisted in localStorage
-- 3-tab interface: Questions | Students | Live Test
+- 4-tab interface: Questions | Students | Live Test | Recipes
 - Full question CRUD with search/filter (course-scoped)
+- **Recipes tab:** manage the global (shared) recipe library — list/search/filter, add/edit/delete global recipes. Globals can ONLY be edited here; the student app forks a personal copy for any edit (even the curator).
 - Dynamic filters: Chapters for CUL-104, Topics + Type for CUL-105
 - Question editor adapts to course (Chapter vs Topic, Quiz vs Flashcard type)
 - Student dashboard with stats, detail modal, CSV export

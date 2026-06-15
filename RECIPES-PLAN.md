@@ -1,8 +1,13 @@
 # Chef's Kitchen — Recipes Feature Plan
 
-**Status:** R1 + R2 shipped & verified — R3–R7 planned
+**Status:** R1 + R2 + R9 shipped & verified; class filters shipped — R3–R8, R10–R11 planned
 **Created:** June 11, 2026
 **Owner:** Leland Long
+
+> **Content seed (06-15-2026-1):** 282 recipes imported from CUL-105 + CUL-112 course
+> materials into the `rerun` library, tagged by course + category + `class-material`
+> (textbook recipes also `on-cooking`). See CHANGELOG. Added the owner-scoped
+> `bulkCreateRecipes` mutation for batch imports.
 
 This document captures the design and phased roadmap for the **Recipes** feature set — the
 evolution of Chef's Kitchen from a pure study tool into a study tool **and** a working kitchen
@@ -201,6 +206,59 @@ Recipes has none of that. So:
 - Flip `resolveApiKey` to prefer a per-user key; store owner's under gamer name `rerun`
 - UI for a user to enter their own key
 
+**Phase R8 — Serving-size scaling (instant ingredient conversion)** *(free)* — REQUESTED (06-15)
+- At the top of the recipe detail, next to **servings**, add a **−/+ stepper** (and/or a target-servings
+  input) to rescale the dish. All structured `{qty, unit, item}` ingredient quantities recompute
+  **instantly** using the conversion-factor method taught in class: `CF = targetYield / baseYield`,
+  then each `qty × CF`.
+- **View-time only** — never mutates the stored recipe; a reset returns to the base servings.
+- Parsing: handle fractions (`1/2`), decimals (`1.5`), and ranges (`2-3`); render results as friendly
+  fractions (e.g. `0.75 cup` → `¾ cup`). Base yield comes from the recipe's `servings` field —
+  portion-style yields (`1 portion`, `6 servings`) scale cleanly; volume yields (`1 pint`, `1 quart`)
+  are a v2 nicety.
+- Optional polish: roll units up as they grow (3 tsp → 1 Tbsp, 16 Tbsp → 1 cup) via the existing
+  `UNIT_MAP`. Nice tie-in: this *is* the CUL-105/112 conversion-factor lesson made interactive.
+
+**Phase R9 — Global recipes + per-user layer** *(free; architectural)* ✅ DONE (06-15-2026-3)
+The 282 imported class recipes should be visible to **every** student (the app is already shared with
+the whole class), while each user keeps their own private library — merged into one list (the class
+filters already distinguish them). **Editing a shared recipe must never change it for anyone else.**
+- **R9a — Global (shared) recipes.** Introduce a recipe *scope*: a `scope: "global" | "user"` field
+  (global rows have no personal `ownerId`, or are owned by a curator/`rerun` and flagged global).
+  `getMyRecipes` returns **the user's own recipes + all global recipes, merged**. Only an admin/curator
+  can create or edit global recipes. **Migrate the 282 class-material imports from `rerun` to global**
+  as the first global set (the `course` / `class-material` / `on-cooking` tags travel with the row, so
+  the new class filters keep working unchanged).
+- **R9b — Per-user custom notes (overlay).** Any user can attach **their own notes** to any recipe
+  (global or personal) via a lightweight per-user annotation, overlaid at display time. Never touches
+  the global row — notes stay private and per-user.
+- **R9c — Copy-on-write edits.** When a user hits **Edit** on a *global* recipe, do **not** mutate the
+  shared row — fork a **personal deep copy** they own (ingredients, steps, images) and edit that; the
+  global stays intact for everyone. Surface clearly as "Save as my copy." (Custom notes = the
+  lightweight overlay in R9b; structural edits = a fork.)
+- Data sketch:
+  ```
+  recipes.scope     : "global" | "user"        // or ownerId null ⇒ global
+  recipes.forkedFrom: optional id("recipes")   // provenance when a global is copied to a user
+  recipeNotes       : { userId, recipeId, notes, updatedAt }   index by_user_recipe [userId, recipeId]
+  ```
+
+**Phase R10 — Cook log (meal events: date · diner count · notes)** *(free)* — REQUESTED (06-15)
+Capture each time a recipe is actually **put on a menu / cooked for a meal**, separate from the 1–10
+diner scores (which already exist and attach to the meal).
+- Below the diner ratings on a recipe, add **"Log a meal"**: a **date**, a **diner count**, and a
+  **notes** field; the existing per-diner 1–10 ratings can be entered for that same meal.
+- Data sketch: `recipeCookLog : { recipeId, ownerId, cookedOn, dinerCount, notes, createdAt }`
+  (index `by_owner`, `by_recipe`). Optionally relate diner scores to an event via `recipeScores.eventId`.
+
+**Phase R11 — Meal-planning history & analytics** *(free)* — REQUESTED (06-15)
+Builds on R10 (and the R6 meal-planning vision).
+- A **history list view across all recipes**, sorted by **date**, with **search** — what was cooked
+  when, for how many, with notes and that meal's ratings.
+- **Running totals / rollups**: meals per week/month, total diners served, most-cooked dishes,
+  best-scoring dishes over time — turning the cook log into a planning + retrospective tool.
+- Surfacing ideas: "haven't made X in a while," crowd-pleasers to re-run, menu planning around a date.
+
 ---
 
 ## 7. Open questions / decisions deferred
@@ -209,6 +267,15 @@ Recipes has none of that. So:
 - Whether shared recipes should retain a "from {gamerName}" attribution line.
 - Image limits per recipe / per user (Convex storage quota awareness).
 - Cost guardrails if classroom-wide AI import usage grows (rate limit per user; or revisit "AI for me only").
+- **R8 scaling:** how to render scaled fractions cleanly; how to parse non-portion yields
+  (pint/quart/gallon) for the stepper; whether to auto-roll units as quantities grow.
+- **R9 global recipes:** scope representation (`scope` field vs `ownerId: null`); who may curate/edit
+  globals (admin only — likely the professor + `rerun`); confirm the `class-material`/`on-cooking`/course
+  tags still drive the existing filters after migration (they should — tags live on the row).
+- **R9 overlay vs fork:** notes are a clean per-user overlay; do we also allow per-user *field-level*
+  overrides without a full fork? Recommend v1 = notes overlay + full deep-copy fork on structural edit.
+- **R10 cook log vs scores:** one cook event → many diner scores; thread `eventId` now, or keep them
+  independent and join by date? (Lean independent first; add `eventId` when R11 needs tight grouping.)
 
 ---
 

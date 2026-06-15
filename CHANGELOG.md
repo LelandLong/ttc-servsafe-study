@@ -6,6 +6,60 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-15-2026-5] - June 15, 2026
+
+### Added
+- **Admin — Global Recipes tab.** `admin.html` gains a 4th tab (**🍳 Recipes**) to manage the shared recipe library: searchable/course-filterable list of all global recipes, **Add Global Recipe**, **Edit**, and **Delete** (with a "removes it for ALL users" confirm). Backed by new admin-only Convex functions `adminListGlobalRecipes`, `adminSaveGlobalRecipe` (create/update; new globals are owned by the `rerun` curator), and `adminDeleteGlobalRecipe` (cleans up images/scores/notes).
+
+### Changed
+- **Globals are edited ONLY from the admin screen.** Editing a shared recipe in the student app now **always forks a personal copy** — for *every* account, including the curator (`rerun`). The student-app **updateRecipe**/**deleteRecipe** mutations now hard-reject any global ("Global recipes can only be edited/deleted from the admin screen."), so no account can alter a shared recipe from the student app. The "(you curate this)" hint and curator in-place editing were removed from the recipe detail screen.
+- **getMyRecipes** hides a forked global even when the viewer owns the global (the curator's own globals), so a forked copy never shows alongside its original.
+
+### Verified
+- Playwright (prod): as `rerun`, a global shows "🌐 Shared recipe", **Customize (save my copy)**, no Delete; editing forks (⭐ Mine appears). Admin Recipes tab: 282 → add → 283 → delete → 282. Backend rejects `updateRecipe`/`deleteRecipe` on a global. Zero console errors; test data cleaned up.
+
+---
+
+## [06-15-2026-4] - June 15, 2026
+
+### Changed
+- **Recipes — no Delete on shared recipes.** The **Delete** button is now hidden on every global/shared recipe, for **all** users including the curator (`rerun`) — deleting a global would remove it for the whole class, so it shouldn't be a one-tap action on the recipe screen. Delete remains on personal recipes and forked copies. Global cleanup is now a deliberate admin action (e.g. `npx convex run recipes:deleteRecipe … --prod`). Verified: curator and student both see Edit/Customize but no Delete on a global; zero console errors.
+
+---
+
+## [06-15-2026-3] - June 15, 2026
+
+### Added
+- **Recipes — Phase R9: global recipes + per-user layer.** The 282 imported class recipes are now **shared with every user** (the app is already class-wide), while each user keeps their own private library — merged into one list. Editing a shared recipe never changes it for anyone else.
+  - **R9a — Global recipes.** New recipe `scope` (`global` | `user`) + `by_scope` index. `getMyRecipes` returns the user's own recipes **plus all global recipes**, merged (newest first), de-duplicated for the curator. The 282 class-material recipes were migrated from `rerun` to global scope (`globalizeClassMaterial` one-shot mutation). Only the curator can edit a global in place. A **🌐 Shared recipe** badge marks them in detail.
+  - **R9b — Per-user custom notes.** New `recipeNotes` table (`by_user_recipe`, `by_recipe`) + `setRecipeNote` upsert. A **📝 My Notes** section on every recipe lets a user attach private notes (e.g. "doubled the garlic") that are theirs alone and never touch the shared recipe. Diner ratings are likewise now **per-viewer** on shared recipes (each user sees only their own).
+  - **R9c — Copy-on-write edits.** Editing a global recipe you don't own forks a **personal deep copy** (`forkedFrom`) — the button reads **"Customize (save my copy)"**, and the original stays intact for everyone. The forked copy replaces the global in your own list; **Delete** is hidden on shared recipes you don't own.
+  - Backend deployed to prod + dev. Verified with Playwright (iPhone viewport): a student sees all 282 globals, adds a private note, and forks a recipe — while `rerun` is unaffected (no leaked note, no fork, still curator-editable). Zero console errors; test data cleaned up.
+
+---
+
+## [06-15-2026-2] - June 15, 2026
+
+### Added
+- **Recipes — class filters.** Filter chips above the search bar on the My Recipes list, generated from the data:
+  - One chip **per class** (`CUL-105`, `CUL-112`) showing only the **in-class lab recipes** (the recipe booklet/packet) — e.g. tapping `CUL-112` shows the ~33 booklet dishes, **not** the 228 *On Cooking* reference recipes. This makes it quick to pull up just the dishes covered in a given class.
+  - A **📚 Reference** chip for the *On Cooking* textbook recipes (tagged `on-cooking`), and a **⭐ Mine** chip for your own non-class recipes (each appears only when such recipes exist).
+  - Multiple chips combine as a union (OR); each chip shows its live count; "Clear" resets. Filters compose with the search box. No re-tagging was needed — in-class recipes carry a course tag without `on-cooking`, reference recipes carry `on-cooking`.
+  - Frontend-only (no Convex change). Verified with Playwright at iPhone viewport: chips `CUL-105 (21)`, `CUL-112 (33)`, `Reference (228)`; CUL-112 → 33 booklet dishes, CUL-105 → 21, no filter → 282, zero console errors.
+
+---
+
+## [06-15-2026-1] - June 15, 2026
+
+### Added
+- **Recipes — class-material import.** Seeded **282 recipes** from the CUL-105 and CUL-112 course materials into the Recipes library, owned by gamer name **`rerun`**. Every imported recipe is tagged with its course (`CUL-105` / `CUL-112`), a category (Sauces, Soups, Beef, Poultry, Fish & Shellfish, etc.), and a shared **`class-material`** tag so they're distinguishable from hand-entered recipes; the 228 *On Cooking* textbook recipes carry an additional `on-cooking` tag.
+  - **CUL-105 (21):** the *Recipe packet CUL 105.docx* lab recipes (stocks, mother sauces, emulsions, starches, vegetables) — scaled duplicates collapsed, lecture/measurement material excluded.
+  - **CUL-112 (261):** the *CUL 112 recipe booklet* lab dishes (33) plus the full *On Cooking* textbook recipe appendix — Beef (20), Veal (12), Pork (16), Poultry (38), Lamb (14), Game (9), Fish & Shellfish (48), Soups (30), Stocks & Sauces (41).
+  - Sources parsed into structured `{qty, unit, item}` ingredients + ordered steps + servings; US measurements kept (textbook metric dropped). Ingredients normalized and fed into the global ingredient catalog on import.
+  - Backend: new owner-scoped **`bulkCreateRecipes`** mutation in `convex/recipes.ts` (same normalization + catalog sync as `createRecipe`). Deployed to prod + dev.
+
+---
+
 ## [06-11-2026-4] - June 11, 2026
 
 ### Added
