@@ -90,8 +90,12 @@ export default defineSchema({
 
   // ============ RECIPES (Phase R1 — per-user recipe library) ============
   // See RECIPES-PLAN.md. Each recipe is owned by one user (ownerId).
+  // R9: a recipe may be "global" (shared with all users, curated by its ownerId)
+  // or "user" (private). Editing a global forks a personal deep copy (forkedFrom).
   recipes: defineTable({
-    ownerId: v.id("users"),              // who owns this copy
+    ownerId: v.id("users"),              // who owns this copy (curator, for globals)
+    scope: v.optional(v.string()),       // "global" | "user" (absent ⇒ "user")
+    forkedFrom: v.optional(v.id("recipes")), // provenance when copied from a global
     title: v.string(),
     description: v.optional(v.string()),
     // Each ingredient is either a legacy plain string OR a structured
@@ -115,7 +119,18 @@ export default defineSchema({
     pickyFlags: v.optional(v.array(v.string())),// ingredients/people to avoid
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_owner", ["ownerId"]),
+  }).index("by_owner", ["ownerId"])
+    .index("by_scope", ["scope"]),
+
+  // Per-user custom notes overlaid on any recipe (R9b). Private to userId;
+  // never mutates the (possibly global) recipe. One row per (user, recipe).
+  recipeNotes: defineTable({
+    userId: v.id("users"),
+    recipeId: v.id("recipes"),
+    notes: v.string(),
+    updatedAt: v.number(),
+  }).index("by_user_recipe", ["userId", "recipeId"])
+    .index("by_recipe", ["recipeId"]),
 
   // Diner ratings of finished dishes (Phase R2). One row per rating.
   recipeScores: defineTable({
