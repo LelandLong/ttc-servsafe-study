@@ -4017,6 +4017,9 @@
 
         const [recipes, setRecipes] = useState(null); // null = loading
         const [search, setSearch] = useState('');
+        // Active list filters: map of filterKey -> true. Keys: 'class:CUL-112',
+        // 'reference' (On Cooking textbook recipes), 'mine' (non-class-material).
+        const [activeFilters, setActiveFilters] = useState({});
         const [view, setView] = useState('list');      // 'list' | 'detail' | 'edit'
         const [activeRecipe, setActiveRecipe] = useState(null);
         const [saving, setSaving] = useState(false);
@@ -4043,6 +4046,11 @@
         const [rDiner, setRDiner] = useState('');
         const [rNotes, setRNotes] = useState('');
         const [savingScore, setSavingScore] = useState(false);
+
+        // Per-user custom notes (R9b) for the recipe open in detail
+        const [noteText, setNoteText] = useState('');
+        const [editingNote, setEditingNote] = useState(false);
+        const [savingNote, setSavingNote] = useState(false);
 
         // Type-ahead suggestion data
         const [dinerNames, setDinerNames] = useState([]);       // per-user, from past ratings
@@ -4164,8 +4172,28 @@
           setActiveRecipe(r);
           setShowRateForm(false);
           setScores([]);
+          setNoteText(r.myNote || '');
+          setEditingNote(false);
           loadScores(r._id);
           setView('detail');
+        }
+
+        function saveNote() {
+          if (!activeRecipe) return;
+          setSavingNote(true);
+          setErrorMsg('');
+          convexMutation('recipes:setRecipeNote', {
+            userId: user.userId,
+            recipeId: activeRecipe._id,
+            notes: noteText
+          }).then(function() {
+            setSavingNote(false);
+            setEditingNote(false);
+            loadRecipes(); // refresh myNote on the synced activeRecipe
+          }).catch(function(err) {
+            setSavingNote(false);
+            setErrorMsg('Could not save note: ' + err.message);
+          });
         }
 
         // Render a 1-10 score as a compact badge (color by quality).
@@ -4253,7 +4281,14 @@
             imageIds: fImageIds
           };
           var p;
-          if (activeRecipe) {
+          if (activeRecipe && activeRecipe.isGlobal) {
+            // Editing a shared/global recipe (ANY user, including the curator) forks a
+            // personal copy (R9c). Globals are only edited from the admin screen.
+            payload.forkedFrom = activeRecipe._id;
+            payload.tags = (payload.tags || []).filter(function(t){ return t !== 'class-material' && t !== 'on-cooking'; });
+            p = convexMutation('recipes:createRecipe', payload);
+          } else if (activeRecipe) {
+            // Editing one's own private recipe (or a fork) → update in place.
             payload.recipeId = activeRecipe._id;
             p = convexMutation('recipes:updateRecipe', payload);
           } else {
@@ -4309,7 +4344,10 @@
           return createElement('div', { className: 'min-h-screen' }, headerEl,
             createElement('main', { className: 'max-w-2xl mx-auto p-6' },
               errorEl,
-              createElement('h2', { className: 'text-xl font-bold text-primary mb-4' }, activeRecipe ? 'Edit Recipe' : 'Add Recipe'),
+              createElement('h2', { className: 'text-xl font-bold text-primary mb-4' },
+                activeRecipe ? (activeRecipe.isGlobal ? 'Save as My Copy' : 'Edit Recipe') : 'Add Recipe'),
+              (activeRecipe && activeRecipe.isGlobal) && createElement('p', { className: 'text-sm text-muted mb-3' },
+                'This is a shared recipe. Your changes save to a personal copy and won’t affect anyone else.'),
 
               createElement('label', { style: labelStyle }, 'Title *'),
               createElement('input', { className: inputCls, style: inputStyle, value: fTitle, onChange: function(e){ setFTitle(e.target.value); }, placeholder: 'e.g. Grandma’s Chili' }),
@@ -4406,7 +4444,7 @@
                 createElement('button', {
                   onClick: saveRecipe, disabled: saving,
                   className: 'flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl disabled:opacity-50'
-                }, saving ? 'Saving…' : (activeRecipe ? 'Save Changes' : 'Create Recipe')),
+                }, saving ? 'Saving…' : (activeRecipe ? (activeRecipe.isGlobal ? 'Save My Copy' : 'Save Changes') : 'Create Recipe')),
                 createElement('button', {
                   onClick: function(){ setView(activeRecipe ? 'detail' : 'list'); setErrorMsg(''); },
                   className: 'px-5 py-3 rounded-xl border-2 border-themed text-primary'
@@ -4428,6 +4466,12 @@
                 })
               ),
               createElement('h2', { className: 'text-2xl font-bold text-primary mb-1' }, r.title),
+              r.isGlobal && createElement('div', { className: 'mb-2' },
+                createElement('span', {
+                  className: 'category-tag',
+                  style: { backgroundColor: 'rgba(37,99,235,0.12)', color: '#2563eb', fontWeight: 700 }
+                }, '🌐 Shared recipe')
+              ),
               r.description && createElement('p', { className: 'text-secondary mb-3' }, r.description),
               createElement('div', { className: 'flex gap-4 text-sm text-muted mb-4' },
                 r.servings && createElement('span', null, '🍽️ ' + r.servings + ' servings'),
@@ -4449,6 +4493,41 @@
               createElement('h3', { className: 'text-lg font-bold text-primary mt-4 mb-2' }, 'Steps'),
               createElement('ol', { className: 'list-decimal pl-5 mb-6 text-secondary' },
                 (r.steps || []).map(function(st, i){ return createElement('li', { key: i, className: 'mb-2' }, st); })
+              ),
+
+              // ---- My Notes (R9b) — private per-user annotation, never alters a shared recipe ----
+              createElement('div', { className: 'mb-6 pt-4', style: { borderTop: '1px solid var(--border-color)' } },
+                createElement('div', { className: 'flex items-center justify-between mb-2' },
+                  createElement('h3', { className: 'text-lg font-bold text-primary' }, '📝 My Notes'),
+                  (!editingNote) && createElement('button', {
+                    onClick: function(){ setEditingNote(true); },
+                    className: 'text-sm font-bold text-orange-600'
+                  }, (noteText && noteText.trim()) ? 'Edit' : '+ Add a note')
+                ),
+                r.isGlobal && createElement('p', { className: 'text-xs text-muted mb-2' },
+                  'Private to you — shared recipes stay the same for everyone else.'),
+                editingNote
+                  ? createElement('div', null,
+                      createElement('textarea', {
+                        className: 'w-full p-2 rounded-lg border mb-2', rows: 3,
+                        style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                        value: noteText, onChange: function(e){ setNoteText(e.target.value); },
+                        placeholder: 'e.g. doubled the garlic; used chicken thighs; great for the Smiths'
+                      }),
+                      createElement('div', { className: 'flex gap-2' },
+                        createElement('button', {
+                          onClick: saveNote, disabled: savingNote,
+                          className: 'bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50'
+                        }, savingNote ? 'Saving…' : 'Save Note'),
+                        createElement('button', {
+                          onClick: function(){ setNoteText(r.myNote || ''); setEditingNote(false); },
+                          className: 'py-2 px-4 rounded-lg border-2 border-themed text-primary'
+                        }, 'Cancel')
+                      )
+                    )
+                  : ((noteText && noteText.trim())
+                      ? createElement('p', { className: 'text-secondary', style: { whiteSpace: 'pre-wrap' } }, noteText)
+                      : createElement('p', { className: 'text-muted text-sm' }, 'No notes yet.'))
               ),
 
               // ---- Diner Scores (R2) ----
@@ -4515,8 +4594,11 @@
               ),
 
               createElement('div', { className: 'flex gap-3' },
-                createElement('button', { onClick: function(){ startEdit(r); }, className: 'flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl' }, 'Edit'),
-                createElement('button', { onClick: deleteActive, className: 'px-5 py-3 rounded-xl border-2 border-red-300 text-red-600' }, 'Delete')
+                createElement('button', { onClick: function(){ startEdit(r); }, className: 'flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl' },
+                  r.isGlobal ? 'Customize (save my copy)' : 'Edit'),
+                // Delete only on personal recipes — never on a shared/global one (would remove
+                // it for the whole class). Global cleanup is a deliberate admin action instead.
+                (!r.isGlobal && r.canEdit !== false) && createElement('button', { onClick: deleteActive, className: 'px-5 py-3 rounded-xl border-2 border-red-300 text-red-600' }, 'Delete')
               )
             )
           );
@@ -4524,15 +4606,84 @@
 
         // ---- LIST (default) ----
         var q = search.trim().toLowerCase();
-        var filtered = (recipes || []).filter(function(r) {
-          if (!q) return true;
-          var hay = (r.title + ' ' + (r.tags || []).join(' ')).toLowerCase();
-          return hay.indexOf(q) !== -1;
+
+        // Classify a recipe for filtering. In-class recipes (recipe booklet/packet)
+        // carry a course tag but NOT 'on-cooking'; the On Cooking textbook recipes
+        // (reference material) carry 'on-cooking'; user's own recipes lack 'class-material'.
+        function recipeTags(r) { return r.tags || []; }
+        function isReference(r) { return recipeTags(r).indexOf('on-cooking') !== -1; }
+        function isMine(r) { return recipeTags(r).indexOf('class-material') === -1; }
+        function inClassCourses(r) {
+          if (isReference(r)) return [];
+          return recipeTags(r).filter(function(t){ return /^CUL-\d/.test(t); });
+        }
+        function recipeMatchesFilter(r, key) {
+          if (key === 'reference') return isReference(r);
+          if (key === 'mine') return isMine(r);
+          if (key.indexOf('class:') === 0) return inClassCourses(r).indexOf(key.slice(6)) !== -1;
+          return false;
+        }
+
+        // Build the available filter chips from the data (only show what exists).
+        var allRecipes = recipes || [];
+        var classCodes = [];
+        allRecipes.forEach(function(r) {
+          inClassCourses(r).forEach(function(c){ if (classCodes.indexOf(c) === -1) classCodes.push(c); });
         });
+        classCodes.sort();
+        var filterOptions = classCodes.map(function(c){ return { key: 'class:' + c, label: c }; });
+        if (allRecipes.some(isReference)) filterOptions.push({ key: 'reference', label: '📚 Reference' });
+        if (allRecipes.some(isMine)) filterOptions.push({ key: 'mine', label: '⭐ Mine' });
+        filterOptions.forEach(function(o){ o.count = allRecipes.filter(function(r){ return recipeMatchesFilter(r, o.key); }).length; });
+
+        var activeKeys = Object.keys(activeFilters).filter(function(k){ return activeFilters[k]; });
+        function toggleFilter(key) {
+          setActiveFilters(function(prev){
+            var next = {}; Object.keys(prev).forEach(function(k){ next[k] = prev[k]; });
+            if (next[key]) { delete next[key]; } else { next[key] = true; }
+            return next;
+          });
+        }
+
+        var filtered = allRecipes.filter(function(r) {
+          if (q) {
+            var hay = (r.title + ' ' + recipeTags(r).join(' ')).toLowerCase();
+            if (hay.indexOf(q) === -1) return false;
+          }
+          if (activeKeys.length === 0) return true;       // no filter = show all
+          return activeKeys.some(function(key){ return recipeMatchesFilter(r, key); });
+        });
+
+        var filterBarEl = filterOptions.length > 0 && createElement('div', {
+          className: 'flex flex-wrap gap-2 mb-3 items-center'
+        },
+          filterOptions.map(function(o) {
+            var on = !!activeFilters[o.key];
+            return createElement('button', {
+              key: o.key,
+              onClick: function(){ toggleFilter(o.key); },
+              className: 'flex items-center gap-2 px-3 py-1.5 rounded-full border-2 text-sm font-semibold',
+              style: {
+                borderColor: on ? '#f97316' : 'var(--border-color)',
+                backgroundColor: on ? '#f97316' : 'var(--bg-card)',
+                color: on ? '#fff' : 'var(--text-primary)'
+              }
+            },
+              createElement('span', { style: { fontSize: '0.9rem' } }, on ? '☑' : '☐'),
+              o.label,
+              createElement('span', { style: { opacity: 0.7, fontWeight: 400 } }, '(' + o.count + ')')
+            );
+          }),
+          activeKeys.length > 0 && createElement('button', {
+            onClick: function(){ setActiveFilters({}); },
+            className: 'text-sm underline', style: { color: 'var(--text-muted, #6b7280)' }
+          }, 'Clear')
+        );
 
         return createElement('div', { className: 'min-h-screen' }, headerEl,
           createElement('main', { className: 'max-w-2xl mx-auto p-6' },
             errorEl,
+            filterBarEl,
             createElement('div', { className: 'flex gap-3 mb-4' },
               createElement('input', {
                 className: 'flex-1 p-2 rounded-lg border',
