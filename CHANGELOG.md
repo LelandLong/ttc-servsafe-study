@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-15-2026-11] - June 15, 2026
+
+### Fixed
+- **Recipes — serving scaler: elegant conversions when scaling *down*.** Scaling by an awkward factor (e.g. 6 servings → 5 = ×⅚) used to produce useless amounts like `3 1/3 Tbsp`, `5/8 cup`, and `6 2/3 Tbsp`. The scaler now renders awkward results as **compound measures the way recipes are actually written**: `2 fl oz × ⅚ → 3 Tbsp + 1 tsp`, `5/8 cup → 1/2 cup + 2 Tbsp`, `6 2/3 Tbsp → 6 Tbsp + 2 tsp`. It only uses standard measuring fractions (¼/⅓/½/⅔/¾ cup, whole Tbsp, ¼-tsp increments; lb in ¼ increments or `X lb + Y oz`) — never thirds-of-a-tablespoon or eighths-of-a-cup. Scaling *up* still rolls up cleanly (3 tsp → 1 Tbsp, 4 Tbsp → ¼ cup, 16 oz → 1 lb). Verified with 24 conversion unit tests + in-app down-scaling on a real recipe; zero console errors. (Conversions match the CUL-112 measurements reference.)
+
+---
+
 ## [06-15-2026-10] - June 15, 2026
 
 ### Added

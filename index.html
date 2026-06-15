@@ -4097,37 +4097,69 @@
         if (MWT_G[k] != null) return 'mwt';
         return null;
       }
-      // Nearest common kitchen fraction within a tight tolerance (so we never
-      // misrepresent — 5 Tbsp won't round to "1/3 cup"), or null if none fits.
-      function niceFractionValue(x) {
-        var whole = Math.floor(x + 1e-9);
-        var frac = x - whole;
-        if (frac < 0.02) return whole;
-        if (frac > 0.98) return whole + 1;
-        var fr = [1/8, 1/6, 1/4, 1/3, 3/8, 1/2, 5/8, 2/3, 3/4, 5/6, 7/8];
-        for (var i = 0; i < fr.length; i++) { if (Math.abs(frac - fr[i]) < 0.02) return whole + fr[i]; }
+      // Whole + {0,1/4,1/2,3/4} within tolerance, else null (for qt/gal/oz fractions).
+      function quarterValue(v) {
+        var whole = Math.floor(v + 1e-9), f = v - whole, c = [0, 0.25, 0.5, 0.75];
+        for (var i = 0; i < c.length; i++) { if (Math.abs(f - c[i]) < 0.04) return whole + c[i]; }
+        if (f > 0.96) return whole + 1;
         return null;
       }
-      // Walk a unit ladder (largest first); pick the biggest unit where the amount
-      // is at least its threshold AND lands on a clean fraction.
-      function rollLadder(base, ladder) {
-        for (var i = 0; i < ladder.length; i++) {
-          var name = ladder[i][0], f = ladder[i][1], minShow = ladder[i][2];
-          var v = base / f;
-          if (v + 1e-9 < minShow) continue;
-          var nv = niceFractionValue(v);
-          if (nv != null) return { qty: decimalToNice(nv), unit: name };
-        }
-        var last = ladder[ladder.length - 1];
-        return { qty: decimalToNice(base / last[1]), unit: last[0] };
+      // Whole + a standard measuring-cup fraction {1/4,1/3,1/2,2/3,3/4}, else null.
+      function exactCupValue(v) {
+        var whole = Math.floor(v + 1e-9), f = v - whole, c = [0, 1/4, 1/3, 1/2, 2/3, 3/4];
+        for (var i = 0; i < c.length; i++) { if (Math.abs(f - c[i]) < 0.03) return whole + c[i]; }
+        if (f > 0.97) return whole + 1;
+        return null;
       }
-      var VOL_LADDER  = [['gal',768,1], ['qt',192,1], ['pt',96,1], ['cup',48,0.25], ['Tbsp',3,1], ['tsp',1,0]];
-      var WT_LADDER   = [['lb',16,1], ['oz',1,0]];
-      var MVOL_LADDER = [['l',1000,1], ['ml',1,0]];
-      var MWT_LADDER  = [['kg',1000,1], ['g',1,0]];
+      // Render a volume (in teaspoons) the way a recipe is written: a single clean
+      // unit when it lands on one, otherwise a compound measure ("1/2 cup + 2 Tbsp",
+      // "3 Tbsp + 1 tsp") instead of awkward fractions like "5/8 cup" or "3 1/3 Tbsp".
+      function renderVolume(tsp) {
+        if (tsp >= 768) { var g = quarterValue(tsp / 768); if (g != null) return decimalToNice(g) + ' gal'; }
+        if (tsp >= 192) { var q = quarterValue(tsp / 192); if (q != null) return decimalToNice(q) + ' qt'; }
+        if (tsp >= 12)  { var ecv = exactCupValue(tsp / 48); if (ecv != null) return decimalToNice(ecv) + ' cup'; }
+        if (tsp >= 24) {
+          // cup + Tbsp compound (cup part uses 1/4-cup increments for clean remainders).
+          var cupWhole = Math.floor(tsp / 48), within = tsp - cupWhole * 48;
+          var qc = [[36, 0.75], [24, 0.5], [12, 0.25]].find(function(p){ return p[0] <= within + 0.5; });
+          var fracTsp = qc ? qc[0] : 0, fracVal = qc ? qc[1] : 0;
+          var cupTsp = cupWhole * 48 + fracTsp, rem = tsp - cupTsp;
+          var partsC = [decimalToNice(cupWhole + fracVal) + ' cup'];
+          if (rem >= 1.5) { var tbC = Math.round(rem / 3); if (tbC >= 1) partsC.push(tbC + ' Tbsp'); }
+          return partsC.join(' + ');
+        }
+        if (tsp >= 3) {
+          // Tbsp + tsp compound (1 Tbsp up to < 1/4 cup).
+          var tb = Math.floor(tsp / 3), rem2 = tsp - tb * 3, partsT = [];
+          if (tb >= 1) partsT.push(tb + ' Tbsp');
+          var tv2 = Math.round(rem2 * 4) / 4; if (tv2 >= 0.25) partsT.push(decimalToNice(tv2) + ' tsp');
+          return partsT.join(' + ') || (decimalToNice(Math.round(tsp * 4) / 4) + ' tsp');
+        }
+        var tv = Math.round(tsp * 4) / 4; if (tv <= 0) tv = 0.25;
+        return decimalToNice(tv) + ' tsp';
+      }
+      // Render a weight (in ounces): lb with 1/4-lb fractions, "X lb + Y oz" when
+      // not clean, or oz (1/4-oz precision) under a pound.
+      function renderWeight(oz) {
+        if (oz >= 16) {
+          var lbW = Math.floor(oz / 16), rem = oz - lbW * 16;
+          if (rem < 0.25) return decimalToNice(lbW) + ' lb';
+          var qf = [[12, 0.75], [8, 0.5], [4, 0.25]].find(function(p){ return Math.abs(rem - p[0]) < 1; });
+          if (qf) return decimalToNice(lbW + qf[1]) + ' lb';
+          var partsW = [decimalToNice(lbW) + ' lb'], ozr = Math.round(rem); if (ozr >= 1) partsW.push(ozr + ' oz');
+          return partsW.join(' + ');
+        }
+        var v = Math.round(oz * 4) / 4; if (v <= 0) v = 0.25;
+        return decimalToNice(v) + ' oz';
+      }
+      function trimNum(n) { return String(Math.round(n * 100) / 100); }
+      function renderMetricVol(ml) { return ml >= 1000 ? trimNum(ml / 1000) + ' l' : String(Math.round(ml)) + ' ml'; }
+      function renderMetricWt(g) { return g >= 1000 ? trimNum(g / 1000) + ' kg' : String(Math.round(g)) + ' g'; }
 
-      // Scale one ingredient's qty+unit by a conversion factor, rolling to the
-      // most sensible unit. Returns { qty, unit } display strings.
+      // Scale one ingredient's qty+unit by a conversion factor, rendering measures
+      // with standard kitchen conversions + compound measures. Returns { qty, unit }.
+      // For converted measures the unit is baked into qty (unit:''); count units
+      // (clove, each, pinch…) and "to taste" keep their original unit.
       function scaleIngredient(qtyStr, unit, cf) {
         var u = String(unit || '').trim();
         if (cf === 1) return { qty: (qtyStr == null ? '' : String(qtyStr)), unit: u };
@@ -4143,10 +4175,10 @@
         if (num == null) return { qty: t, unit: u }; // unparseable compound — leave as written
         var scaled = num * cf;
         var fam = unitFamily(u), k = unitKey(u);
-        if (fam === 'vol')  return rollLadder(scaled * VOL_TSP[k], VOL_LADDER);
-        if (fam === 'wt')   return rollLadder(scaled * WT_OZ[k],  WT_LADDER);
-        if (fam === 'mvol') return rollLadder(scaled * MVOL_ML[k], MVOL_LADDER);
-        if (fam === 'mwt')  return rollLadder(scaled * MWT_G[k],  MWT_LADDER);
+        if (fam === 'vol')  return { qty: renderVolume(scaled * VOL_TSP[k]), unit: '' };
+        if (fam === 'wt')   return { qty: renderWeight(scaled * WT_OZ[k]),  unit: '' };
+        if (fam === 'mvol') return { qty: renderMetricVol(scaled * MVOL_ML[k]), unit: '' };
+        if (fam === 'mwt')  return { qty: renderMetricWt(scaled * MWT_G[k]),  unit: '' };
         return { qty: decimalToNice(scaled), unit: u }; // count units (clove, each, pinch…) — scale only
       }
 
