@@ -1,7 +1,7 @@
 {
-  "name": "servsafe-pwa",
+  "name": "chefs-kitchen-pwa",
   "version": "1.0.0",
-  "description": "CUL 104 ServSafe Study Aid PWA",
+  "description": "Chef's Kitchen — multi-course culinary study aid PWA for Trident Technical College",
   "private": true,
   "scripts": {
     "setup": "npx convex deploy"

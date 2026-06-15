@@ -1,6 +1,6 @@
 # Architecture Documentation
 
-Technical deep dive into Chef's Kitchen ServSafe PWA implementation.
+Technical deep dive into Chef's Kitchen Study Aid (multi-course culinary PWA) implementation.
 
 ---
 

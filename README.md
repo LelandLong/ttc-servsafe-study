@@ -2,7 +2,7 @@
 
 A Progressive Web App (PWA) for culinary course study at Trident Technical College. Supports CUL-104 (ServSafe) and CUL-105 (Kitchen Fundamentals) with quiz questions, flashcards, gamified learning, cloud sync, live tests, and professor dashboard. Ratatouille-inspired rat chef theme.
 
-**Version:** 05-31-2026-1
+**Version:** 06-11-2026-1
 **Deployment:** GitHub Pages
 **Backend:** Convex Cloud (`https://cautious-monitor-526.convex.cloud`)
 

@@ -1,8 +1,16 @@
 # Changelog
 
-All notable changes to the Chef's Kitchen ServSafe PWA project.
+All notable changes to the Chef's Kitchen Study Aid project (multi-course culinary PWA for Trident Technical College).
 
 Format: `MM-DD-YYYY-BUILD`
+
+---
+
+## [06-11-2026-1] - June 11, 2026
+
+### Changed
+- **App renamed to "Chef's Kitchen Study Aid."** The app started as a CUL-104 ServSafe study tool ("ServSafe PWA") and has grown to three courses, so the visible app name and internal project metadata are now course-neutral. Updated the PWA name/description (`manifest.json`), login subtitle ("Culinary Study Aid"), `package.json`/`package-lock.json` (`chefs-kitchen-pwa`), and doc headers (CHANGELOG, ARCHITECTURE).
+- **Unchanged on purpose:** the GitHub repo name, the GitHub Pages URL, and the local folder path all keep their original `servsafe` names — they're addresses/identifiers, not user-facing branding, and changing them would break links. "ServSafe" is also intentionally retained everywhere it refers to the CUL-104 course itself, its content, and the ServSafe certification exam.
 
 ---
 
