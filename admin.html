@@ -2235,6 +2235,170 @@
         );
       }
 
+      // ============ RECIPES ADMIN (global recipe management) ============
+      var RECIPE_UNIT_OPTIONS = ['tsp','Tbsp','cup','oz','fl oz','lb','g','kg','ml','l','pt','qt','gal','pinch','dash','clove','can','stick','slice','piece','each','to taste','as needed'];
+
+      function recipeIngredientRows(arr) {
+        var rows = (arr || []).map(function(ing) {
+          if (typeof ing === 'string') return { qty: '', unit: '', item: ing };
+          return { qty: ing.qty || '', unit: ing.unit || '', item: ing.item || '' };
+        });
+        return rows.length ? rows : [{ qty: '', unit: '', item: '' }];
+      }
+
+      function RecipeAdminEditor(props) {
+        var recipe = props.recipe || {};
+        var isNew = !recipe._id;
+        var st1 = useState(recipe.title || ''); var title = st1[0], setTitle = st1[1];
+        var st2 = useState(recipe.description || ''); var desc = st2[0], setDesc = st2[1];
+        var st3 = useState(recipeIngredientRows(recipe.ingredients)); var ings = st3[0], setIngs = st3[1];
+        var st4 = useState((recipe.steps || []).join('\n')); var steps = st4[0], setSteps = st4[1];
+        var st5 = useState(recipe.servings || ''); var servings = st5[0], setServings = st5[1];
+        var st6 = useState(recipe.prepMinutes != null ? String(recipe.prepMinutes) : ''); var prep = st6[0], setPrep = st6[1];
+        var st7 = useState(recipe.cookMinutes != null ? String(recipe.cookMinutes) : ''); var cook = st7[0], setCook = st7[1];
+        var st8 = useState((recipe.tags || []).join(', ')); var tags = st8[0], setTags = st8[1];
+        var st9 = useState(false); var saving = st9[0], setSaving = st9[1];
+        var st10 = useState(''); var err = st10[0], setErr = st10[1];
+
+        function setRow(i, f, val) { setIngs(function(prev){ return prev.map(function(r, idx){ if (idx !== i) return r; var n = { qty: r.qty, unit: r.unit, item: r.item }; n[f] = val; return n; }); }); }
+        function addRow() { setIngs(function(prev){ return prev.concat([{ qty:'', unit:'', item:'' }]); }); }
+        function delRow(i) { setIngs(function(prev){ var n = prev.filter(function(_, idx){ return idx !== i; }); return n.length ? n : [{ qty:'', unit:'', item:'' }]; }); }
+
+        function save() {
+          if (!title.trim()) { setErr('Title is required'); return; }
+          setSaving(true); setErr('');
+          var payload = {
+            title: title.trim(),
+            description: desc.trim() || undefined,
+            ingredients: ings.filter(function(r){ return (r.item||'').trim(); }).map(function(r){ return { qty:(r.qty||'').trim(), unit:(r.unit||'').trim(), item:r.item.trim() }; }),
+            steps: steps.split('\n').map(function(x){ return x.trim(); }).filter(Boolean),
+            servings: servings.trim() || undefined,
+            prepMinutes: prep.trim() ? Number(prep) : undefined,
+            cookMinutes: cook.trim() ? Number(cook) : undefined,
+            tags: tags.split(',').map(function(x){ return x.trim(); }).filter(Boolean)
+          };
+          if (recipe._id) payload.recipeId = recipe._id;
+          convexMutation('recipes:adminSaveGlobalRecipe', payload)
+            .then(function(){ setSaving(false); props.onSaved(); })
+            .catch(function(e2){ setSaving(false); setErr(e2.message || 'Save failed'); });
+        }
+
+        var inputCls = 'w-full p-2 rounded-lg border mb-3';
+        var inputStyle = { backgroundColor: 'var(--bg-secondary, #fff)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' };
+        var lbl = { display:'block', fontSize:'0.8rem', fontWeight:600, marginBottom:'4px', color:'var(--text-secondary)' };
+
+        return e('div', { className:'fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4', style:{ backgroundColor:'rgba(0,0,0,0.5)' } },
+          e('div', { className:'rounded-xl shadow-xl max-w-2xl w-full my-8 p-6', style:{ backgroundColor:'var(--bg-card)', color:'var(--text-primary)' } },
+            e('h2', { className:'text-xl font-bold mb-4' }, isNew ? 'Add Global Recipe' : 'Edit Global Recipe'),
+            err && e('div', { className:'mb-3 p-2 rounded text-sm', style:{ backgroundColor:'rgba(220,38,38,0.1)', color:'#dc2626' } }, err),
+            e('label', { style: lbl }, 'Title *'),
+            e('input', { className: inputCls, style: inputStyle, value: title, onChange: function(ev){ setTitle(ev.target.value); } }),
+            e('label', { style: lbl }, 'Description'),
+            e('textarea', { className: inputCls, style: inputStyle, rows: 2, value: desc, onChange: function(ev){ setDesc(ev.target.value); } }),
+            e('label', { style: lbl }, 'Ingredients'),
+            e('datalist', { id: 'admin-unit-options' }, RECIPE_UNIT_OPTIONS.map(function(u){ return e('option', { key:u, value:u }); })),
+            e('div', { className: 'mb-3' },
+              ings.map(function(row, idx){
+                return e('div', { key: idx, className: 'flex gap-2 mb-2 items-center' },
+                  e('input', { style: Object.assign({ width:'60px', flexShrink:0 }, inputStyle), className:'p-2 rounded-lg border', value: row.qty, placeholder:'Qty', onChange: function(ev){ setRow(idx,'qty',ev.target.value); } }),
+                  e('input', { style: Object.assign({ width:'90px', flexShrink:0 }, inputStyle), className:'p-2 rounded-lg border', list:'admin-unit-options', value: row.unit, placeholder:'Unit', onChange: function(ev){ setRow(idx,'unit',ev.target.value); } }),
+                  e('input', { style: Object.assign({ flex:'1', minWidth:0 }, inputStyle), className:'p-2 rounded-lg border', value: row.item, placeholder:'Ingredient', onChange: function(ev){ setRow(idx,'item',ev.target.value); } }),
+                  e('button', { onClick: function(){ delRow(idx); }, style:{ color:'#dc2626', fontSize:'1.3rem', padding:'0 4px', flexShrink:0 } }, '×')
+                );
+              }),
+              e('button', { onClick: addRow, className:'text-sm font-bold text-orange-600 mt-1' }, '+ Add ingredient')
+            ),
+            e('label', { style: lbl }, 'Steps (one per line)'),
+            e('textarea', { className: inputCls, style: inputStyle, rows: 6, value: steps, onChange: function(ev){ setSteps(ev.target.value); } }),
+            e('div', { className: 'grid grid-cols-3 gap-3' },
+              e('div', null, e('label', { style: lbl }, 'Servings'), e('input', { className: inputCls, style: inputStyle, value: servings, onChange: function(ev){ setServings(ev.target.value); } })),
+              e('div', null, e('label', { style: lbl }, 'Prep (min)'), e('input', { className: inputCls, style: inputStyle, type:'number', value: prep, onChange: function(ev){ setPrep(ev.target.value); } })),
+              e('div', null, e('label', { style: lbl }, 'Cook (min)'), e('input', { className: inputCls, style: inputStyle, type:'number', value: cook, onChange: function(ev){ setCook(ev.target.value); } }))
+            ),
+            e('label', { style: lbl }, 'Tags (comma separated)'),
+            e('input', { className: inputCls, style: inputStyle, value: tags, placeholder:'CUL-112, Beef, class-material', onChange: function(ev){ setTags(ev.target.value); } }),
+            e('p', { className:'text-xs mb-3', style:{ color:'var(--text-secondary)' } }, 'Include the course (CUL-105/CUL-112), a category, and "class-material" so the student class filters work. Add "on-cooking" for textbook reference recipes.'),
+            e('div', { className: 'flex gap-3 mt-2' },
+              e('button', { onClick: save, disabled: saving, className:'flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl disabled:opacity-50' }, saving ? 'Saving…' : (isNew ? 'Create Global Recipe' : 'Save Changes')),
+              e('button', { onClick: props.onClose, className:'px-5 py-3 rounded-xl border', style:{ borderColor:'var(--border-color)', color:'var(--text-primary)' } }, 'Cancel')
+            )
+          )
+        );
+      }
+
+      function RecipesAdmin() {
+        var s1 = useState(null); var recipes = s1[0], setRecipes = s1[1];
+        var s2 = useState(''); var search = s2[0], setSearch = s2[1];
+        var s3 = useState(''); var courseF = s3[0], setCourseF = s3[1];
+        var s4 = useState(undefined); var editing = s4[0], setEditing = s4[1]; // undefined=none, {}=new, recipe=edit
+        var s5 = useState(''); var msg = s5[0], setMsg = s5[1];
+
+        function load() {
+          convexQuery('recipes:adminListGlobalRecipes', {})
+            .then(function(list){ setRecipes(list || []); })
+            .catch(function(err){ setMsg('Load failed: ' + err.message); setRecipes([]); });
+        }
+        useEffect(function(){ load(); }, []);
+
+        var all = recipes || [];
+        var courses = [];
+        all.forEach(function(r){ (r.tags||[]).forEach(function(t){ if (/^CUL-\d/.test(t) && courses.indexOf(t) === -1) courses.push(t); }); });
+        courses.sort();
+
+        var filtered = all.filter(function(r){
+          if (courseF && (r.tags||[]).indexOf(courseF) === -1) return false;
+          if (search) {
+            var hay = (r.title + ' ' + (r.tags||[]).join(' ')).toLowerCase();
+            if (hay.indexOf(search.toLowerCase()) === -1) return false;
+          }
+          return true;
+        });
+
+        function doDelete(r) {
+          if (!window.confirm('Delete the GLOBAL recipe "' + r.title + '"? This removes it for ALL users.')) return;
+          convexMutation('recipes:adminDeleteGlobalRecipe', { recipeId: r._id })
+            .then(function(){ load(); })
+            .catch(function(err){ setMsg('Delete failed: ' + err.message); });
+        }
+
+        return e('div', { className:'max-w-7xl mx-auto p-4 space-y-4' },
+          e('div', { className:'flex items-center justify-between flex-wrap gap-3' },
+            e('div', null,
+              e('h2', { className:'text-lg font-bold', style:{ color:'var(--text-primary)' } }, '🍳 Global Recipes'),
+              e('p', { className:'text-sm', style:{ color:'var(--text-secondary)' } }, recipes === null ? 'Loading…' : (all.length + ' shared recipes visible to all users'))
+            ),
+            e('button', { onClick: function(){ setEditing({}); }, className:'px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium' }, '+ Add Global Recipe')
+          ),
+          msg && e('div', { className:'p-2 rounded text-sm', style:{ backgroundColor:'rgba(220,38,38,0.1)', color:'#dc2626' } }, msg),
+          e('div', { className:'flex gap-3 flex-wrap' },
+            e('input', { className:'flex-1 p-2 rounded-lg border', style:{ minWidth:'200px', backgroundColor:'var(--bg-card)', borderColor:'var(--border-color)', color:'var(--text-primary)' }, value: search, placeholder:'🔍 Search title or tag', onChange: function(ev){ setSearch(ev.target.value); } }),
+            e('select', { className:'p-2 rounded-lg border', style:{ backgroundColor:'var(--bg-card)', borderColor:'var(--border-color)', color:'var(--text-primary)' }, value: courseF, onChange: function(ev){ setCourseF(ev.target.value); } },
+              e('option', { value:'' }, 'All courses'),
+              courses.map(function(c){ return e('option', { key:c, value:c }, c); })
+            )
+          ),
+          e('div', { className:'text-sm', style:{ color:'var(--text-secondary)' } }, 'Showing ' + filtered.length + ' of ' + all.length),
+          e('div', { className:'rounded-xl overflow-hidden', style:{ border:'1px solid var(--border-color)' } },
+            recipes === null
+              ? e('div', { className:'p-8 text-center', style:{ color:'var(--text-secondary)' } }, 'Loading…')
+              : (filtered.length === 0
+                  ? e('div', { className:'p-8 text-center', style:{ color:'var(--text-secondary)' } }, 'No global recipes match.')
+                  : filtered.map(function(r){
+                      return e('div', { key: r._id, className:'flex items-center gap-3 p-3', style:{ borderBottom:'1px solid var(--border-color)', backgroundColor:'var(--bg-card)' } },
+                        e('div', { className:'flex-1 min-w-0' },
+                          e('div', { className:'font-bold truncate', style:{ color:'var(--text-primary)' } }, r.title),
+                          e('div', { className:'text-xs truncate', style:{ color:'var(--text-secondary)' } }, ((r.tags||[]).join(' • ')) + '  —  ' + ((r.ingredients||[]).length) + ' ingredients')
+                        ),
+                        e('button', { onClick: function(){ setEditing(r); }, className:'px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium' }, 'Edit'),
+                        e('button', { onClick: function(){ doDelete(r); }, className:'px-3 py-1.5 rounded-lg text-sm font-medium', style:{ border:'2px solid rgba(220,38,38,0.4)', color:'#dc2626' } }, 'Delete')
+                      );
+                    })
+                )
+          ),
+          (editing !== undefined) && e(RecipeAdminEditor, { recipe: editing, onClose: function(){ setEditing(undefined); }, onSaved: function(){ setEditing(undefined); load(); } })
+        );
+      }
+
       // ============ MAIN APP ============
       function AdminApp() {
         const [theme, setTheme] = useState(getInitialTheme);
@@ -2456,7 +2620,8 @@
               [
                 { key: 'questions', label: 'Questions', icon: '\uD83D\uDCDD' },
                 { key: 'students', label: 'Students', icon: '\uD83D\uDC65' },
-                { key: 'livetest', label: 'Live Test', icon: '\u23F1\uFE0F' }
+                { key: 'livetest', label: 'Live Test', icon: '\u23F1\uFE0F' },
+                { key: 'recipes', label: 'Recipes', icon: '\uD83C\uDF73' }
               ].map(function(tab) {
                 var isActive = activeTab === tab.key;
                 return e('button', {
@@ -2543,6 +2708,8 @@
           activeTab === 'students' && e(StudentDashboard, { activeCourse: activeCourse }),
 
           activeTab === 'livetest' && e(LiveTestPanel, { activeCourse: activeCourse }),
+
+          activeTab === 'recipes' && e(RecipesAdmin, null),
 
           // Modals (always available)
           editingQuestion && e(QuestionEditor, {
