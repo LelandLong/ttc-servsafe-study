@@ -4011,6 +4011,63 @@
 
       // ============ RECIPES (Phase R1) ============
       // Per-user recipe library. Backend: convex/recipes.ts. See RECIPES-PLAN.md.
+      // ---- Serving-size scaling helpers (R8) ----
+      // Base serving count parsed from a recipe's free-text servings ("2 portions",
+      // "Makes 12 servings", "1 pint" → 2, 12, 1). null when no number is present.
+      function parseServingsBase(s) {
+        if (!s) return null;
+        var m = String(s).match(/(\d+(?:\.\d+)?)/);
+        if (!m) return null;
+        var b = parseFloat(m[1]);
+        return (isFinite(b) && b > 0) ? b : null;
+      }
+      // The unit/word after the number, for the stepper label ("portions", "pint").
+      function parseServingsLabel(s) {
+        var m = String(s || '').match(/\d+(?:\.\d+)?\s*([A-Za-z.]+)/);
+        return (m && m[1]) ? m[1].replace(/\.$/, '') : 'servings';
+      }
+      // Parse a qty token ("2", "1/2", "2 1/2", "1.5") to a number, or null if it
+      // isn't a clean numeric form (e.g. "2 lb. 8" — left unscaled rather than mangled).
+      function parseQtyNumber(s) {
+        if (s == null) return null;
+        var t = String(s).trim();
+        if (!t) return null;
+        var mm = t.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+        if (mm) return parseInt(mm[1], 10) + parseInt(mm[2], 10) / parseInt(mm[3], 10);
+        var fm = t.match(/^(\d+)\/(\d+)$/);
+        if (fm) return parseInt(fm[1], 10) / parseInt(fm[2], 10);
+        var dm = t.match(/^(\d+(?:\.\d+)?)$/);
+        if (dm) return parseFloat(dm[1]);
+        return null;
+      }
+      // Render a number as a friendly fraction ("0.75" → "¾", "1.5" → "1 ½").
+      function decimalToNice(x) {
+        if (!isFinite(x)) return '';
+        var whole = Math.floor(x + 1e-9);
+        var frac = x - whole;
+        var glyphs = [[1/8,'⅛'],[1/6,'⅙'],[1/4,'¼'],[1/3,'⅓'],[3/8,'⅜'],[1/2,'½'],[5/8,'⅝'],[2/3,'⅔'],[3/4,'¾'],[5/6,'⅚'],[7/8,'⅞']];
+        var tol = 0.04, best = null;
+        for (var i = 0; i < glyphs.length; i++) { if (Math.abs(frac - glyphs[i][0]) < tol) { best = glyphs[i][1]; break; } }
+        if (frac < tol) return String(whole);
+        if (frac > 1 - tol) return String(whole + 1);
+        if (best) return (whole > 0 ? whole + ' ' : '') + best;
+        return String(Math.round(x * 100) / 100);
+      }
+      // Scale a qty string by a conversion factor, preserving ranges ("2-3").
+      function scaleQtyDisplay(qty, cf) {
+        if (qty == null || String(qty).trim() === '') return '';
+        var t = String(qty).trim();
+        if (cf === 1) return t;
+        var parts = t.split(/\s*[-–]\s*/);
+        if (parts.length === 2) {
+          var a = parseQtyNumber(parts[0]), b = parseQtyNumber(parts[1]);
+          if (a != null && b != null) return decimalToNice(a * cf) + '–' + decimalToNice(b * cf);
+        }
+        var v = parseQtyNumber(t);
+        if (v != null) return decimalToNice(v * cf);
+        return t; // unparseable compound qty — leave as written
+      }
+
       function RecipesScreen(props) {
         const user = props.user;
         const onBack = props.onBack;
@@ -4051,6 +4108,9 @@
         const [noteText, setNoteText] = useState('');
         const [editingNote, setEditingNote] = useState(false);
         const [savingNote, setSavingNote] = useState(false);
+
+        // Serving-size scaling (R8): target serving count for the open recipe (null = no base).
+        const [scaleTarget, setScaleTarget] = useState(null);
 
         // Type-ahead suggestion data
         const [dinerNames, setDinerNames] = useState([]);       // per-user, from past ratings
@@ -4174,6 +4234,7 @@
           setScores([]);
           setNoteText(r.myNote || '');
           setEditingNote(false);
+          setScaleTarget(parseServingsBase(r.servings));
           loadScores(r._id);
           setView('detail');
         }
@@ -4457,6 +4518,11 @@
         // ---- DETAIL ----
         if (view === 'detail' && activeRecipe) {
           var r = activeRecipe;
+          // R8 scaling: conversion factor from base servings to the chosen target.
+          var rBaseServ = parseServingsBase(r.servings);
+          var rServLabel = parseServingsLabel(r.servings);
+          var rCanScale = rBaseServ != null && scaleTarget != null && scaleTarget > 0;
+          var rCf = rCanScale ? (scaleTarget / rBaseServ) : 1;
           return createElement('div', { className: 'min-h-screen' }, headerEl,
             createElement('main', { className: 'max-w-2xl mx-auto p-6' },
               errorEl,
@@ -4473,20 +4539,46 @@
                 }, '🌐 Shared recipe')
               ),
               r.description && createElement('p', { className: 'text-secondary mb-3' }, r.description),
-              createElement('div', { className: 'flex gap-4 text-sm text-muted mb-4' },
-                r.servings && createElement('span', null, '🍽️ ' + r.servings + ' servings'),
+              createElement('div', { className: 'flex gap-4 text-sm text-muted mb-4 items-center flex-wrap' },
+                // Serving-size scaler (R8): −/+ rescales ingredient quantities live.
+                rCanScale
+                  ? createElement('span', { className: 'inline-flex items-center gap-1' },
+                      '🍽️',
+                      createElement('button', {
+                        onClick: function(){ setScaleTarget(Math.max(1, Math.round((scaleTarget - 1) * 100) / 100)); },
+                        className: 'px-2 py-0.5 rounded border font-bold', style: { borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                        title: 'Fewer'
+                      }, '−'),
+                      createElement('span', { className: 'font-bold text-primary', style: { minWidth: '1.5rem', textAlign: 'center' } }, decimalToNice(scaleTarget)),
+                      createElement('button', {
+                        onClick: function(){ setScaleTarget(Math.round((scaleTarget + 1) * 100) / 100); },
+                        className: 'px-2 py-0.5 rounded border font-bold', style: { borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                        title: 'More'
+                      }, '+'),
+                      createElement('span', null, rServLabel),
+                      (rCf !== 1) && createElement('button', {
+                        onClick: function(){ setScaleTarget(rBaseServ); },
+                        className: 'underline ml-1', style: { color: 'var(--text-muted, #6b7280)' }
+                      }, 'reset')
+                    )
+                  : (r.servings && createElement('span', null, '🍽️ ' + r.servings)),
                 (r.prepMinutes != null) && createElement('span', null, '⏱️ ' + r.prepMinutes + 'm prep'),
                 (r.cookMinutes != null) && createElement('span', null, '🔥 ' + r.cookMinutes + 'm cook')
               ),
               (r.tags && r.tags.length > 0) && createElement('div', { className: 'flex flex-wrap gap-2 mb-4' },
                 r.tags.map(function(t, i){ return createElement('span', { key: i, className: 'category-tag', style: { backgroundColor: 'rgba(249,115,22,0.15)', color: '#ea580c' } }, t); })
               ),
-              createElement('h3', { className: 'text-lg font-bold text-primary mt-4 mb-2' }, 'Ingredients'),
+              createElement('h3', { className: 'text-lg font-bold text-primary mt-4 mb-2' }, 'Ingredients',
+                (rCf !== 1) && createElement('span', { className: 'text-sm text-muted font-normal ml-2' }, '(scaled ×' + decimalToNice(rCf) + ')')
+              ),
               createElement('ul', { className: 'list-disc pl-5 mb-4 text-secondary' },
                 (r.ingredients || []).map(function(ing, i){
                   var text;
                   if (typeof ing === 'string') { text = ing; }
-                  else { text = [ing.qty, ing.unit, ing.item].filter(Boolean).join(' '); }
+                  else {
+                    var qd = scaleQtyDisplay(ing.qty, rCf);
+                    text = [qd, ing.unit, ing.item].filter(Boolean).join(' ');
+                  }
                   return createElement('li', { key: i, className: 'mb-1' }, text);
                 })
               ),

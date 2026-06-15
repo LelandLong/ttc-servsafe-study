@@ -6,6 +6,16 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-15-2026-6] - June 15, 2026
+
+### Added
+- **Recipes — Phase R8: serving-size scaling.** The recipe detail screen now has a **−/+ stepper** next to the servings line. Stepping the target serving count instantly rescales every structured ingredient quantity via the conversion-factor method (`CF = target ÷ base`) — the in-class lesson, live. View-only (never changes the stored recipe); a **reset** link restores the base.
+  - Handles fractions (`1/2`), decimals (`1.5`), mixed numbers (`2 1/2`), and ranges (`2-3`); results render as friendly fractions (`0.75 → ¾`, `1.5 → 1 ½`). "To taste"/"as needed" and unparseable compound quantities (e.g. `2 lb. 8`) pass through unchanged. The Ingredients header shows the active factor (e.g. "scaled ×2").
+  - Base serving count is parsed from the recipe's `servings` text (`2 portions` → 2, `Makes 12 … servings` → 12); recipes with no number in servings simply show the text with no stepper. Frontend-only (no Convex change).
+  - Verified: 16/16 scaling unit cases; Playwright (Saffron Risotto, 2 portions → ×2) rescaled all quantities correctly and reset restored the originals; zero console errors.
+
+---
+
 ## [06-15-2026-5] - June 15, 2026
 
 ### Added

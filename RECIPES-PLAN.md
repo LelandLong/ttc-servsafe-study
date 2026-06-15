@@ -1,6 +1,6 @@
 # Chef's Kitchen — Recipes Feature Plan
 
-**Status:** R1 + R2 + R9 shipped & verified; class filters shipped — R3–R8, R10–R11 planned
+**Status:** R1 + R2 + R8 + R9 shipped & verified; class filters shipped — R3–R7, R10–R11 planned
 **Created:** June 11, 2026
 **Owner:** Leland Long
 
@@ -206,7 +206,7 @@ Recipes has none of that. So:
 - Flip `resolveApiKey` to prefer a per-user key; store owner's under gamer name `rerun`
 - UI for a user to enter their own key
 
-**Phase R8 — Serving-size scaling (instant ingredient conversion)** *(free)* — REQUESTED (06-15)
+**Phase R8 — Serving-size scaling (instant ingredient conversion)** *(free)* ✅ DONE (06-15-2026-6)
 - At the top of the recipe detail, next to **servings**, add a **−/+ stepper** (and/or a target-servings
   input) to rescale the dish. All structured `{qty, unit, item}` ingredient quantities recompute
   **instantly** using the conversion-factor method taught in class: `CF = targetYield / baseYield`,
