@@ -4035,10 +4035,60 @@
         const [fImageUrls, setFImageUrls] = useState([]);     // matching preview urls
         const [uploading, setUploading] = useState(false);
 
+        // Diner scores (R2) for the recipe currently open in detail
+        const [scores, setScores] = useState([]);
+        const [showRateForm, setShowRateForm] = useState(false);
+        const [rScore, setRScore] = useState(8);
+        const [rDiner, setRDiner] = useState('');
+        const [rNotes, setRNotes] = useState('');
+        const [savingScore, setSavingScore] = useState(false);
+
+        function loadScores(recipeId) {
+          convexQuery('recipes:getScores', { recipeId: recipeId, ownerId: user.userId })
+            .then(function(list) { setScores(list || []); })
+            .catch(function() { setScores([]); });
+        }
+
+        function submitScore() {
+          if (!activeRecipe) return;
+          setSavingScore(true);
+          setErrorMsg('');
+          convexMutation('recipes:addScore', {
+            recipeId: activeRecipe._id,
+            ownerId: user.userId,
+            score: Number(rScore),
+            dinerName: rDiner.trim() || undefined,
+            notes: rNotes.trim() || undefined
+          }).then(function() {
+            setSavingScore(false);
+            setShowRateForm(false);
+            setRScore(8); setRDiner(''); setRNotes('');
+            loadScores(activeRecipe._id);
+            loadRecipes(); // refresh avg/count on the list
+          }).catch(function(err) {
+            setSavingScore(false);
+            setErrorMsg('Could not save rating: ' + err.message);
+          });
+        }
+
+        function removeScore(scoreId) {
+          convexMutation('recipes:deleteScore', { scoreId: scoreId, ownerId: user.userId })
+            .then(function() { loadScores(activeRecipe._id); loadRecipes(); })
+            .catch(function(err) { setErrorMsg('Could not delete rating: ' + err.message); });
+        }
+
         function loadRecipes() {
           if (!user) { setRecipes([]); return; }
           convexQuery('recipes:getMyRecipes', { ownerId: user.userId })
-            .then(function(list) { setRecipes(list || []); })
+            .then(function(list) {
+              setRecipes(list || []);
+              // Keep the open detail recipe in sync (so its avg-score badge updates live).
+              setActiveRecipe(function(cur) {
+                if (!cur) return cur;
+                var fresh = (list || []).find(function(r) { return r._id === cur._id; });
+                return fresh || cur;
+              });
+            })
             .catch(function(err) { setErrorMsg('Could not load recipes: ' + err.message); setRecipes([]); });
         }
 
@@ -4071,7 +4121,20 @@
 
         function openDetail(r) {
           setActiveRecipe(r);
+          setShowRateForm(false);
+          setScores([]);
+          loadScores(r._id);
           setView('detail');
+        }
+
+        // Render a 1-10 score as a compact badge (color by quality).
+        function scoreBadge(avg, count) {
+          var bg = avg >= 8 ? 'rgba(22,163,74,0.15)' : avg >= 5 ? 'rgba(234,179,8,0.18)' : 'rgba(220,38,38,0.15)';
+          var fg = avg >= 8 ? '#16a34a' : avg >= 5 ? '#a16207' : '#dc2626';
+          return createElement('span', {
+            className: 'category-tag',
+            style: { backgroundColor: bg, color: fg, fontWeight: 700 }
+          }, '★ ' + avg + '/10' + (count ? ' (' + count + ')' : ''));
         }
 
         // Upload an image file: get a signed URL, POST the file, store its id.
@@ -4275,6 +4338,66 @@
               createElement('ol', { className: 'list-decimal pl-5 mb-6 text-secondary' },
                 (r.steps || []).map(function(st, i){ return createElement('li', { key: i, className: 'mb-2' }, st); })
               ),
+
+              // ---- Diner Scores (R2) ----
+              createElement('div', { className: 'mb-6 pt-4', style: { borderTop: '1px solid var(--border-color)' } },
+                createElement('div', { className: 'flex items-center justify-between mb-3' },
+                  createElement('h3', { className: 'text-lg font-bold text-primary' },
+                    'Diner Ratings',
+                    (r.avgScore != null) ? createElement('span', { className: 'ml-2' }, scoreBadge(r.avgScore, r.scoreCount)) : null
+                  ),
+                  createElement('button', {
+                    onClick: function(){ setShowRateForm(!showRateForm); setErrorMsg(''); },
+                    className: 'text-sm font-bold text-orange-600'
+                  }, showRateForm ? 'Cancel' : '+ Rate this dish')
+                ),
+
+                // Rating form
+                showRateForm && createElement('div', { className: 'card-bg rounded-xl p-4 mb-3 border-2 border-themed' },
+                  createElement('label', { style: { display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px', color: 'var(--text-secondary)' } }, 'Score: ' + rScore + ' / 10'),
+                  createElement('input', {
+                    type: 'range', min: 1, max: 10, step: 1, value: rScore,
+                    onChange: function(e){ setRScore(Number(e.target.value)); },
+                    style: { width: '100%', marginBottom: '12px' }
+                  }),
+                  createElement('input', {
+                    className: 'w-full p-2 rounded-lg border mb-2',
+                    style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                    value: rDiner, onChange: function(e){ setRDiner(e.target.value); },
+                    placeholder: 'Who rated it? (optional)'
+                  }),
+                  createElement('textarea', {
+                    className: 'w-full p-2 rounded-lg border mb-3', rows: 2,
+                    style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                    value: rNotes, onChange: function(e){ setRNotes(e.target.value); },
+                    placeholder: 'Notes (optional)'
+                  }),
+                  createElement('button', {
+                    onClick: submitScore, disabled: savingScore,
+                    className: 'w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg disabled:opacity-50'
+                  }, savingScore ? 'Saving…' : 'Save Rating')
+                ),
+
+                // Score list
+                scores.length === 0
+                  ? createElement('p', { className: 'text-muted text-sm' }, 'No ratings yet. Tap “+ Rate this dish” after someone tries it.')
+                  : createElement('div', { className: 'flex flex-col gap-2' },
+                      scores.map(function(s) {
+                        return createElement('div', {
+                          key: s._id,
+                          className: 'card-bg rounded-lg p-3 border border-themed flex items-start gap-3'
+                        },
+                          createElement('div', { style: { fontWeight: 700, fontSize: '1.1rem', color: s.score >= 8 ? '#16a34a' : s.score >= 5 ? '#a16207' : '#dc2626', minWidth: '46px' } }, s.score + '/10'),
+                          createElement('div', { className: 'flex-1 min-w-0' },
+                            s.dinerName && createElement('div', { className: 'font-semibold text-primary text-sm' }, s.dinerName),
+                            s.notes && createElement('div', { className: 'text-secondary text-sm' }, s.notes)
+                          ),
+                          createElement('button', { onClick: function(){ removeScore(s._id); }, className: 'text-red-500 text-sm', title: 'Delete rating' }, '×')
+                        );
+                      })
+                    )
+              ),
+
               createElement('div', { className: 'flex gap-3' },
                 createElement('button', { onClick: function(){ startEdit(r); }, className: 'flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl' }, 'Edit'),
                 createElement('button', { onClick: deleteActive, className: 'px-5 py-3 rounded-xl border-2 border-red-300 text-red-600' }, 'Delete')
@@ -4326,7 +4449,8 @@
                             createElement('div', { className: 'font-bold text-primary truncate' }, r.title),
                             createElement('div', { className: 'text-xs text-muted truncate' },
                               (r.tags && r.tags.length > 0) ? r.tags.join(' • ') : ((r.ingredients || []).length + ' ingredients'))
-                          )
+                          ),
+                          (r.avgScore != null) ? createElement('div', { style: { flexShrink: 0 } }, scoreBadge(r.avgScore, r.scoreCount)) : null
                         );
                       })
                     )

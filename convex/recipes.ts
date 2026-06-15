@@ -22,13 +22,29 @@ const recipeFields = {
   pickyFlags: v.optional(v.array(v.string())),
 };
 
-// Resolve signed URLs for a recipe's stored images so the client can render them.
-async function withImageUrls(ctx: any, recipe: any) {
+// Decorate a recipe with resolved image URLs plus its rating summary
+// (avgScore + scoreCount) so list/detail views need no extra round-trips.
+async function decorateRecipe(ctx: any, recipe: any) {
   const ids = recipe.imageIds || [];
   const imageUrls = await Promise.all(
     ids.map((id: any) => ctx.storage.getUrl(id))
   );
-  return { ...recipe, imageUrls: imageUrls.filter((u: any) => u !== null) };
+
+  const scores = await ctx.db
+    .query("recipeScores")
+    .withIndex("by_recipe", (q: any) => q.eq("recipeId", recipe._id))
+    .collect();
+  const scoreCount = scores.length;
+  const avgScore = scoreCount > 0
+    ? Math.round((scores.reduce((sum: number, s: any) => sum + s.score, 0) / scoreCount) * 10) / 10
+    : null;
+
+  return {
+    ...recipe,
+    imageUrls: imageUrls.filter((u: any) => u !== null),
+    avgScore,
+    scoreCount,
+  };
 }
 
 // List all recipes owned by a user (newest first), each with resolved image URLs.
@@ -42,7 +58,7 @@ export const getMyRecipes = query({
 
     recipes.sort((a, b) => b.updatedAt - a.updatedAt);
 
-    return await Promise.all(recipes.map((r) => withImageUrls(ctx, r)));
+    return await Promise.all(recipes.map((r) => decorateRecipe(ctx, r)));
   },
 });
 
@@ -52,7 +68,7 @@ export const getRecipe = query({
   handler: async (ctx, args) => {
     const recipe = await ctx.db.get(args.recipeId);
     if (!recipe || recipe.ownerId !== args.ownerId) return null;
-    return await withImageUrls(ctx, recipe);
+    return await decorateRecipe(ctx, recipe);
   },
 });
 
@@ -141,6 +157,15 @@ export const deleteRecipe = mutation({
       }
     }
 
+    // Clean up associated diner scores so they don't orphan.
+    const scores = await ctx.db
+      .query("recipeScores")
+      .withIndex("by_recipe", (q) => q.eq("recipeId", args.recipeId))
+      .collect();
+    for (const s of scores) {
+      await ctx.db.delete(s._id);
+    }
+
     await ctx.db.delete(args.recipeId);
     return { ok: true };
   },
@@ -155,5 +180,70 @@ export const generateUploadUrl = mutation({
     const user = await ctx.db.get(args.ownerId);
     if (!user) throw new Error("Unknown user");
     return await ctx.storage.generateUploadUrl();
+  },
+});
+
+// ============ DINER SCORES (Phase R2) ============
+
+// Add a 1-10 rating to a recipe the user owns.
+export const addScore = mutation({
+  args: {
+    recipeId: v.id("recipes"),
+    ownerId: v.id("users"),
+    score: v.number(),
+    dinerName: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    cookedOn: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const recipe = await ctx.db.get(args.recipeId);
+    if (!recipe) throw new Error("Recipe not found");
+    if (recipe.ownerId !== args.ownerId) {
+      throw new Error("Not authorized to rate this recipe");
+    }
+    const score = Math.round(args.score);
+    if (score < 1 || score > 10) {
+      throw new Error("Score must be between 1 and 10");
+    }
+
+    const scoreId = await ctx.db.insert("recipeScores", {
+      recipeId: args.recipeId,
+      ownerId: args.ownerId,
+      score,
+      dinerName: args.dinerName && args.dinerName.trim() ? args.dinerName.trim() : undefined,
+      notes: args.notes && args.notes.trim() ? args.notes.trim() : undefined,
+      cookedOn: args.cookedOn,
+      createdAt: Date.now(),
+    });
+    return { scoreId };
+  },
+});
+
+// List all scores for a recipe the user owns (newest first).
+export const getScores = query({
+  args: { recipeId: v.id("recipes"), ownerId: v.id("users") },
+  handler: async (ctx, args) => {
+    const recipe = await ctx.db.get(args.recipeId);
+    if (!recipe || recipe.ownerId !== args.ownerId) return [];
+    const scores = await ctx.db
+      .query("recipeScores")
+      .withIndex("by_recipe", (q) => q.eq("recipeId", args.recipeId))
+      .collect();
+    scores.sort((a, b) => b.createdAt - a.createdAt);
+    return scores;
+  },
+});
+
+// Delete a single score the user owns.
+export const deleteScore = mutation({
+  args: { scoreId: v.id("recipeScores"), ownerId: v.id("users") },
+  handler: async (ctx, args) => {
+    const score = await ctx.db.get(args.scoreId);
+    if (!score) throw new Error("Score not found");
+    if (score.ownerId !== args.ownerId) {
+      throw new Error("Not authorized to delete this rating");
+    }
+    await ctx.db.delete(args.scoreId);
+    return { ok: true };
   },
 });

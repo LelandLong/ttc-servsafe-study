@@ -6,6 +6,17 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-11-2026-3] - June 11, 2026
+
+### Added
+- **Recipes — Phase R2 (diner scores).** Rate finished dishes 1–10 and track what actually goes over well.
+  - "+ Rate this dish" on the recipe detail: 1–10 slider, optional diner name and notes.
+  - Average score + rating count shown as a color-coded badge (green ≥8, amber ≥5, red <5) on both the recipe list cards and the detail header; individual ratings listed with delete.
+  - Backend: new `recipeScores` Convex table + `addScore` / `getScores` / `deleteScore` (owner-scoped, 1–10 validation); `getMyRecipes`/`getRecipe` now include `avgScore` + `scoreCount`. Deleting a recipe also cleans up its ratings. Deployed to prod + dev.
+  - Verified end-to-end with Playwright at iPhone viewport (PASS 6/6): average computes and live-updates as ratings are added, badge appears on list + detail, no horizontal overflow, zero console errors.
+
+---
+
 ## [06-11-2026-2] - June 11, 2026
 
 ### Added

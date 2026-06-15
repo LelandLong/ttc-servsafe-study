@@ -107,4 +107,16 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_owner", ["ownerId"]),
+
+  // Diner ratings of finished dishes (Phase R2). One row per rating.
+  recipeScores: defineTable({
+    recipeId: v.id("recipes"),
+    ownerId: v.id("users"),              // denormalized (recipe owner) for easy per-user queries
+    score: v.number(),                   // 1..10
+    dinerName: v.optional(v.string()),   // who rated it (free text; not necessarily a user)
+    notes: v.optional(v.string()),
+    cookedOn: v.optional(v.number()),    // when the dish was made
+    createdAt: v.number(),
+  }).index("by_recipe", ["recipeId"])
+    .index("by_owner", ["ownerId"]),
 });

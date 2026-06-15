@@ -1,6 +1,6 @@
 # Chef's Kitchen — Recipes Feature Plan
 
-**Status:** Phase R1 (foundation) shipped & verified — R2–R7 planned
+**Status:** R1 + R2 shipped & verified — R3–R7 planned
 **Created:** June 11, 2026
 **Owner:** Leland Long
 
@@ -164,7 +164,7 @@ Recipes has none of that. So:
 - Browse/search by title + tags
 - *Outcome: replaces iPhone Notes.*
 
-**Phase R2 — Scores (free)**
+**Phase R2 — Scores (free)** ✅ DONE (06-11-2026-3)
 - `recipeScores` table + functions
 - Log diner scores (1–10) on a recipe; show avg + count
 - *Outcome: capture what people actually like.*
