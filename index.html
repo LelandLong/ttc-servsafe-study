@@ -4378,8 +4378,25 @@
           setView('edit');
         }
 
-        // URL import (R3): fetch+parse server-side, then open the edit form pre-filled
-        // for review-before-save.
+        // Populate the editor from an imported/parsed recipe for review-before-save.
+        function applyImportedRecipe(r, srcType, srcUrl) {
+          setActiveRecipe(null);
+          setFTitle(r.title || '');
+          setFDescription(r.description || '');
+          setFIngredients(ingredientsToRows(r.ingredients));
+          setFSteps((r.steps || []).join('\n'));
+          setFServings(r.servings || '');
+          setFPrep(r.prepMinutes != null ? String(r.prepMinutes) : '');
+          setFCook(r.cookMinutes != null ? String(r.cookMinutes) : '');
+          setFTags((r.tags || []).join(', '));
+          setFImageIds([]); setFImageUrls([]);
+          setFSourceType(srcType); setFSourceUrl(srcUrl || '');
+          setShowImport(false); setImportUrl('');
+          setErrorMsg('');
+          setView('edit');
+        }
+
+        // URL import (R3): fetch+parse server-side, then open the edit form pre-filled.
         function runImport() {
           var url = importUrl.trim();
           if (!url) { setImportError('Paste a recipe URL first.'); return; }
@@ -4388,26 +4405,49 @@
             .then(function(res) {
               setImporting(false);
               if (!res || !res.ok) { setImportError((res && res.error) || 'Could not import that page.'); return; }
-              var r = res.recipe;
-              setActiveRecipe(null);
-              setFTitle(r.title || '');
-              setFDescription(r.description || '');
-              setFIngredients(ingredientsToRows(r.ingredients));
-              setFSteps((r.steps || []).join('\n'));
-              setFServings(r.servings || '');
-              setFPrep(r.prepMinutes != null ? String(r.prepMinutes) : '');
-              setFCook(r.cookMinutes != null ? String(r.cookMinutes) : '');
-              setFTags((r.tags || []).join(', '));
-              setFImageIds([]); setFImageUrls([]);
-              setFSourceType('url'); setFSourceUrl(r.sourceUrl || url);
-              setShowImport(false); setImportUrl('');
-              setErrorMsg('');
-              setView('edit');
+              applyImportedRecipe(res.recipe, 'url', res.recipe.sourceUrl || url);
             })
-            .catch(function(err) {
+            .catch(function(err) { setImporting(false); setImportError('Import failed: ' + err.message); });
+        }
+
+        // Downscale a photo to keep the upload small and the vision cost low.
+        function downscaleImage(file, maxDim, quality) {
+          return new Promise(function(resolve, reject) {
+            var url = URL.createObjectURL(file);
+            var img = new Image();
+            img.onload = function() {
+              var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+              var cw = Math.round(img.width * scale), ch = Math.round(img.height * scale);
+              var canvas = document.createElement('canvas');
+              canvas.width = cw; canvas.height = ch;
+              canvas.getContext('2d').drawImage(img, 0, 0, cw, ch);
+              URL.revokeObjectURL(url);
+              try { resolve(canvas.toDataURL('image/jpeg', quality)); }
+              catch (e) { reject(new Error('Could not process image')); }
+            };
+            img.onerror = function() { URL.revokeObjectURL(url); reject(new Error('Could not read image')); };
+            img.src = url;
+          });
+        }
+
+        // Photo import (R4): downscale → Claude vision → review-before-save.
+        function handlePhotoImport(ev) {
+          var file = ev.target.files && ev.target.files[0];
+          ev.target.value = '';
+          if (!file) return;
+          setShowImport(true);
+          setImporting(true); setImportError('');
+          downscaleImage(file, 1568, 0.82)
+            .then(function(dataUrl) {
+              var base64 = dataUrl.split(',')[1];
+              return convexAction('recipes:importRecipeFromPhoto', { imageBase64: base64, mediaType: 'image/jpeg' });
+            })
+            .then(function(res) {
               setImporting(false);
-              setImportError('Import failed: ' + err.message);
-            });
+              if (!res || !res.ok) { setImportError((res && res.error) || 'Could not read that photo.'); return; }
+              applyImportedRecipe(res.recipe, 'photo', '');
+            })
+            .catch(function(err) { setImporting(false); setImportError('Photo import failed: ' + err.message); });
         }
 
         function openDetail(r) {
@@ -5051,8 +5091,22 @@
                   className: 'bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 rounded-lg disabled:opacity-50'
                 }, importing ? 'Importing…' : 'Import')
               ),
-              importError && createElement('p', { className: 'text-sm mt-2', style: { color: '#dc2626' } }, importError),
-              createElement('p', { className: 'text-xs text-muted mt-2' }, 'Paste a recipe link — we’ll pull the title, ingredients and steps for you to review before saving.')
+              createElement('p', { className: 'text-xs text-muted mt-2' }, 'Paste a recipe link — we’ll pull the title, ingredients and steps for you to review before saving.'),
+              createElement('div', { className: 'flex items-center gap-3 my-3' },
+                createElement('div', { style: { flex: 1, height: '1px', backgroundColor: 'var(--border-color)' } }),
+                createElement('span', { className: 'text-xs text-muted' }, 'or'),
+                createElement('div', { style: { flex: 1, height: '1px', backgroundColor: 'var(--border-color)' } })
+              ),
+              createElement('label', {
+                className: 'flex items-center justify-center gap-2 w-full py-2 rounded-lg border-2 cursor-pointer font-bold',
+                style: { borderColor: '#fdba74', color: '#ea580c' }
+              },
+                '📷 Scan a recipe photo',
+                createElement('input', { type: 'file', accept: 'image/*', capture: 'environment', style: { display: 'none' }, onChange: handlePhotoImport })
+              ),
+              createElement('p', { className: 'text-xs text-muted mt-2' }, 'Snap a recipe card or cookbook page (handwritten or printed) and we’ll read it for you.'),
+              importing && createElement('p', { className: 'text-sm mt-2 text-orange-600 font-medium' }, 'Working… reading your recipe.'),
+              importError && createElement('p', { className: 'text-sm mt-2', style: { color: '#dc2626' } }, importError)
             ),
             recipes === null
               ? createElement('p', { className: 'text-muted text-center py-10' }, 'Loading…')

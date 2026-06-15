@@ -783,7 +783,7 @@ function mapRecipe(r: any, url: string) {
   };
 }
 
-const AI_PROMPT = `You extract a single recipe from the text of a web page. Return ONLY a JSON object (no markdown, no commentary) with exactly these keys:
+const AI_PROMPT = `You extract a single recipe from the provided content — the text of a web page, or a photo of a recipe card / cookbook page (which may be handwritten or printed). Return ONLY a JSON object (no markdown, no commentary) with exactly these keys:
 {"title": string, "description": string, "ingredients": string[], "steps": string[], "servings": string, "prepMinutes": number|null, "cookMinutes": number|null, "tags": string[]}
 - ingredients: one string per ingredient line, e.g. "2 cups flour".
 - steps: one string per instruction step, in order, with no leading numbers.
@@ -802,7 +802,9 @@ function htmlToText(html: string): string {
 
 // Claude fallback for pages without JSON-LD. Model default per the claude-api guide;
 // switch to "claude-haiku-4-5" here to cut cost if classroom usage grows.
-async function aiExtract(text: string, url: string, apiKey: string) {
+// Call the Claude Messages API and return the model's text. `content` is either a
+// string (URL text) or a content-block array (image + prompt for photo import).
+async function callClaude(apiKey: string, content: any): Promise<string> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -810,11 +812,7 @@ async function aiExtract(text: string, url: string, apiKey: string) {
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
     },
-    body: JSON.stringify({
-      model: "claude-opus-4-8",
-      max_tokens: 2000,
-      messages: [{ role: "user", content: AI_PROMPT + "\n\nPAGE CONTENT:\n" + text.slice(0, 16000) }],
-    }),
+    body: JSON.stringify({ model: "claude-opus-4-8", max_tokens: 2000, messages: [{ role: "user", content }] }),
   });
   if (!res.ok) {
     const t = await res.text();
@@ -822,7 +820,11 @@ async function aiExtract(text: string, url: string, apiKey: string) {
   }
   const data: any = await res.json();
   const block = (data.content || []).find((b: any) => b.type === "text");
-  const raw = block ? block.text : "";
+  return block ? block.text : "";
+}
+
+// Parse the model's JSON reply into a recipe payload (shared by URL + photo import).
+function recipeFromAiText(raw: string, sourceType: string, sourceUrl: string | null) {
   const start = raw.indexOf("{"), end = raw.lastIndexOf("}");
   if (start === -1 || end === -1) throw new Error("AI returned no JSON");
   const obj = JSON.parse(raw.slice(start, end + 1));
@@ -836,9 +838,14 @@ async function aiExtract(text: string, url: string, apiKey: string) {
     cookMinutes: typeof obj.cookMinutes === "number" ? obj.cookMinutes : null,
     tags: Array.isArray(obj.tags) ? obj.tags : [],
     imageUrl: null,
-    sourceType: "url",
-    sourceUrl: url,
+    sourceType,
+    sourceUrl,
   };
+}
+
+async function aiExtract(text: string, url: string, apiKey: string) {
+  const raw = await callClaude(apiKey, AI_PROMPT + "\n\nPAGE CONTENT:\n" + text.slice(0, 16000));
+  return recipeFromAiText(raw, "url", url);
 }
 
 export const importRecipeFromUrl = action({
@@ -888,6 +895,32 @@ export const importRecipeFromUrl = action({
       return { ok: true, method: "ai", recipe };
     } catch (e: any) {
       return { ok: false, error: "AI import failed: " + (e.message || "unknown error") };
+    }
+  },
+});
+
+// ============ R4: PHOTO IMPORT (Claude vision) ============
+// The client downscales a photo (recipe card / cookbook page) and sends the
+// base64 here; Claude vision extracts the same structured fields as URL import,
+// returned for review-before-save. Requires the deployment ANTHROPIC_API_KEY.
+export const importRecipeFromPhoto = action({
+  args: { imageBase64: v.string(), mediaType: v.optional(v.string()) },
+  handler: async (_ctx, args) => {
+    const apiKey = resolveApiKey();
+    if (!apiKey) {
+      return { ok: false, error: "AI photo import isn't enabled yet (ANTHROPIC_API_KEY not set on this deployment)." };
+    }
+    if (!args.imageBase64) return { ok: false, error: "No image was provided." };
+    const mediaType = args.mediaType || "image/jpeg";
+    try {
+      const raw = await callClaude(apiKey, [
+        { type: "image", source: { type: "base64", media_type: mediaType, data: args.imageBase64 } },
+        { type: "text", text: AI_PROMPT },
+      ]);
+      const recipe = recipeFromAiText(raw, "photo", null);
+      return { ok: true, method: "ai-vision", recipe };
+    } catch (e: any) {
+      return { ok: false, error: "Photo import failed: " + (e.message || "unknown error") };
     }
   },
 });

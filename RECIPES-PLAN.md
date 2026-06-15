@@ -1,6 +1,6 @@
 # Chef's Kitchen — Recipes Feature Plan
 
-**Status:** R1 + R2 + R3 + R8 + R9 + R10 shipped & verified; class filters shipped — R4–R7, R11 planned
+**Status:** R1 + R2 + R3 + R4 + R8 + R9 + R10 shipped & verified; class filters shipped — R5–R7, R11 planned
 **Created:** June 11, 2026
 **Owner:** Leland Long
 
@@ -181,9 +181,9 @@ Recipes has none of that. So:
 - 🔗 Import button → review-before-save (pre-fills the editor; saved with `sourceType: "url"` + `sourceUrl`)
 - *Outcome: replaces the bookmark folder.* Note: some sites (e.g. seriouseats, simplyrecipes) block server-side fetches with 403/Cloudflare — those won't import.
 
-**Phase R4 — Photo import (AI)**
-- Convex action: image → Claude vision → structured fields
-- Camera + photo-roll capture; review-before-save
+**Phase R4 — Photo import (AI)** ✅ DONE (06-15-2026-10)
+- Convex action `importRecipeFromPhoto`: base64 image → Claude vision → structured fields
+- Camera + photo-roll capture (client downscales to ≤1568px JPEG); review-before-save (`sourceType: "photo"`)
 - *Outcome: snap a handwritten/printed card → clean recipe.*
 
 **Phase R5 — Sharing (free)**

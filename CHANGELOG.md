@@ -6,6 +6,15 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-15-2026-10] - June 15, 2026
+
+### Added
+- **Recipes — Phase R4: import from a photo (Claude vision).** The import panel now has a **📷 Scan a recipe photo** option (camera or photo roll). Snap a recipe card or cookbook page — handwritten or printed — and Claude vision reads it into the editor (title, ingredients, steps, servings, times, tags) for **review before saving** (`sourceType: "photo"`).
+  - Client downscales the photo to ≤1568px JPEG before upload (keeps the request small and vision cost low), then calls the new Convex action `importRecipeFromPhoto` (base64 image → Claude vision → structured fields). Shared `callClaude` / `recipeFromAiText` helpers back both URL and photo import. Key stays server-side only.
+  - Verified end-to-end: a synthetic recipe card extracted title, all 6 ingredients, 4 steps, and servings exactly; full in-app scan → review → save flow passed with zero console errors. Deployed to prod + dev.
+
+---
+
 ## [06-15-2026-9] - June 15, 2026
 
 ### Added
