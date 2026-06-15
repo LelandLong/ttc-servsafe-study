@@ -9,6 +9,7 @@
  */
 
 import type * as questions from "../questions.js";
+import type * as recipes from "../recipes.js";
 import type * as seed from "../seed.js";
 import type * as tests from "../tests.js";
 import type * as users from "../users.js";
@@ -21,6 +22,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   questions: typeof questions;
+  recipes: typeof recipes;
   seed: typeof seed;
   tests: typeof tests;
   users: typeof users;

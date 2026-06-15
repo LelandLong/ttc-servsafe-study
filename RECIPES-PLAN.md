@@ -1,6 +1,6 @@
 # Chef's Kitchen — Recipes Feature Plan
 
-**Status:** Planned (not yet built)
+**Status:** Phase R1 (foundation) shipped & verified — R2–R7 planned
 **Created:** June 11, 2026
 **Owner:** Leland Long
 
@@ -156,7 +156,7 @@ Recipes has none of that. So:
 
 ## 6. Phased roadmap
 
-**Phase R1 — Foundation (free)**
+**Phase R1 — Foundation (free)** ✅ DONE (06-11-2026-2)
 - Convex `recipes` table + per-user CRUD functions
 - Image upload/storage/serve (signed URLs)
 - Recipes card in selector → `RecipesScreen` (list + detail + add/edit form)

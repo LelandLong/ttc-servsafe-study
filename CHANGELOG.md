@@ -6,6 +6,24 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-11-2026-2] - June 11, 2026
+
+### Added
+- **Recipes — Phase R1 (foundation).** Chef's Kitchen now includes a per-user recipe library, the first step toward the kitchen-companion vision in RECIPES-PLAN.md.
+  - New **"My Recipes"** card in the course selector (all users, optional) → routes to a dedicated Recipes screen (separate from the quiz engine).
+  - Create / edit / delete recipes with title, description, ingredients (one per line), steps, servings, prep/cook time, tags, and 1+ photos (camera or photo roll via Convex file storage).
+  - Recipe **list** (with search by title/tag), **detail** view, and **add/edit** form.
+  - Backend: `recipes` Convex table + owner-scoped CRUD (`convex/recipes.ts`), deployed to prod + dev.
+  - Verified end-to-end in a real browser (Playwright): full create→list→detail→edit→delete flow, zero console errors.
+- **Mobile/iOS friendliness** (Recipes will be used mostly on phones, in class/kitchens):
+  - `viewport-fit=cover` for iPhone safe areas; 16px form inputs to stop iOS focus-zoom; 44px+ tap targets on touch devices; momentum scrolling; word-wrap + image max-width to prevent horizontal overflow.
+  - Verified at iPhone 13 viewport (390px): no horizontal overflow on any Recipes screen.
+
+### Dev
+- Added **Playwright** as a dev dependency for browser-based UI verification and screenshots.
+
+---
+
 ## [06-11-2026-1] - June 11, 2026
 
 ### Changed

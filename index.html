@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0">
   <meta name="theme-color" content="#B91C1C">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Chef's Kitchen | Study Aid</title>
@@ -339,6 +339,30 @@
         color: #6B7280;
       }
     }
+
+    /* ============ MOBILE / iOS FRIENDLINESS ============ */
+    /* iOS auto-zooms when a focused input has font-size < 16px. Force 16px on all
+       form controls so the page never zoom-jumps when typing in a recipe. */
+    input, textarea, select, button {
+      font-size: 16px;
+    }
+    /* Comfortable tap targets (Apple HIG ~44px) on touch devices. */
+    @media (pointer: coarse) {
+      button, .mode-card, input, textarea, select {
+        min-height: 44px;
+      }
+    }
+    /* Smooth momentum scrolling for long ingredient/step lists on iOS. */
+    body { -webkit-overflow-scrolling: touch; }
+    /* Respect iPhone notch / home-indicator safe areas. */
+    body {
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+    /* Prevent long recipe titles/URLs from forcing horizontal scroll. */
+    h1, h2, h3, p, li, span, div { overflow-wrap: break-word; }
+    /* Images never overflow their container on small screens. */
+    img { max-width: 100%; }
   </style>
 </head>
 <body class="kitchen-bg min-h-screen">
@@ -3132,7 +3156,24 @@
                       ? createElement('div', { className: 'mt-2 text-xs font-medium text-orange-600' }, '\u2713 Active \u2022 ' + courseQs.length + ' questions')
                       : createElement('div', { className: 'mt-2 text-xs text-muted' }, 'Tap to switch \u2022 ' + courseQs.length + ' questions')
                   );
-                })
+                }).concat([
+                  // Recipes \u2014 not a course; routes to the Recipes screen
+                  createElement('button', {
+                    key: '_recipes',
+                    onClick: function() { if (props.onOpenRecipes) props.onOpenRecipes(); },
+                    className: 'rounded-xl p-4 border-2 border-themed text-left transition-all opacity-80 hover:opacity-100 hover:border-orange-300',
+                    style: { backgroundColor: 'var(--bg-card)' }
+                  },
+                    createElement('div', { className: 'flex items-center gap-2 mb-1' },
+                      createElement('span', { className: 'text-3xl' }, '\ud83c\udf73'),
+                      createElement('div', null,
+                        createElement('div', { className: 'font-bold text-primary' }, 'My Recipes'),
+                        createElement('div', { className: 'text-xs text-muted' }, 'Your recipe library')
+                      )
+                    ),
+                    createElement('div', { className: 'mt-2 text-xs text-muted' }, 'Tap to open \u2022 save, import & rate')
+                  )
+                ])
               )
             ),
 
@@ -3968,6 +4009,332 @@
         );
       }
 
+      // ============ RECIPES (Phase R1) ============
+      // Per-user recipe library. Backend: convex/recipes.ts. See RECIPES-PLAN.md.
+      function RecipesScreen(props) {
+        const user = props.user;
+        const onBack = props.onBack;
+
+        const [recipes, setRecipes] = useState(null); // null = loading
+        const [search, setSearch] = useState('');
+        const [view, setView] = useState('list');      // 'list' | 'detail' | 'edit'
+        const [activeRecipe, setActiveRecipe] = useState(null);
+        const [saving, setSaving] = useState(false);
+        const [errorMsg, setErrorMsg] = useState('');
+
+        // Editable form fields (used in 'edit' view)
+        const [fTitle, setFTitle] = useState('');
+        const [fDescription, setFDescription] = useState('');
+        const [fIngredients, setFIngredients] = useState(''); // textarea, one per line
+        const [fSteps, setFSteps] = useState('');             // textarea, one per line
+        const [fServings, setFServings] = useState('');
+        const [fPrep, setFPrep] = useState('');
+        const [fCook, setFCook] = useState('');
+        const [fTags, setFTags] = useState('');               // comma separated
+        const [fImageIds, setFImageIds] = useState([]);       // storage ids
+        const [fImageUrls, setFImageUrls] = useState([]);     // matching preview urls
+        const [uploading, setUploading] = useState(false);
+
+        function loadRecipes() {
+          if (!user) { setRecipes([]); return; }
+          convexQuery('recipes:getMyRecipes', { ownerId: user.userId })
+            .then(function(list) { setRecipes(list || []); })
+            .catch(function(err) { setErrorMsg('Could not load recipes: ' + err.message); setRecipes([]); });
+        }
+
+        useEffect(function() { loadRecipes(); }, [user ? user.userId : null]);
+
+        function startAdd() {
+          setActiveRecipe(null);
+          setFTitle(''); setFDescription(''); setFIngredients(''); setFSteps('');
+          setFServings(''); setFPrep(''); setFCook(''); setFTags('');
+          setFImageIds([]); setFImageUrls([]);
+          setErrorMsg('');
+          setView('edit');
+        }
+
+        function startEdit(r) {
+          setActiveRecipe(r);
+          setFTitle(r.title || '');
+          setFDescription(r.description || '');
+          setFIngredients((r.ingredients || []).join('\n'));
+          setFSteps((r.steps || []).join('\n'));
+          setFServings(r.servings || '');
+          setFPrep(r.prepMinutes != null ? String(r.prepMinutes) : '');
+          setFCook(r.cookMinutes != null ? String(r.cookMinutes) : '');
+          setFTags((r.tags || []).join(', '));
+          setFImageIds((r.imageIds || []).slice());
+          setFImageUrls((r.imageUrls || []).slice());
+          setErrorMsg('');
+          setView('edit');
+        }
+
+        function openDetail(r) {
+          setActiveRecipe(r);
+          setView('detail');
+        }
+
+        // Upload an image file: get a signed URL, POST the file, store its id.
+        function handleImageUpload(ev) {
+          var file = ev.target.files && ev.target.files[0];
+          if (!file || !user) return;
+          setUploading(true);
+          setErrorMsg('');
+          convexMutation('recipes:generateUploadUrl', { ownerId: user.userId })
+            .then(function(uploadUrl) {
+              return fetch(uploadUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': file.type },
+                body: file
+              }).then(function(res) { return res.json(); });
+            })
+            .then(function(result) {
+              var storageId = result.storageId;
+              // Make a local preview URL for immediate display.
+              var previewUrl = URL.createObjectURL(file);
+              setFImageIds(function(prev) { return prev.concat([storageId]); });
+              setFImageUrls(function(prev) { return prev.concat([previewUrl]); });
+              setUploading(false);
+            })
+            .catch(function(err) {
+              setErrorMsg('Image upload failed: ' + err.message);
+              setUploading(false);
+            });
+          ev.target.value = ''; // allow re-selecting the same file
+        }
+
+        function removeImageAt(idx) {
+          setFImageIds(function(prev) { return prev.filter(function(_, i) { return i !== idx; }); });
+          setFImageUrls(function(prev) { return prev.filter(function(_, i) { return i !== idx; }); });
+        }
+
+        function saveRecipe() {
+          if (!fTitle.trim()) { setErrorMsg('Please enter a title.'); return; }
+          setSaving(true);
+          setErrorMsg('');
+          var payload = {
+            ownerId: user.userId,
+            title: fTitle.trim(),
+            description: fDescription.trim() || undefined,
+            ingredients: fIngredients.split('\n').map(function(s){return s.trim();}).filter(Boolean),
+            steps: fSteps.split('\n').map(function(s){return s.trim();}).filter(Boolean),
+            servings: fServings.trim() || undefined,
+            prepMinutes: fPrep.trim() ? Number(fPrep) : undefined,
+            cookMinutes: fCook.trim() ? Number(fCook) : undefined,
+            tags: fTags.split(',').map(function(s){return s.trim();}).filter(Boolean),
+            imageIds: fImageIds
+          };
+          var p;
+          if (activeRecipe) {
+            payload.recipeId = activeRecipe._id;
+            p = convexMutation('recipes:updateRecipe', payload);
+          } else {
+            p = convexMutation('recipes:createRecipe', payload);
+          }
+          p.then(function() {
+            setSaving(false);
+            setView('list');
+            loadRecipes();
+          }).catch(function(err) {
+            setSaving(false);
+            setErrorMsg('Save failed: ' + err.message);
+          });
+        }
+
+        function deleteActive() {
+          if (!activeRecipe) return;
+          if (!window.confirm('Delete "' + activeRecipe.title + '"? This cannot be undone.')) return;
+          convexMutation('recipes:deleteRecipe', { recipeId: activeRecipe._id, ownerId: user.userId })
+            .then(function() { setView('list'); setActiveRecipe(null); loadRecipes(); })
+            .catch(function(err) { setErrorMsg('Delete failed: ' + err.message); });
+        }
+
+        // ---- Render helpers ----
+        var headerEl = createElement('header', { className: 'bg-gradient-to-r from-red-700 via-red-600 to-orange-600 text-white p-6 shadow-lg' },
+          createElement('div', { className: 'max-w-4xl mx-auto' },
+            createElement('div', { className: 'flex justify-between items-center' },
+              createElement('button', {
+                onClick: function() { if (view === 'list') { onBack(); } else { setView('list'); setErrorMsg(''); } },
+                className: 'text-white/90 hover:text-white text-sm font-medium'
+              }, '← ' + (view === 'list' ? 'Back to courses' : 'Back to recipes')),
+              createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION)
+            ),
+            createElement('div', { className: 'text-center' },
+              createElement('div', { className: 'text-5xl mb-2' }, '🍳'),
+              createElement('h1', { className: 'brand text-3xl font-bold' }, "My Recipes"),
+              createElement('p', { className: 'text-orange-200' }, user ? user.displayName + "'s kitchen" : '')
+            )
+          )
+        );
+
+        var errorEl = errorMsg ? createElement('div', {
+          className: 'mb-4 p-3 rounded-lg text-sm',
+          style: { backgroundColor: 'rgba(220,38,38,0.1)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.3)' }
+        }, errorMsg) : null;
+
+        // ---- EDIT / ADD form ----
+        if (view === 'edit') {
+          var labelStyle = { display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px', color: 'var(--text-secondary)' };
+          var inputCls = 'w-full p-2 rounded-lg border mb-3';
+          var inputStyle = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' };
+          return createElement('div', { className: 'min-h-screen' }, headerEl,
+            createElement('main', { className: 'max-w-2xl mx-auto p-6' },
+              errorEl,
+              createElement('h2', { className: 'text-xl font-bold text-primary mb-4' }, activeRecipe ? 'Edit Recipe' : 'Add Recipe'),
+
+              createElement('label', { style: labelStyle }, 'Title *'),
+              createElement('input', { className: inputCls, style: inputStyle, value: fTitle, onChange: function(e){ setFTitle(e.target.value); }, placeholder: 'e.g. Grandma’s Chili' }),
+
+              createElement('label', { style: labelStyle }, 'Description'),
+              createElement('textarea', { className: inputCls, style: inputStyle, rows: 2, value: fDescription, onChange: function(e){ setFDescription(e.target.value); }, placeholder: 'A short note about this dish' }),
+
+              createElement('label', { style: labelStyle }, 'Ingredients (one per line)'),
+              createElement('textarea', { className: inputCls, style: inputStyle, rows: 6, value: fIngredients, onChange: function(e){ setFIngredients(e.target.value); }, placeholder: '2 lbs ground beef\n1 onion, diced\n...' }),
+
+              createElement('label', { style: labelStyle }, 'Steps (one per line)'),
+              createElement('textarea', { className: inputCls, style: inputStyle, rows: 6, value: fSteps, onChange: function(e){ setFSteps(e.target.value); }, placeholder: 'Brown the beef\nAdd onions\n...' }),
+
+              createElement('div', { className: 'grid grid-cols-3 gap-3' },
+                createElement('div', null,
+                  createElement('label', { style: labelStyle }, 'Servings'),
+                  createElement('input', { className: inputCls, style: inputStyle, value: fServings, onChange: function(e){ setFServings(e.target.value); }, placeholder: '4' })
+                ),
+                createElement('div', null,
+                  createElement('label', { style: labelStyle }, 'Prep (min)'),
+                  createElement('input', { className: inputCls, style: inputStyle, type: 'number', value: fPrep, onChange: function(e){ setFPrep(e.target.value); }, placeholder: '15' })
+                ),
+                createElement('div', null,
+                  createElement('label', { style: labelStyle }, 'Cook (min)'),
+                  createElement('input', { className: inputCls, style: inputStyle, type: 'number', value: fCook, onChange: function(e){ setFCook(e.target.value); }, placeholder: '30' })
+                )
+              ),
+
+              createElement('label', { style: labelStyle }, 'Tags (comma separated)'),
+              createElement('input', { className: inputCls, style: inputStyle, value: fTags, onChange: function(e){ setFTags(e.target.value); }, placeholder: 'quick, comfort food, kid-friendly' }),
+
+              createElement('label', { style: labelStyle }, 'Photos'),
+              createElement('div', { className: 'flex flex-wrap gap-2 mb-3' },
+                fImageUrls.map(function(url, i) {
+                  return createElement('div', { key: i, style: { position: 'relative' } },
+                    createElement('img', { src: url, style: { width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' } }),
+                    createElement('button', {
+                      onClick: function(){ removeImageAt(i); },
+                      style: { position: 'absolute', top: '-6px', right: '-6px', background: '#dc2626', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', lineHeight: '1' }
+                    }, '×')
+                  );
+                }),
+                createElement('label', {
+                  className: 'flex items-center justify-center cursor-pointer',
+                  style: { width: '80px', height: '80px', borderRadius: '8px', border: '2px dashed var(--border-color)', color: 'var(--text-muted)', fontSize: '0.7rem', textAlign: 'center' }
+                },
+                  uploading ? 'Uploading…' : '+ Photo',
+                  createElement('input', { type: 'file', accept: 'image/*', capture: 'environment', style: { display: 'none' }, onChange: handleImageUpload })
+                )
+              ),
+
+              createElement('div', { className: 'flex gap-3 mt-4' },
+                createElement('button', {
+                  onClick: saveRecipe, disabled: saving,
+                  className: 'flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl disabled:opacity-50'
+                }, saving ? 'Saving…' : (activeRecipe ? 'Save Changes' : 'Create Recipe')),
+                createElement('button', {
+                  onClick: function(){ setView(activeRecipe ? 'detail' : 'list'); setErrorMsg(''); },
+                  className: 'px-5 py-3 rounded-xl border-2 border-themed text-primary'
+                }, 'Cancel')
+              )
+            )
+          );
+        }
+
+        // ---- DETAIL ----
+        if (view === 'detail' && activeRecipe) {
+          var r = activeRecipe;
+          return createElement('div', { className: 'min-h-screen' }, headerEl,
+            createElement('main', { className: 'max-w-2xl mx-auto p-6' },
+              errorEl,
+              (r.imageUrls && r.imageUrls.length > 0) && createElement('div', { className: 'flex gap-2 overflow-x-auto mb-4' },
+                r.imageUrls.map(function(url, i) {
+                  return createElement('img', { key: i, src: url, style: { height: '180px', borderRadius: '12px', objectFit: 'cover' } });
+                })
+              ),
+              createElement('h2', { className: 'text-2xl font-bold text-primary mb-1' }, r.title),
+              r.description && createElement('p', { className: 'text-secondary mb-3' }, r.description),
+              createElement('div', { className: 'flex gap-4 text-sm text-muted mb-4' },
+                r.servings && createElement('span', null, '🍽️ ' + r.servings + ' servings'),
+                (r.prepMinutes != null) && createElement('span', null, '⏱️ ' + r.prepMinutes + 'm prep'),
+                (r.cookMinutes != null) && createElement('span', null, '🔥 ' + r.cookMinutes + 'm cook')
+              ),
+              (r.tags && r.tags.length > 0) && createElement('div', { className: 'flex flex-wrap gap-2 mb-4' },
+                r.tags.map(function(t, i){ return createElement('span', { key: i, className: 'category-tag', style: { backgroundColor: 'rgba(249,115,22,0.15)', color: '#ea580c' } }, t); })
+              ),
+              createElement('h3', { className: 'text-lg font-bold text-primary mt-4 mb-2' }, 'Ingredients'),
+              createElement('ul', { className: 'list-disc pl-5 mb-4 text-secondary' },
+                (r.ingredients || []).map(function(ing, i){ return createElement('li', { key: i, className: 'mb-1' }, ing); })
+              ),
+              createElement('h3', { className: 'text-lg font-bold text-primary mt-4 mb-2' }, 'Steps'),
+              createElement('ol', { className: 'list-decimal pl-5 mb-6 text-secondary' },
+                (r.steps || []).map(function(st, i){ return createElement('li', { key: i, className: 'mb-2' }, st); })
+              ),
+              createElement('div', { className: 'flex gap-3' },
+                createElement('button', { onClick: function(){ startEdit(r); }, className: 'flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl' }, 'Edit'),
+                createElement('button', { onClick: deleteActive, className: 'px-5 py-3 rounded-xl border-2 border-red-300 text-red-600' }, 'Delete')
+              )
+            )
+          );
+        }
+
+        // ---- LIST (default) ----
+        var q = search.trim().toLowerCase();
+        var filtered = (recipes || []).filter(function(r) {
+          if (!q) return true;
+          var hay = (r.title + ' ' + (r.tags || []).join(' ')).toLowerCase();
+          return hay.indexOf(q) !== -1;
+        });
+
+        return createElement('div', { className: 'min-h-screen' }, headerEl,
+          createElement('main', { className: 'max-w-2xl mx-auto p-6' },
+            errorEl,
+            createElement('div', { className: 'flex gap-3 mb-4' },
+              createElement('input', {
+                className: 'flex-1 p-2 rounded-lg border',
+                style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                value: search, onChange: function(e){ setSearch(e.target.value); },
+                placeholder: '🔍 Search by title or tag'
+              }),
+              createElement('button', { onClick: startAdd, className: 'bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 rounded-lg' }, '+ Add')
+            ),
+            recipes === null
+              ? createElement('p', { className: 'text-muted text-center py-10' }, 'Loading…')
+              : (filtered.length === 0
+                  ? createElement('div', { className: 'text-center py-12' },
+                      createElement('div', { className: 'text-5xl mb-3' }, '📖'),
+                      createElement('p', { className: 'text-secondary mb-1' }, recipes.length === 0 ? 'No recipes yet.' : 'No matches.'),
+                      createElement('p', { className: 'text-muted text-sm' }, recipes.length === 0 ? 'Tap “+ Add” to save your first recipe.' : 'Try a different search.')
+                    )
+                  : createElement('div', { className: 'grid grid-cols-1 gap-3' },
+                      filtered.map(function(r) {
+                        var cover = (r.imageUrls && r.imageUrls.length > 0) ? r.imageUrls[0] : null;
+                        return createElement('button', {
+                          key: r._id,
+                          onClick: function(){ openDetail(r); },
+                          className: 'mode-card card-bg rounded-xl p-3 border-2 border-themed text-left flex gap-3 items-center hover:border-orange-300'
+                        },
+                          cover
+                            ? createElement('img', { src: cover, style: { width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 } })
+                            : createElement('div', { style: { width: '60px', height: '60px', borderRadius: '8px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', backgroundColor: 'var(--bg-hover, #f3f4f6)' } }, '🍴'),
+                          createElement('div', { className: 'flex-1 min-w-0' },
+                            createElement('div', { className: 'font-bold text-primary truncate' }, r.title),
+                            createElement('div', { className: 'text-xs text-muted truncate' },
+                              (r.tags && r.tags.length > 0) ? r.tags.join(' • ') : ((r.ingredients || []).length + ' ingredients'))
+                          )
+                        );
+                      })
+                    )
+                )
+          )
+        );
+      }
+
       function App() {
         const [screen, setScreen] = useState('home');
         const [progress, setProgress] = useState(loadProgress);
@@ -4771,6 +5138,19 @@
           })
         );
 
+        if (screen === 'recipes') {
+          return createElement('div', null,
+            accountMenuEl,
+            createElement(NetworkStatus, { status: networkStatus }),
+            createElement('div', { style: { paddingTop: '24px' } },
+              createElement(RecipesScreen, {
+                user: user,
+                onBack: function() { setScreen('home'); }
+              })
+            )
+          );
+        }
+
         if (screen === 'quiz') {
           return createElement('div', null,
             accountMenuEl,
@@ -4811,7 +5191,8 @@
               user: user,
               classStats: classStats,
               activeCourse: activeCourse,
-              onSwitchCourse: switchCourse
+              onSwitchCourse: switchCourse,
+              onOpenRecipes: function() { setScreen('recipes'); }
             })
           )
         );
