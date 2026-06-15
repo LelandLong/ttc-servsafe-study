@@ -800,8 +800,12 @@ function htmlToText(html: string): string {
   ).replace(/\s+/g, " ").trim();
 }
 
-// Claude fallback for pages without JSON-LD. Model default per the claude-api guide;
-// switch to "claude-haiku-4-5" here to cut cost if classroom usage grows.
+// Model used for AI recipe extraction (URL fallback + photo import). Haiku 4.5 is
+// the most cost-effective model and is plenty capable for this structured
+// extraction (text + vision) — ~80% cheaper than Opus. Bump to "claude-sonnet-4-6"
+// for a middle ground, or "claude-opus-4-8" for max capability.
+const IMPORT_MODEL = "claude-haiku-4-5";
+
 // Call the Claude Messages API and return the model's text. `content` is either a
 // string (URL text) or a content-block array (image + prompt for photo import).
 async function callClaude(apiKey: string, content: any): Promise<string> {
@@ -812,7 +816,7 @@ async function callClaude(apiKey: string, content: any): Promise<string> {
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
     },
-    body: JSON.stringify({ model: "claude-opus-4-8", max_tokens: 2000, messages: [{ role: "user", content }] }),
+    body: JSON.stringify({ model: IMPORT_MODEL, max_tokens: 2000, messages: [{ role: "user", content }] }),
   });
   if (!res.ok) {
     const t = await res.text();

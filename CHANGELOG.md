@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-15-2026-12] - June 15, 2026
+
+### Changed
+- **Recipes — AI import now uses Claude Haiku 4.5 (cheaper).** URL-import AI fallback and photo import switched from Opus 4.8 to **Haiku 4.5** (`claude-haiku-4-5`) — roughly **80% cheaper per import** (~9¢ → ~1–2¢) with no meaningful quality loss for this structured extraction. (URL import is still free whenever the site publishes `schema.org/Recipe` JSON-LD; the AI model only matters for the JSON-LD-less fallback and for photo import.) Single `IMPORT_MODEL` constant in `convex/recipes.ts` — bump to `claude-sonnet-4-6` for a middle ground if needed. Verified the AI fallback still extracts correctly on Haiku. Deployed to prod + dev.
+
+---
+
 ## [06-15-2026-11] - June 15, 2026
 
 ### Fixed
