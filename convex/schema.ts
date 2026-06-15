@@ -94,7 +94,16 @@ export default defineSchema({
     ownerId: v.id("users"),              // who owns this copy
     title: v.string(),
     description: v.optional(v.string()),
-    ingredients: v.array(v.string()),    // one line each
+    // Each ingredient is either a legacy plain string OR a structured
+    // {qty, unit, item}. Union keeps older string-based recipes valid.
+    ingredients: v.array(v.union(
+      v.string(),
+      v.object({
+        qty: v.optional(v.string()),   // "2", "1/2", "2-3" — string handles fractions/ranges
+        unit: v.optional(v.string()),  // canonical abbrev: tsp, Tbsp, cup, lb, g...
+        item: v.string(),              // lowercase ingredient name/description
+      })
+    )),
     steps: v.array(v.string()),          // ordered instructions
     imageIds: v.optional(v.array(v.id("_storage"))), // 1+ images; [0] is the cover
     sourceType: v.optional(v.string()),  // "manual" | "url" | "photo"
@@ -119,4 +128,10 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_recipe", ["recipeId"])
     .index("by_owner", ["ownerId"]),
+
+  // Global catalog of ingredient names for type-ahead (everyone shares it —
+  // onion/garlic/etc are not user-specific). Stored lowercase, deduped.
+  ingredientCatalog: defineTable({
+    name: v.string(),
+  }).index("by_name", ["name"]),
 });

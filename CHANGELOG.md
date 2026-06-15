@@ -6,6 +6,19 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-11-2026-4] - June 11, 2026
+
+### Added
+- **Recipes — structured ingredients.** Ingredients are now three fields per row — quantity, unit, and ingredient name — instead of free-text lines.
+  - **Unit autocomplete** from a canonical list with normalization for consistency (e.g. POUNDS→`lb`, tbsp→`Tbsp`, teaspoon→`tsp`, cloves→`clove`). Case is meaningful where it disambiguates: `tsp` vs `Tbsp`.
+  - **Ingredient-name autocomplete** from a **global** catalog (everyone shares onion/garlic/etc.), so repeated ingredients stay consistent over time. Ingredient names are forced lowercase.
+  - Legacy free-text ingredients from earlier recipes still display and are best-effort parsed into the three fields when editing (backward compatible).
+- **Diner name type-ahead.** When rating a dish, the "who rated it" field suggests diners you've entered before (per-user) via a filtering dropdown — type "mer" → "Mermaid" narrows in; type a new name and the dropdown gets out of the way.
+  - Backend: `ingredientCatalog` table + `getIngredientCatalog` (global) and `getMyDinerNames` (per-user); create/update normalize ingredients and feed the catalog. Deployed to prod + dev.
+- Verified with Playwright at iPhone viewport: 3-field rows, unit/ingredient/diner autocomplete, normalization on save, edit pre-fill, 16px inputs (no iOS zoom), no horizontal overflow.
+
+---
+
 ## [06-11-2026-3] - June 11, 2026
 
 ### Added

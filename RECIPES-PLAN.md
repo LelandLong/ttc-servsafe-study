@@ -188,6 +188,15 @@ Recipes has none of that. So:
 - Filter/browse by mood, ingredients on hand, picky-eater flags, time, score
 - "What should I cook?" surfacing
 
+**Phase R6b — Diner-centric view ("cook for a person") (free)** — REQUESTED
+- Pick a diner (from the per-user diner list) → see all dishes that diner has rated,
+  sorted highest rating at top, lowest at bottom.
+- Use case: plan a birthday/featured-guest menu around dishes a specific person loves,
+  and avoid ones they rated low.
+- Data is already captured (recipeScores has dinerName + score + recipeId). Likely a new
+  query `getDinerRatings(ownerId, dinerName)` joining scores→recipes, returning
+  [{recipe, score, notes}] sorted desc. Mostly UI on existing data.
+
 **Phase R7 — Per-user API keys (later)**
 - Flip `resolveApiKey` to prefer a per-user key; store owner's under gamer name `rerun`
 - UI for a user to enter their own key

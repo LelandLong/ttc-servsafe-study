@@ -4025,7 +4025,8 @@
         // Editable form fields (used in 'edit' view)
         const [fTitle, setFTitle] = useState('');
         const [fDescription, setFDescription] = useState('');
-        const [fIngredients, setFIngredients] = useState(''); // textarea, one per line
+        // Structured ingredient rows: [{qty, unit, item}, ...]
+        const [fIngredients, setFIngredients] = useState([{ qty: '', unit: '', item: '' }]);
         const [fSteps, setFSteps] = useState('');             // textarea, one per line
         const [fServings, setFServings] = useState('');
         const [fPrep, setFPrep] = useState('');
@@ -4042,6 +4043,21 @@
         const [rDiner, setRDiner] = useState('');
         const [rNotes, setRNotes] = useState('');
         const [savingScore, setSavingScore] = useState(false);
+
+        // Type-ahead suggestion data
+        const [dinerNames, setDinerNames] = useState([]);       // per-user, from past ratings
+        const [ingredientCatalog, setIngredientCatalog] = useState([]); // global
+
+        // Canonical measurement units offered in the unit dropdown.
+        var UNIT_OPTIONS = ['tsp','Tbsp','cup','oz','fl oz','lb','g','kg','ml','l','pt','qt','gal','pinch','dash','clove','can','stick','slice','piece','each','to taste'];
+
+        function loadSuggestions() {
+          if (!user) return;
+          convexQuery('recipes:getMyDinerNames', { ownerId: user.userId })
+            .then(function(list){ setDinerNames(list || []); }).catch(function(){});
+          convexQuery('recipes:getIngredientCatalog', {})
+            .then(function(list){ setIngredientCatalog(list || []); }).catch(function(){});
+        }
 
         function loadScores(recipeId) {
           convexQuery('recipes:getScores', { recipeId: recipeId, ownerId: user.userId })
@@ -4092,11 +4108,36 @@
             .catch(function(err) { setErrorMsg('Could not load recipes: ' + err.message); setRecipes([]); });
         }
 
-        useEffect(function() { loadRecipes(); }, [user ? user.userId : null]);
+        useEffect(function() { loadRecipes(); loadSuggestions(); }, [user ? user.userId : null]);
+
+        // Best-effort parse a legacy "2 lbs ground beef" string into {qty, unit, item}.
+        function parseLegacyIngredient(str) {
+          var s = String(str).trim();
+          var m = s.match(/^([\d\/.\-\s]+)?\s*([a-zA-Z]+)?\s+(.*)$/);
+          if (m && m[3]) {
+            var maybeUnit = (m[2] || '').toLowerCase();
+            var known = UNIT_OPTIONS.map(function(u){return u.toLowerCase();}).indexOf(maybeUnit) !== -1
+              || ['lbs','pounds','tbsp','tablespoon','teaspoon','cups','grams','ounce','ounces','cloves'].indexOf(maybeUnit) !== -1;
+            if (known) return { qty: (m[1]||'').trim(), unit: (m[2]||'').trim(), item: m[3].trim() };
+          }
+          return { qty: '', unit: '', item: s };
+        }
+
+        // Convert stored ingredients (strings or {qty,unit,item}) to editable rows.
+        function ingredientsToRows(arr) {
+          var rows = (arr || []).map(function(ing) {
+            if (typeof ing === 'string') return parseLegacyIngredient(ing);
+            return { qty: ing.qty || '', unit: ing.unit || '', item: ing.item || '' };
+          });
+          if (rows.length === 0) rows = [{ qty: '', unit: '', item: '' }];
+          return rows;
+        }
 
         function startAdd() {
           setActiveRecipe(null);
-          setFTitle(''); setFDescription(''); setFIngredients(''); setFSteps('');
+          setFTitle(''); setFDescription('');
+          setFIngredients([{ qty: '', unit: '', item: '' }]);
+          setFSteps('');
           setFServings(''); setFPrep(''); setFCook(''); setFTags('');
           setFImageIds([]); setFImageUrls([]);
           setErrorMsg('');
@@ -4107,7 +4148,7 @@
           setActiveRecipe(r);
           setFTitle(r.title || '');
           setFDescription(r.description || '');
-          setFIngredients((r.ingredients || []).join('\n'));
+          setFIngredients(ingredientsToRows(r.ingredients));
           setFSteps((r.steps || []).join('\n'));
           setFServings(r.servings || '');
           setFPrep(r.prepMinutes != null ? String(r.prepMinutes) : '');
@@ -4171,15 +4212,39 @@
           setFImageUrls(function(prev) { return prev.filter(function(_, i) { return i !== idx; }); });
         }
 
+        // Ingredient-row editing
+        function updateIngredientRow(idx, field, value) {
+          setFIngredients(function(prev) {
+            return prev.map(function(row, i) {
+              if (i !== idx) return row;
+              var next = { qty: row.qty, unit: row.unit, item: row.item };
+              next[field] = value;
+              return next;
+            });
+          });
+        }
+        function addIngredientRow() {
+          setFIngredients(function(prev) { return prev.concat([{ qty: '', unit: '', item: '' }]); });
+        }
+        function removeIngredientRow(idx) {
+          setFIngredients(function(prev) {
+            var next = prev.filter(function(_, i) { return i !== idx; });
+            return next.length ? next : [{ qty: '', unit: '', item: '' }];
+          });
+        }
+
         function saveRecipe() {
           if (!fTitle.trim()) { setErrorMsg('Please enter a title.'); return; }
           setSaving(true);
           setErrorMsg('');
+          var cleanIngredients = fIngredients
+            .filter(function(r){ return (r.item || '').trim(); })
+            .map(function(r){ return { qty: (r.qty||'').trim(), unit: (r.unit||'').trim(), item: r.item.trim() }; });
           var payload = {
             ownerId: user.userId,
             title: fTitle.trim(),
             description: fDescription.trim() || undefined,
-            ingredients: fIngredients.split('\n').map(function(s){return s.trim();}).filter(Boolean),
+            ingredients: cleanIngredients,
             steps: fSteps.split('\n').map(function(s){return s.trim();}).filter(Boolean),
             servings: fServings.trim() || undefined,
             prepMinutes: fPrep.trim() ? Number(fPrep) : undefined,
@@ -4198,6 +4263,7 @@
             setSaving(false);
             setView('list');
             loadRecipes();
+            loadSuggestions(); // pick up any new ingredient names
           }).catch(function(err) {
             setSaving(false);
             setErrorMsg('Save failed: ' + err.message);
@@ -4251,8 +4317,49 @@
               createElement('label', { style: labelStyle }, 'Description'),
               createElement('textarea', { className: inputCls, style: inputStyle, rows: 2, value: fDescription, onChange: function(e){ setFDescription(e.target.value); }, placeholder: 'A short note about this dish' }),
 
-              createElement('label', { style: labelStyle }, 'Ingredients (one per line)'),
-              createElement('textarea', { className: inputCls, style: inputStyle, rows: 6, value: fIngredients, onChange: function(e){ setFIngredients(e.target.value); }, placeholder: '2 lbs ground beef\n1 onion, diced\n...' }),
+              createElement('label', { style: labelStyle }, 'Ingredients'),
+              // Shared datalists for unit + ingredient type-ahead (referenced by each row).
+              createElement('datalist', { id: 'unit-options' },
+                UNIT_OPTIONS.map(function(u){ return createElement('option', { key: u, value: u }); })
+              ),
+              createElement('datalist', { id: 'ingredient-options' },
+                ingredientCatalog.map(function(name){ return createElement('option', { key: name, value: name }); })
+              ),
+              createElement('div', { className: 'mb-3' },
+                fIngredients.map(function(row, idx) {
+                  return createElement('div', { key: idx, className: 'flex gap-2 mb-2 items-center' },
+                    createElement('input', {
+                      style: Object.assign({ width: '52px', flexShrink: 0 }, inputStyle),
+                      className: 'p-2 rounded-lg border',
+                      value: row.qty, onChange: function(e){ updateIngredientRow(idx, 'qty', e.target.value); },
+                      placeholder: 'Qty', inputMode: 'decimal'
+                    }),
+                    createElement('input', {
+                      style: Object.assign({ width: '78px', flexShrink: 0 }, inputStyle),
+                      className: 'p-2 rounded-lg border',
+                      list: 'unit-options',
+                      value: row.unit, onChange: function(e){ updateIngredientRow(idx, 'unit', e.target.value); },
+                      placeholder: 'Unit'
+                    }),
+                    createElement('input', {
+                      style: Object.assign({ flex: '1', minWidth: '0' }, inputStyle),
+                      className: 'p-2 rounded-lg border',
+                      list: 'ingredient-options',
+                      value: row.item, onChange: function(e){ updateIngredientRow(idx, 'item', e.target.value); },
+                      placeholder: 'Ingredient'
+                    }),
+                    createElement('button', {
+                      onClick: function(){ removeIngredientRow(idx); },
+                      style: { color: '#dc2626', fontSize: '1.3rem', lineHeight: '1', padding: '0 4px', flexShrink: 0 },
+                      title: 'Remove'
+                    }, '×')
+                  );
+                }),
+                createElement('button', {
+                  onClick: addIngredientRow,
+                  className: 'text-sm font-bold text-orange-600 mt-1'
+                }, '+ Add ingredient')
+              ),
 
               createElement('label', { style: labelStyle }, 'Steps (one per line)'),
               createElement('textarea', { className: inputCls, style: inputStyle, rows: 6, value: fSteps, onChange: function(e){ setFSteps(e.target.value); }, placeholder: 'Brown the beef\nAdd onions\n...' }),
@@ -4332,7 +4439,12 @@
               ),
               createElement('h3', { className: 'text-lg font-bold text-primary mt-4 mb-2' }, 'Ingredients'),
               createElement('ul', { className: 'list-disc pl-5 mb-4 text-secondary' },
-                (r.ingredients || []).map(function(ing, i){ return createElement('li', { key: i, className: 'mb-1' }, ing); })
+                (r.ingredients || []).map(function(ing, i){
+                  var text;
+                  if (typeof ing === 'string') { text = ing; }
+                  else { text = [ing.qty, ing.unit, ing.item].filter(Boolean).join(' '); }
+                  return createElement('li', { key: i, className: 'mb-1' }, text);
+                })
               ),
               createElement('h3', { className: 'text-lg font-bold text-primary mt-4 mb-2' }, 'Steps'),
               createElement('ol', { className: 'list-decimal pl-5 mb-6 text-secondary' },
@@ -4347,7 +4459,7 @@
                     (r.avgScore != null) ? createElement('span', { className: 'ml-2' }, scoreBadge(r.avgScore, r.scoreCount)) : null
                   ),
                   createElement('button', {
-                    onClick: function(){ setShowRateForm(!showRateForm); setErrorMsg(''); },
+                    onClick: function(){ if (!showRateForm) loadSuggestions(); setShowRateForm(!showRateForm); setErrorMsg(''); },
                     className: 'text-sm font-bold text-orange-600'
                   }, showRateForm ? 'Cancel' : '+ Rate this dish')
                 ),
@@ -4360,11 +4472,15 @@
                     onChange: function(e){ setRScore(Number(e.target.value)); },
                     style: { width: '100%', marginBottom: '12px' }
                   }),
+                  createElement('datalist', { id: 'diner-options' },
+                    dinerNames.map(function(n){ return createElement('option', { key: n, value: n }); })
+                  ),
                   createElement('input', {
                     className: 'w-full p-2 rounded-lg border mb-2',
                     style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                    list: 'diner-options',
                     value: rDiner, onChange: function(e){ setRDiner(e.target.value); },
-                    placeholder: 'Who rated it? (optional)'
+                    placeholder: 'Who rated it? (type to pick a past diner)'
                   }),
                   createElement('textarea', {
                     className: 'w-full p-2 rounded-lg border mb-3', rows: 2,
