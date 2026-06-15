@@ -144,6 +144,18 @@ export default defineSchema({
   }).index("by_recipe", ["recipeId"])
     .index("by_owner", ["ownerId"]),
 
+  // Cook log (Phase R10): one row each time a user actually cooks a recipe for a
+  // meal. Per-user (ownerId = who cooked it); works on global recipes too.
+  recipeCookLog: defineTable({
+    recipeId: v.id("recipes"),
+    ownerId: v.id("users"),
+    cookedOn: v.number(),                // epoch millis of the meal date
+    dinerCount: v.optional(v.number()),  // how many people were served
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_recipe", ["recipeId"])
+    .index("by_owner", ["ownerId"]),
+
   // Global catalog of ingredient names for type-ahead (everyone shares it —
   // onion/garlic/etc are not user-specific). Stored lowercase, deduped.
   ingredientCatalog: defineTable({

@@ -327,6 +327,15 @@ export const deleteRecipe = mutation({
       await ctx.db.delete(n._id);
     }
 
+    // Clean up cook-log entries.
+    const logs = await ctx.db
+      .query("recipeCookLog")
+      .withIndex("by_recipe", (q) => q.eq("recipeId", args.recipeId))
+      .collect();
+    for (const l of logs) {
+      await ctx.db.delete(l._id);
+    }
+
     await ctx.db.delete(args.recipeId);
     return { ok: true };
   },
@@ -407,6 +416,63 @@ export const deleteScore = mutation({
       throw new Error("Not authorized to delete this rating");
     }
     await ctx.db.delete(args.scoreId);
+    return { ok: true };
+  },
+});
+
+// ============ COOK LOG (Phase R10) ============
+
+// Log a meal: record that the viewer cooked this recipe on a date, for N diners.
+// Works on global recipes too (per-user — ownerId is who cooked it).
+export const addCookLog = mutation({
+  args: {
+    recipeId: v.id("recipes"),
+    ownerId: v.id("users"),
+    cookedOn: v.number(),
+    dinerCount: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const recipe = await ctx.db.get(args.recipeId);
+    if (!recipe || !isVisibleTo(recipe, args.ownerId)) {
+      throw new Error("Not authorized to log this recipe");
+    }
+    const logId = await ctx.db.insert("recipeCookLog", {
+      recipeId: args.recipeId,
+      ownerId: args.ownerId,
+      cookedOn: args.cookedOn,
+      dinerCount: args.dinerCount != null && args.dinerCount > 0 ? Math.round(args.dinerCount) : undefined,
+      notes: args.notes && args.notes.trim() ? args.notes.trim() : undefined,
+      createdAt: Date.now(),
+    });
+    return { logId };
+  },
+});
+
+// List the viewer's cook-log entries for a recipe (most recent meal first).
+export const getCookLog = query({
+  args: { recipeId: v.id("recipes"), ownerId: v.id("users") },
+  handler: async (ctx, args) => {
+    const recipe = await ctx.db.get(args.recipeId);
+    if (!recipe || !isVisibleTo(recipe, args.ownerId)) return [];
+    const rows = await ctx.db
+      .query("recipeCookLog")
+      .withIndex("by_recipe", (q) => q.eq("recipeId", args.recipeId))
+      .collect();
+    const mine = rows.filter((r) => r.ownerId === args.ownerId);
+    mine.sort((a, b) => b.cookedOn - a.cookedOn);
+    return mine;
+  },
+});
+
+// Delete one of the viewer's own cook-log entries.
+export const deleteCookLog = mutation({
+  args: { logId: v.id("recipeCookLog"), ownerId: v.id("users") },
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.logId);
+    if (!row) throw new Error("Log entry not found");
+    if (row.ownerId !== args.ownerId) throw new Error("Not authorized to delete this entry");
+    await ctx.db.delete(args.logId);
     return { ok: true };
   },
 });
@@ -598,6 +664,11 @@ export const adminDeleteGlobalRecipe = mutation({
       .withIndex("by_recipe", (q) => q.eq("recipeId", args.recipeId))
       .collect();
     for (const n of notes) await ctx.db.delete(n._id);
+    const logs = await ctx.db
+      .query("recipeCookLog")
+      .withIndex("by_recipe", (q) => q.eq("recipeId", args.recipeId))
+      .collect();
+    for (const l of logs) await ctx.db.delete(l._id);
 
     await ctx.db.delete(args.recipeId);
     return { ok: true };

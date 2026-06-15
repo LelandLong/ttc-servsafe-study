@@ -4068,6 +4068,23 @@
         return t; // unparseable compound qty — leave as written
       }
 
+      // ---- Cook-log date helpers (R10) ----
+      function todayInputValue() {
+        var d = new Date();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return d.getFullYear() + '-' + m + '-' + day;
+      }
+      function dateInputToMillis(s) {
+        var p = String(s || '').split('-');
+        if (p.length !== 3) return Date.now();
+        return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getTime();
+      }
+      function formatCookDate(ms) {
+        try { return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); }
+        catch (e) { return ''; }
+      }
+
       function RecipesScreen(props) {
         const user = props.user;
         const onBack = props.onBack;
@@ -4112,6 +4129,14 @@
         // Serving-size scaling (R8): target serving count for the open recipe (null = no base).
         const [scaleTarget, setScaleTarget] = useState(null);
 
+        // Cook log (R10) for the recipe open in detail
+        const [cookLog, setCookLog] = useState([]);
+        const [showCookForm, setShowCookForm] = useState(false);
+        const [cDate, setCDate] = useState('');
+        const [cCount, setCCount] = useState('');
+        const [cNotes, setCNotes] = useState('');
+        const [savingCook, setSavingCook] = useState(false);
+
         // Type-ahead suggestion data
         const [dinerNames, setDinerNames] = useState([]);       // per-user, from past ratings
         const [ingredientCatalog, setIngredientCatalog] = useState([]); // global
@@ -4131,6 +4156,39 @@
           convexQuery('recipes:getScores', { recipeId: recipeId, ownerId: user.userId })
             .then(function(list) { setScores(list || []); })
             .catch(function() { setScores([]); });
+        }
+
+        function loadCookLog(recipeId) {
+          convexQuery('recipes:getCookLog', { recipeId: recipeId, ownerId: user.userId })
+            .then(function(list) { setCookLog(list || []); })
+            .catch(function() { setCookLog([]); });
+        }
+
+        function submitCook() {
+          if (!activeRecipe) return;
+          setSavingCook(true);
+          setErrorMsg('');
+          convexMutation('recipes:addCookLog', {
+            recipeId: activeRecipe._id,
+            ownerId: user.userId,
+            cookedOn: dateInputToMillis(cDate || todayInputValue()),
+            dinerCount: cCount.trim() ? Number(cCount) : undefined,
+            notes: cNotes.trim() || undefined
+          }).then(function() {
+            setSavingCook(false);
+            setShowCookForm(false);
+            setCCount(''); setCNotes('');
+            loadCookLog(activeRecipe._id);
+          }).catch(function(err) {
+            setSavingCook(false);
+            setErrorMsg('Could not log meal: ' + err.message);
+          });
+        }
+
+        function removeCook(logId) {
+          convexMutation('recipes:deleteCookLog', { logId: logId, ownerId: user.userId })
+            .then(function() { loadCookLog(activeRecipe._id); })
+            .catch(function(err) { setErrorMsg('Could not delete entry: ' + err.message); });
         }
 
         function submitScore() {
@@ -4235,7 +4293,11 @@
           setNoteText(r.myNote || '');
           setEditingNote(false);
           setScaleTarget(parseServingsBase(r.servings));
+          setCookLog([]);
+          setShowCookForm(false);
+          setCDate(todayInputValue()); setCCount(''); setCNotes('');
           loadScores(r._id);
+          loadCookLog(r._id);
           setView('detail');
         }
 
@@ -4680,6 +4742,60 @@
                             s.notes && createElement('div', { className: 'text-secondary text-sm' }, s.notes)
                           ),
                           createElement('button', { onClick: function(){ removeScore(s._id); }, className: 'text-red-500 text-sm', title: 'Delete rating' }, '×')
+                        );
+                      })
+                    )
+              ),
+
+              // ---- Cook Log (R10): one entry per time the dish is actually made ----
+              createElement('div', { className: 'mb-6 pt-4', style: { borderTop: '1px solid var(--border-color)' } },
+                createElement('div', { className: 'flex items-center justify-between mb-3' },
+                  createElement('h3', { className: 'text-lg font-bold text-primary' },
+                    '🍴 Meals Cooked',
+                    (cookLog.length > 0) && createElement('span', { className: 'ml-2 text-sm text-muted font-normal' }, '(' + cookLog.length + ')')
+                  ),
+                  createElement('button', {
+                    onClick: function(){ if (!showCookForm) { setCDate(todayInputValue()); } setShowCookForm(!showCookForm); setErrorMsg(''); },
+                    className: 'text-sm font-bold text-orange-600'
+                  }, showCookForm ? 'Cancel' : '+ Log a meal')
+                ),
+                showCookForm && createElement('div', { className: 'card-bg rounded-xl p-4 mb-3 border-2 border-themed' },
+                  createElement('div', { className: 'grid grid-cols-2 gap-3 mb-2' },
+                    createElement('div', null,
+                      createElement('label', { style: { display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px', color: 'var(--text-secondary)' } }, 'Date cooked'),
+                      createElement('input', { type: 'date', className: 'w-full p-2 rounded-lg border', style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }, value: cDate, onChange: function(e){ setCDate(e.target.value); } })
+                    ),
+                    createElement('div', null,
+                      createElement('label', { style: { display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px', color: 'var(--text-secondary)' } }, 'Diners'),
+                      createElement('input', { type: 'number', min: 1, className: 'w-full p-2 rounded-lg border', style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }, value: cCount, onChange: function(e){ setCCount(e.target.value); }, placeholder: 'e.g. 4' })
+                    )
+                  ),
+                  createElement('textarea', {
+                    className: 'w-full p-2 rounded-lg border mb-3', rows: 2,
+                    style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                    value: cNotes, onChange: function(e){ setCNotes(e.target.value); },
+                    placeholder: 'Notes about this meal (occasion, tweaks, leftovers…)'
+                  }),
+                  createElement('button', {
+                    onClick: submitCook, disabled: savingCook,
+                    className: 'w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg disabled:opacity-50'
+                  }, savingCook ? 'Saving…' : 'Save Meal')
+                ),
+                cookLog.length === 0
+                  ? createElement('p', { className: 'text-muted text-sm' }, 'No meals logged yet. Tap “+ Log a meal” each time you make this dish.')
+                  : createElement('div', { className: 'flex flex-col gap-2' },
+                      cookLog.map(function(entry) {
+                        return createElement('div', {
+                          key: entry._id,
+                          className: 'card-bg rounded-lg p-3 border border-themed flex items-start gap-3'
+                        },
+                          createElement('div', { className: 'flex-1 min-w-0' },
+                            createElement('div', { className: 'font-semibold text-primary text-sm' },
+                              formatCookDate(entry.cookedOn) + (entry.dinerCount ? ' • ' + entry.dinerCount + (entry.dinerCount === 1 ? ' diner' : ' diners') : '')
+                            ),
+                            entry.notes && createElement('div', { className: 'text-secondary text-sm' }, entry.notes)
+                          ),
+                          createElement('button', { onClick: function(){ removeCook(entry._id); }, className: 'text-red-500 text-sm', title: 'Delete entry' }, '×')
                         );
                       })
                     )

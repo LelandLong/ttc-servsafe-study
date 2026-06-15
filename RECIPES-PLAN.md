@@ -1,6 +1,6 @@
 # Chef's Kitchen — Recipes Feature Plan
 
-**Status:** R1 + R2 + R8 + R9 shipped & verified; class filters shipped — R3–R7, R10–R11 planned
+**Status:** R1 + R2 + R8 + R9 + R10 shipped & verified; class filters shipped — R3–R7, R11 planned
 **Created:** June 11, 2026
 **Owner:** Leland Long
 
@@ -243,7 +243,7 @@ filters already distinguish them). **Editing a shared recipe must never change i
   recipeNotes       : { userId, recipeId, notes, updatedAt }   index by_user_recipe [userId, recipeId]
   ```
 
-**Phase R10 — Cook log (meal events: date · diner count · notes)** *(free)* — REQUESTED (06-15)
+**Phase R10 — Cook log (meal events: date · diner count · notes)** *(free)* ✅ DONE (06-15-2026-7)
 Capture each time a recipe is actually **put on a menu / cooked for a meal**, separate from the 1–10
 diner scores (which already exist and attach to the meal).
 - Below the diner ratings on a recipe, add **"Log a meal"**: a **date**, a **diner count**, and a

@@ -6,6 +6,15 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-15-2026-7] - June 15, 2026
+
+### Added
+- **Recipes — Phase R10: cook log.** A **🍴 Meals Cooked** section on each recipe lets you log every time you actually make the dish: **date cooked**, **diner count**, and **notes** — separate from the 1–10 diner ratings. Entries list newest-first with a running count in the header, and each can be deleted. Per-user (each person logs their own meals; works on shared/global recipes too). This is the data foundation for the planned R11 meal-planning history/analytics.
+  - Backend: new `recipeCookLog` table (`by_recipe`, `by_owner`) + `addCookLog` / `getCookLog` / `deleteCookLog` (owner-scoped, visible-recipe check). Deleting a recipe (or an admin global delete) cleans up its cook-log entries. Deployed to prod + dev.
+  - Verified with Playwright: logging a meal on a global recipe shows the entry (date • diners • notes) with count, and delete returns to empty; zero console errors.
+
+---
+
 ## [06-15-2026-6] - June 15, 2026
 
 ### Added
