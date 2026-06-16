@@ -6,6 +6,19 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-15-2026-15] - June 15, 2026
+
+### Changed
+- **Recipes — smarter search + a found-set count.** The recipe search is now **multi-word and prefix-based** instead of a single exact-substring match. The query is split into words and a recipe matches only if **every** word is the start of some word in its searchable text — so `poultry chick` finds a chicken recipe tagged *poultry* (order and adjacency no longer matter), and `cul-112 stock` works even though the tag is hyphenated. Search now also looks at **ingredients and description**, not just title + tags. (Previously, typing a tag plus a word from the title returned nothing.)
+- **Recipes — found / total count.** A live count sits under the search box: it reads `554 recipes` normally and `Showing 32 of 554 recipes` once a search or filter is applied — so you always know how much the current criteria matched.
+- **Recipes — Clear now clears everything.** The **Clear** link next to the filter chips now resets the **search box too** (not just the filter chips), and it appears whenever a search *or* a filter is active. Verified end-to-end in-browser: `poultry chick` → 32, `cul-112` → 261, `class-material` → 282, no-match shows the empty state, and Clear empties the search field — zero console errors.
+
+### Added
+- **Recipes — large library from imports.** The shared `rerun` library now holds **554 recipes**: 147 imported from Safari "Cooking" bookmarks (`from-bookmarks`, most with optimized cover images) and 122 from macOS Notes (`from-notes`). Bookmark recipes came in via deterministic `schema.org/Recipe` JSON-LD where available and hand-structured extraction otherwise (no paid API used).
+- **Recipes — CUL-112 reference photos.** The CUL-112 (*On Cooking*) reference recipes now show the **dish photos from the textbook**. Images were extracted from the source PDFs, each candidate visually QA'd to pick a finished/plated shot (rejecting process/"hands-in-a-bowl" steps), then attached to the existing global rows. **125 of 261** CUL-112 recipes got a cover; the rest are sauces, marinades, stocks, and component sub-recipes the textbook doesn't photograph. New backend mutation `recipes:setRecipeImages` (sets a recipe's `imageIds` only — allowed on globals, unlike `updateRecipe`).
+
+---
+
 ## [06-15-2026-14] - June 15, 2026
 
 ### Fixed

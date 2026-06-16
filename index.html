@@ -5068,10 +5068,28 @@
           });
         }
 
+        // Multi-word, prefix-based search. The query is split into words; a recipe
+        // matches only if EVERY query word is the start of some word in the recipe's
+        // searchable text (title + tags + description + ingredient names) — order and
+        // adjacency don't matter. So "poultry chick" finds a chicken recipe tagged
+        // poultry, and "cord" matches "Cordon". (Old behavior was a single exact
+        // substring match on title+tags, which failed on multi-word/out-of-order queries.)
+        // Split the query the SAME way as the haystack (on any non-alphanumeric run), so a
+        // hyphenated tag like "CUL-112" typed as "cul-112" becomes ["cul","112"] and still
+        // matches — otherwise the one-token "cul-112" would never equal the split words.
+        var queryTokens = q ? q.split(/[^a-z0-9]+/).filter(Boolean) : [];
+        function recipeWords(r) {
+          var parts = [r.title || '', recipeTags(r).join(' '), r.description || ''];
+          (r.ingredients || []).forEach(function(ing){ if (ing && ing.item) parts.push(ing.item); });
+          return parts.join(' ').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+        }
         var filtered = allRecipes.filter(function(r) {
-          if (q) {
-            var hay = (r.title + ' ' + recipeTags(r).join(' ')).toLowerCase();
-            if (hay.indexOf(q) === -1) return false;
+          if (queryTokens.length) {
+            var words = recipeWords(r);
+            var allTokensMatch = queryTokens.every(function(tok) {
+              return words.some(function(w){ return w.indexOf(tok) === 0; });
+            });
+            if (!allTokensMatch) return false;
           }
           if (activeKeys.length === 0) return true;       // no filter = show all
           return activeKeys.some(function(key){ return recipeMatchesFilter(r, key); });
@@ -5097,8 +5115,8 @@
               createElement('span', { style: { opacity: 0.7, fontWeight: 400 } }, '(' + o.count + ')')
             );
           }),
-          activeKeys.length > 0 && createElement('button', {
-            onClick: function(){ setActiveFilters({}); },
+          (activeKeys.length > 0 || queryTokens.length > 0) && createElement('button', {
+            onClick: function(){ setActiveFilters({}); setSearch(''); },
             className: 'text-sm underline', style: { color: 'var(--text-muted, #6b7280)' }
           }, 'Clear')
         );
@@ -5112,7 +5130,7 @@
                 className: 'flex-1 p-2 rounded-lg border',
                 style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
                 value: search, onChange: function(e){ setSearch(e.target.value); },
-                placeholder: '🔍 Search by title or tag'
+                placeholder: '🔍 Search title, tag or ingredient'
               }),
               createElement('button', { onClick: startAdd, className: 'bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 rounded-lg' }, '+ Add'),
               createElement('button', {
@@ -5121,6 +5139,14 @@
                 style: { borderColor: '#fdba74', color: '#ea580c' },
                 title: 'Import a recipe from a URL'
               }, '🔗')
+            ),
+            // Found-set / total count — reactive to the current search + filter chips.
+            recipes !== null && allRecipes.length > 0 && createElement('div', {
+              className: 'text-sm font-medium mb-3', style: { color: 'var(--text-muted, #6b7280)' }
+            },
+              (queryTokens.length || activeKeys.length > 0)
+                ? ('Showing ' + filtered.length + ' of ' + allRecipes.length + ' recipes')
+                : (allRecipes.length + (allRecipes.length === 1 ? ' recipe' : ' recipes'))
             ),
             // ---- URL import panel (R3) ----
             showImport && createElement('div', { className: 'card-bg rounded-xl p-4 mb-4 border-2 border-themed' },

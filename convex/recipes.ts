@@ -353,6 +353,19 @@ export const generateUploadUrl = mutation({
   },
 });
 
+// Set a recipe's cover image(s) directly. Used for batch image backfills (e.g. attaching
+// the CUL-112 "On Cooking" textbook photos to the existing global recipe rows). Unlike
+// updateRecipe, this is allowed on global recipes — it only touches imageIds, nothing else.
+export const setRecipeImages = mutation({
+  args: { recipeId: v.id("recipes"), imageIds: v.array(v.id("_storage")) },
+  handler: async (ctx, args) => {
+    const recipe = await ctx.db.get(args.recipeId);
+    if (!recipe) throw new Error("Recipe not found");
+    await ctx.db.patch(args.recipeId, { imageIds: args.imageIds, updatedAt: Date.now() });
+    return { recipeId: args.recipeId };
+  },
+});
+
 // ============ DINER SCORES (Phase R2) ============
 
 // Add a 1-10 rating to a recipe the user owns.
