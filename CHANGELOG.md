@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-16-2026-13] - June 16, 2026
+
+### Fixed
+- **Recipes — menu scaling no longer dead-ends on recipes that lack a serving size.** Most imported recipes don't state how many they serve, so "Cooking for N" had no base to scale them from and just showed a warning you couldn't act on without leaving the screen — making the headcount feature look broken. The grocery list's warning is now an **inline fixer**: it lists each recipe missing a serving size with a **"serves [ ]"** box right there — type how many it makes as written and it **rescales on the spot** (and remembers it on the recipe). Verified: a menu scaled to 5 with a no-serving-size recipe → set "serves 4" in the banner → warning clears and the list rescales, zero console errors. (Owned recipes only; a global recipe still says "Customize to set.")
+
+---
+
 ## [06-16-2026-12] - June 16, 2026
 
 ### Fixed

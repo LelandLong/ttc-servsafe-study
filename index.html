@@ -5142,11 +5142,32 @@
               createElement('p', { className: 'text-sm text-muted mb-3' },
                 needLines.length + ' to buy' + (haveCount ? ' • ' + haveCount + ' already have' : '') + (menuTarget ? ' • scaled for ' + menuTarget : '')),
               cookedMsg ? createElement('div', { className: 'mb-3 p-2 rounded-lg text-sm', style: { backgroundColor: 'rgba(22,163,74,0.12)', color: '#16a34a' } }, cookedMsg) : null,
-              // Warn when scaling can't apply to a recipe because it has no serving size.
+              // When scaling can't apply to a recipe (no serving size), let the user fix it
+              // RIGHT HERE: set how many it serves and it rescales on the spot.
               (function(){
                 var unscaled = menuTarget ? (gm.recipes || []).filter(function(r){ return !parseServingsBase(r.servings); }) : [];
-                return unscaled.length ? createElement('div', { className: 'mb-3 p-2 rounded-lg text-xs', style: { backgroundColor: 'rgba(234,179,8,0.15)', color: '#a16207' } },
-                  '⚠️ Not scaled (no serving size set): ' + unscaled.map(function(r){ return r.title; }).join(', ') + '. Set “serves” on the menu screen to scale these.') : null;
+                if (!unscaled.length) return null;
+                return createElement('div', { className: 'mb-3 p-3 rounded-lg text-sm', style: { backgroundColor: 'rgba(234,179,8,0.15)', color: '#a16207' } },
+                  createElement('div', { className: 'font-semibold mb-2' }, '⚠️ Set a serving size to scale these for ' + menuTarget + ':'),
+                  unscaled.map(function(r){
+                    return createElement('div', { key: r._id, className: 'flex items-center gap-2 mb-1' },
+                      createElement('span', { className: 'flex-1 min-w-0 truncate' }, r.title),
+                      createElement('span', null, 'serves'),
+                      r.isGlobal
+                        ? createElement('span', { className: 'italic' }, '(Customize recipe to set)')
+                        : createElement('input', {
+                            type: 'number', min: '1', inputMode: 'numeric',
+                            defaultValue: '',
+                            onBlur: function(e){ var n = parseInt(e.target.value, 10); if (n > 0) setRecipeBaseServings(r._id, n); },
+                            onKeyDown: function(e){ if (e.key === 'Enter') { var n = parseInt(e.target.value, 10); if (n > 0) setRecipeBaseServings(r._id, n); } },
+                            className: 'w-14 px-1 py-0.5 rounded border text-center',
+                            style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                            placeholder: '#'
+                          })
+                    );
+                  }),
+                  createElement('div', { className: 'text-xs mt-1', style: { opacity: 0.85 } }, 'e.g. if the recipe as written feeds 4, type 4 — we’ll scale it to ' + menuTarget + '.')
+                );
               })(),
               sections.length === 0
                 ? createElement('p', { className: 'text-muted text-center py-10' }, lines.length ? 'Everything’s checked as “have”. 🎉' : 'No ingredients found.')
