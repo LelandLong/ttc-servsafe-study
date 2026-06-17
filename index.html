@@ -4185,8 +4185,23 @@
       // ---- Meal planning: combine a menu's recipe ingredients into a grocery list ----
       // Merge key for an ingredient: lowercase, drop a trailing ", diced"/parenthetical,
       // and common prep words, so "onion, diced" + "1/2 onion" combine to one "onion" line.
+      // Some ingredients carry the amount inside the item text ("3 zucchini",
+      // "2 cloves garlic") with no structured qty. Pull a leading number (and an
+      // optional unit word) out so it can be scaled + combined like a real quantity.
+      var COUNT_UNITS = ['clove','cloves','can','cans','slice','slices','stick','sticks','sprig','sprigs','piece','pieces','head','heads','strip','strips','rib','ribs','package','packages','bag','bags','bunch','bunches','ear','ears','fillet','fillets','breast','breasts'];
+      function splitLeadingQty(text) {
+        var m = String(text || '').match(/^\s*(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)\s+(.*)$/);
+        if (!m) return null;
+        var rest = m[2];
+        var wm = rest.match(/^([A-Za-z]+)\.?\s+(.*)$/);
+        if (wm && (unitFamily(wm[1]) || COUNT_UNITS.indexOf(wm[1].toLowerCase()) >= 0)) {
+          return { qty: m[1], unit: wm[1], item: wm[2] };
+        }
+        return { qty: m[1], unit: '', item: rest };
+      }
       function normalizeItemKey(item) {
         var s = String(item || '').toLowerCase().trim();
+        s = s.replace(/^\s*(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)\s+/, ''); // drop a leading "3 ", "1/2 "
         s = s.split(',')[0].trim();
         s = s.replace(/\([^)]*\)/g, ' ');
         s = s.replace(/\b(fresh|dried|chopped|minced|sliced|diced|ground|grated|shredded|peeled|large|small|medium|ripe|to taste|as needed|optional|for serving|for garnish|plus more|softened|melted|room temperature|cold|warm|cooked|raw|boneless|skinless)\b/g, ' ');
@@ -4220,12 +4235,17 @@
             var isObj = ing && typeof ing === 'object';
             var item = isObj ? (ing.item || '') : String(ing || '');
             if (!item.trim()) return;
+            var qtyStr = isObj ? (ing.qty || '') : '';
+            var unit = isObj ? (ing.unit || '') : '';
+            // No structured qty? Try to recover one from the item text ("3 zucchini").
+            if (!String(qtyStr).trim()) {
+              var led = splitLeadingQty(item);
+              if (led) { qtyStr = led.qty; unit = led.unit; item = led.item; }
+            }
             var key = normalizeItemKey(item);
             if (!groups[key]) groups[key] = { display: titleCaseItem(key), vol: 0, wt: 0, mvol: 0, mwt: 0, counts: {}, raw: [], titles: {} };
             var g = groups[key];
             if (r.title) g.titles[r.title] = true;
-            var qtyStr = isObj ? (ing.qty || '') : '';
-            var unit = isObj ? (ing.unit || '') : '';
             var num = parseQtyNumber(qtyStr);
             var fam = unitFamily(unit), k = unitKey(unit);
             if (num != null && fam) { g[fam] += num * cf * FAM[fam][k]; }
@@ -4439,6 +4459,13 @@
           if (!activeMenu) return;
           setActiveMenu(Object.assign({}, activeMenu, { name: name })); // optimistic
           convexMutation('menus:updateMenu', { menuId: activeMenu._id, ownerId: user.userId, name: name });
+        }
+        // Set a recipe's base serving count (so the menu can scale it). Owned recipes only;
+        // updates the recipe itself. Reloads the menu so the grocery list rescales.
+        function setRecipeBaseServings(recipeId, n) {
+          convexMutation('recipes:updateRecipe', { recipeId: recipeId, ownerId: user.userId, servings: n ? String(n) : '' })
+            .then(reloadActiveMenu).then(function(){ loadRecipes(); })
+            .catch(function(err){ setErrorMsg('Could not set serving size: ' + err.message); });
         }
         function setMenuServings(n) {
           setMenuTarget(n);
@@ -5027,9 +5054,25 @@
                     m.recipes.map(function(r){
                       return createElement('div', { key: r._id, className: 'card-bg rounded-lg p-2 border border-themed flex gap-2 items-center' },
                         r.imageUrl ? createElement('img', { src: r.imageUrl, style: { width: '44px', height: '44px', objectFit: 'cover', borderRadius: '6px' } }) : createElement('div', { style: { width: '44px', height: '44px', borderRadius: '6px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '🍴'),
-                        createElement('button', { onClick: function(){ var full = (recipes || []).find(function(x){ return x._id === r._id; }); if (full) openDetail(full); }, className: 'flex-1 text-left min-w-0' },
-                          createElement('div', { className: 'font-semibold text-primary text-sm truncate' }, r.title),
-                          r.servings ? createElement('div', { className: 'text-xs text-muted' }, 'serves ' + r.servings) : null
+                        createElement('div', { className: 'flex-1 min-w-0' },
+                          createElement('button', { onClick: function(){ var full = (recipes || []).find(function(x){ return x._id === r._id; }); if (full) openDetail(full); }, className: 'text-left w-full' },
+                            createElement('div', { className: 'font-semibold text-primary text-sm truncate' }, r.title)
+                          ),
+                          // Editable base serving size — the scaler needs it. Owned recipes edit
+                          // in place; globals show read-only (Customize to change).
+                          createElement('div', { className: 'flex items-center gap-1 text-xs text-muted mt-0.5' },
+                            createElement('span', null, 'serves'),
+                            r.isGlobal
+                              ? createElement('span', { className: 'font-semibold' }, parseServingsBase(r.servings) || '—')
+                              : createElement('input', {
+                                  type: 'number', min: '1',
+                                  defaultValue: parseServingsBase(r.servings) || '',
+                                  onBlur: function(e){ var n = parseInt(e.target.value, 10); if (n > 0) setRecipeBaseServings(r._id, n); },
+                                  className: 'w-12 px-1 rounded border', style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                                  placeholder: '—', title: 'Base servings (needed to scale)'
+                                }),
+                            (menuTarget && !parseServingsBase(r.servings)) ? createElement('span', { style: { color: '#dc2626' } }, '• set to scale') : null
+                          )
                         ),
                         createElement('button', { onClick: function(){ removeRecipeFromMenu(r._id); }, className: 'text-red-500 px-2', title: 'Remove from menu' }, '×')
                       );
@@ -5081,6 +5124,12 @@
               createElement('p', { className: 'text-sm text-muted mb-3' },
                 needLines.length + ' to buy' + (haveCount ? ' • ' + haveCount + ' already have' : '') + (menuTarget ? ' • scaled for ' + menuTarget : '')),
               cookedMsg ? createElement('div', { className: 'mb-3 p-2 rounded-lg text-sm', style: { backgroundColor: 'rgba(22,163,74,0.12)', color: '#16a34a' } }, cookedMsg) : null,
+              // Warn when scaling can't apply to a recipe because it has no serving size.
+              (function(){
+                var unscaled = menuTarget ? (gm.recipes || []).filter(function(r){ return !parseServingsBase(r.servings); }) : [];
+                return unscaled.length ? createElement('div', { className: 'mb-3 p-2 rounded-lg text-xs', style: { backgroundColor: 'rgba(234,179,8,0.15)', color: '#a16207' } },
+                  '⚠️ Not scaled (no serving size set): ' + unscaled.map(function(r){ return r.title; }).join(', ') + '. Set “serves” on the menu screen to scale these.') : null;
+              })(),
               sections.length === 0
                 ? createElement('p', { className: 'text-muted text-center py-10' }, lines.length ? 'Everything’s checked as “have”. 🎉' : 'No ingredients found.')
                 : sections.map(function(s){

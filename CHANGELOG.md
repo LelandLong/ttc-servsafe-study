@@ -6,6 +6,16 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-16-2026-11] - June 16, 2026
+
+### Fixed
+- **Recipes — grocery list now scales ingredients whose amount is in the item text, and recipes with no serving size can be scaled.** Two issues made a recipe show "3 zucchini" even after scaling a menu up:
+  1. Some imported ingredients carry the amount inside the item text (`"3 zucchini, green and/or goldbar"`) with no structured qty — so there was no number to scale or combine. The grocery aggregator now **extracts a leading quantity (and unit) from the item text** when no structured qty exists, so "3 zucchini" scales and combines like a real amount (and "3 zucchini" + "2 zucchini" merge).
+  2. A recipe with **no serving size** has no base for the scaler, so the menu headcount couldn't apply. The menu screen now shows an **editable "serves N"** on each recipe (owned recipes save in place; globals are read-only) — set it and the menu scales that recipe. The grocery list also shows a **⚠️ "not scaled (no serving size set)"** note listing any such recipes.
+  - Verified: a recipe with no servings + `"3 zucchini"` in the item text, set to serves 1 in a menu scaled to 5 → garlic 2 clove → 10 clove, zucchini → 15, with the original amounts shown beside them.
+
+---
+
 ## [06-16-2026-10] - June 16, 2026
 
 ### Added
