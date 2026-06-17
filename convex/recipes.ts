@@ -16,13 +16,72 @@ const ingredientValidator = v.union(
   })
 );
 
-// Normalize a structured ingredient: lowercase the item, canonicalize the unit.
+// Normalize a structured ingredient → ALWAYS {qty?, unit?, item}. Critically, when no
+// structured qty is present it pulls a leading quantity (and unit) out of the item text,
+// so count-style lines like "3 zucchini" become {qty:"3", item:"zucchini"} and can scale —
+// instead of dumping the amount into the item with an empty qty (which broke scaling).
 function normalizeIngredient(ing: any) {
-  if (typeof ing === "string") return ing; // leave legacy strings as-is
-  const item = (ing.item || "").trim().toLowerCase();
-  const qty = ing.qty != null ? String(ing.qty).trim() : undefined;
-  const unit = canonicalUnit(ing.unit);
-  return { qty: qty || undefined, unit: unit || undefined, item };
+  let qty: string | undefined;
+  let unit: any;
+  let item: string;
+  if (typeof ing === "string") {
+    const p = splitQtyUnitItem(ing);
+    qty = p.qty; unit = p.unit; item = p.item;
+  } else {
+    item = ing.item || "";
+    qty = ing.qty != null && String(ing.qty).trim() ? String(ing.qty).trim() : undefined;
+    unit = ing.unit;
+    if (!qty) {
+      // qty field empty but the amount may be glued into the item text — recover it.
+      const p = splitQtyUnitItem(item);
+      if (p.qty) { qty = p.qty; if (!unit && p.unit) unit = p.unit; item = p.item; }
+    }
+  }
+  item = String(item || "").trim().toLowerCase();
+  let cu = canonicalUnit(unit);
+  // Consistency: every line carries a unit. A no-quantity seasoning ("salt and pepper
+  // to taste") → "TT"; a counted item with no measure unit ("3 zucchini") → "EA".
+  if (!qty && !cu && isToTaste(item)) { cu = "TT"; item = stripToTaste(item); }
+  if (qty && !cu) cu = "EA";
+  return { qty: qty || undefined, unit: cu || undefined, item };
+}
+
+// A line with no measured amount that's seasoned "to taste" (or is bare salt/pepper).
+function isToTaste(item: string): boolean {
+  const t = String(item).toLowerCase();
+  if (/\b(to taste|as needed|to season|for seasoning)\b/.test(t)) return true;
+  const bare = t.replace(/[,&.]/g, " ").replace(/\b(kosher|sea|fine|coarse|freshly|fresh|ground|black|white|and|of|a|pinch)\b/g, " ").replace(/\s+/g, " ").trim();
+  return bare === "salt" || bare === "pepper" || bare === "salt pepper" || bare === "pepper salt";
+}
+function stripToTaste(item: string): string {
+  const out = String(item).replace(/,?\s*\b(to taste|as needed|to season|for seasoning)\b/ig, "").replace(/\s+/g, " ").trim();
+  return out || item;
+}
+
+// Unicode fraction glyphs → ascii ("½"→"1/2", "1 ½"→"1 1/2") so they parse.
+const FRAC_GLYPH: Record<string, string> = { "½": "1/2", "¼": "1/4", "¾": "3/4", "⅓": "1/3", "⅔": "2/3", "⅛": "1/8", "⅜": "3/8", "⅝": "5/8", "⅞": "7/8", "⅙": "1/6", "⅚": "5/6" };
+function deglyphFractions(s: string): string {
+  return String(s)
+    .replace(/(\d)\s*([½¼¾⅓⅔⅛⅜⅝⅞⅙⅚])/g, (_m, d, g) => d + " " + FRAC_GLYPH[g])
+    .replace(/[½¼¾⅓⅔⅛⅜⅝⅞⅙⅚]/g, (g) => FRAC_GLYPH[g] || g);
+}
+function isUnitWord(w: string): boolean {
+  const lw = String(w).toLowerCase().replace(/\.$/, "");
+  if (UNIT_MAP[w] !== undefined || UNIT_MAP[lw] !== undefined) return true;
+  return ["sprig", "sprigs", "rib", "ribs", "package", "packages", "pkg", "bag", "bags", "head", "heads", "bunch", "bunches", "strip", "strips", "fillet", "fillets", "ear", "ears", "jar", "jars", "bottle", "bottles", "box", "boxes"].indexOf(lw) >= 0;
+}
+// Pull a leading quantity (+ optional unit word) out of an ingredient string.
+function splitQtyUnitItem(text: string): { qty?: string; unit?: string; item: string } {
+  const s = deglyphFractions(String(text || "").trim());
+  const qm = s.match(/^(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?(?:\s*[-–]\s*\d+(?:\/\d+)?(?:\.\d+)?)?)\s+(.*)$/);
+  if (!qm) return { item: s };
+  const qty = qm[1].replace(/\s*[-–]\s*/, "-").trim();
+  const rest = qm[2].trim();
+  const um = rest.match(/^([A-Za-z.]+)\.?\s+(.*)$/);
+  if (um && isUnitWord(um[1]) && um[2].trim()) {
+    return { qty, unit: um[1].replace(/\.$/, ""), item: um[2].trim() };
+  }
+  return { qty, item: rest };
 }
 
 // Canonical measurement abbreviations. Maps many spellings to one form.
@@ -44,7 +103,9 @@ const UNIT_MAP: Record<string, string> = {
   "pinch": "pinch", "dash": "dash", "clove": "clove", "cloves": "clove",
   "can": "can", "cans": "can", "stick": "stick", "sticks": "stick",
   "slice": "slice", "slices": "slice", "piece": "piece", "pieces": "piece",
-  "each": "each", "to taste": "to taste",
+  // Count items → EA, season-to-taste → TT (consistent units on every line).
+  "each": "EA", "ea": "EA",
+  "to taste": "TT", "tt": "TT", "as needed": "TT",
 };
 
 function canonicalUnit(u: any): string {
@@ -235,6 +296,37 @@ export const bulkCreateRecipes = mutation({
       count++;
     }
     return { count };
+  },
+});
+
+// One-time data repair: re-run the (now smarter) ingredient normalizer over EVERY recipe,
+// patching any whose ingredients change — fixes the legacy rows where the quantity was
+// stuck in the item text with an empty qty (so scaling failed). Idempotent; safe to re-run.
+// Processes up to `limit` recipes that still need fixing per call; returns how many remain.
+export const repairIngredients = mutation({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const limit = args.limit || 250;
+    const all = await ctx.db.query("recipes").collect();
+    // Order-independent signature so an already-normalized row compares equal.
+    const sig = (x: any) => typeof x === "string"
+      ? "s:" + x
+      : "o:" + (x.qty || "") + "|" + (x.unit || "") + "|" + (x.item || "");
+    let fixed = 0;
+    let needFixTotal = 0;
+    for (const r of all) {
+      const orig = r.ingredients || [];
+      const norm = orig.map(normalizeIngredient);
+      const changed = orig.length !== norm.length || orig.some((o: any, i: number) => sig(o) !== sig(norm[i]));
+      if (changed) {
+        needFixTotal++;
+        if (fixed < limit) {
+          await ctx.db.patch(r._id, { ingredients: norm });
+          fixed++;
+        }
+      }
+    }
+    return { totalRecipes: all.length, fixedThisCall: fixed, stillNeedFix: needFixTotal - fixed };
   },
 });
 

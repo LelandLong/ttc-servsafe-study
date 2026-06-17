@@ -4249,7 +4249,7 @@
             var num = parseQtyNumber(qtyStr);
             var fam = unitFamily(unit), k = unitKey(unit);
             if (num != null && fam) { g[fam] += num * cf * FAM[fam][k]; }
-            else if (num != null && unit) { var uk = unit.toLowerCase(); g.counts[uk] = (g.counts[uk] || 0) + num * cf; }
+            else if (num != null && unit) { var uk = unit; g.counts[uk] = (g.counts[uk] || 0) + num * cf; }
             else if (num != null) { g.counts[''] = (g.counts[''] || 0) + num * cf; }
             else { var rawTxt = ((qtyStr ? scaleQtyDisplay(qtyStr, cf) + ' ' : '') + (unit || '')).trim(); if (rawTxt) g.raw.push(rawTxt); }
           });
@@ -4366,7 +4366,7 @@
         const [ingredientCatalog, setIngredientCatalog] = useState([]); // global
 
         // Canonical measurement units offered in the unit dropdown.
-        var UNIT_OPTIONS = ['tsp','Tbsp','cup','oz','fl oz','lb','g','kg','ml','l','pt','qt','gal','pinch','dash','clove','can','stick','slice','piece','each','to taste'];
+        var UNIT_OPTIONS = ['tsp','Tbsp','cup','oz','fl oz','lb','g','kg','ml','l','pt','qt','gal','pinch','dash','clove','can','stick','slice','piece','EA','TT'];
 
         function loadSuggestions() {
           if (!user) return;
@@ -4563,16 +4563,34 @@
         useEffect(function() { loadRecipes(); loadSuggestions(); }, [user ? user.userId : null]);
 
         // Best-effort parse a legacy "2 lbs ground beef" string into {qty, unit, item}.
+        // Parse a string ingredient into {qty, unit, item}, matching the server normalizer:
+        // pull a leading quantity (+ unit) out of the text; count items with no measure unit
+        // get "EA"; no-quantity seasonings ("salt and pepper to taste") get "TT".
+        var FRAC_GLYPH_FE = { '½':'1/2','¼':'1/4','¾':'3/4','⅓':'1/3','⅔':'2/3','⅛':'1/8','⅜':'3/8','⅝':'5/8','⅞':'7/8','⅙':'1/6','⅚':'5/6' };
+        function deglyphFE(s) { return String(s).replace(/(\d)\s*([½¼¾⅓⅔⅛⅜⅝⅞⅙⅚])/g, function(_m,d,g){ return d+' '+FRAC_GLYPH_FE[g]; }).replace(/[½¼¾⅓⅔⅛⅜⅝⅞⅙⅚]/g, function(g){ return FRAC_GLYPH_FE[g]||g; }); }
+        var FE_UNIT_CANON = { teaspoon:'tsp',teaspoons:'tsp',t:'tsp',tsp:'tsp', tablespoon:'Tbsp',tablespoons:'Tbsp',tbl:'Tbsp',tbs:'Tbsp',tbsp:'Tbsp', cup:'cup',cups:'cup',c:'cup', oz:'oz',ounce:'oz',ounces:'oz', lb:'lb',lbs:'lb',pound:'lb',pounds:'lb', g:'g',gram:'g',grams:'g', kg:'kg', ml:'ml',milliliter:'ml',milliliters:'ml', l:'l',liter:'l',liters:'l', pt:'pt',pint:'pt',pints:'pt', qt:'qt',quart:'qt',quarts:'qt', gal:'gal',gallon:'gal',gallons:'gal', pinch:'pinch',dash:'dash', clove:'clove',cloves:'clove', can:'can',cans:'can', stick:'stick',sticks:'stick', slice:'slice',slices:'slice', piece:'piece',pieces:'piece', sprig:'sprig',sprigs:'sprig',rib:'rib',ribs:'rib',package:'package',packages:'package',bag:'bag',bags:'bag',head:'head',heads:'head',bunch:'bunch',bunches:'bunch',strip:'strip',strips:'strip',fillet:'fillet',fillets:'fillet', each:'EA',ea:'EA' };
+        function isToTasteFE(item) {
+          var t = String(item).toLowerCase();
+          if (/\b(to taste|as needed|to season|for seasoning)\b/.test(t)) return true;
+          var bare = t.replace(/[,&.]/g,' ').replace(/\b(kosher|sea|fine|coarse|freshly|fresh|ground|black|white|and|of|a|pinch)\b/g,' ').replace(/\s+/g,' ').trim();
+          return bare === 'salt' || bare === 'pepper' || bare === 'salt pepper' || bare === 'pepper salt';
+        }
+        function stripToTasteFE(item) { return String(item).replace(/,?\s*\b(to taste|as needed|to season|for seasoning)\b/ig,'').replace(/\s+/g,' ').trim() || item; }
         function parseLegacyIngredient(str) {
-          var s = String(str).trim();
-          var m = s.match(/^([\d\/.\-\s]+)?\s*([a-zA-Z]+)?\s+(.*)$/);
-          if (m && m[3]) {
-            var maybeUnit = (m[2] || '').toLowerCase();
-            var known = UNIT_OPTIONS.map(function(u){return u.toLowerCase();}).indexOf(maybeUnit) !== -1
-              || ['lbs','pounds','tbsp','tablespoon','teaspoon','cups','grams','ounce','ounces','cloves'].indexOf(maybeUnit) !== -1;
-            if (known) return { qty: (m[1]||'').trim(), unit: (m[2]||'').trim(), item: m[3].trim() };
+          var s = deglyphFE(String(str).trim());
+          var qm = s.match(/^(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?(?:\s*[-–]\s*\d+(?:\/\d+)?(?:\.\d+)?)?)\s+(.*)$/);
+          if (!qm) {
+            if (isToTasteFE(s)) return { qty: '', unit: 'TT', item: stripToTasteFE(s) };
+            return { qty: '', unit: '', item: s };
           }
-          return { qty: '', unit: '', item: s };
+          var qty = qm[1].replace(/\s*[-–]\s*/, '-').trim();
+          var rest = qm[2].trim();
+          var um = rest.match(/^([A-Za-z.]+)\.?\s+(.*)$/);
+          if (um && um[2].trim()) {
+            var canon = FE_UNIT_CANON[um[1].toLowerCase().replace(/\.$/, '')];
+            if (canon) return { qty: qty, unit: canon, item: um[2].trim() };
+          }
+          return { qty: qty, unit: 'EA', item: rest }; // counted item, no measure unit
         }
 
         // Convert stored ingredients (strings or {qty,unit,item}) to editable rows.

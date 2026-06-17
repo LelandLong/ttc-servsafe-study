@@ -6,6 +6,17 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-16-2026-12] - June 16, 2026
+
+### Fixed
+- **Recipes — ingredient quantities are now always structured (so scaling works everywhere), and existing data was repaired.** The importer/parser only pulled out a quantity when a *known unit* followed it, so count-style lines like `"3 zucchini"` (number, no unit) dumped the amount into the item text with an empty qty — meaning that ingredient never scaled, in the per-recipe scaler or the grocery list. Now **every quantity is parsed into the structured field** with a consistent unit on every line:
+  - A leading amount is pulled out of the item text even with no unit (`"3 zucchini"` → qty `3`). **Unicode fractions** (`½`, `1 ½`) and **ranges** (`6-8 oz`, `2-3`) are handled.
+  - **Counted items with no measure unit get `EA`** (`3 EA zucchini`); **no-quantity seasonings get `TT`** (to taste) — e.g. `"salt and pepper to taste"` and bare `"kosher salt"`. The unit dropdown now offers **EA**/**TT**.
+  - Fixed in the single server-side normalizer that **every** create/update/import passes through, and mirrored in the front-end editor parser so the review screen shows the same.
+- **Repaired all existing recipes.** A one-time migration (`recipes:repairIngredients`, idempotent) re-normalized every recipe — **282 recipes fixed** — so the hundreds already imported now scale correctly. Verified: the Keller zucchini recipe now reads `3 EA zucchini`, `6-8 oz canola oil`, `kosher salt → TT`, and scales properly.
+
+---
+
 ## [06-16-2026-11] - June 16, 2026
 
 ### Fixed
