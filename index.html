@@ -4428,7 +4428,9 @@
           setFPrep(r.prepMinutes != null ? String(r.prepMinutes) : '');
           setFCook(r.cookMinutes != null ? String(r.cookMinutes) : '');
           setFTags((r.tags || []).join(', '));
-          setFImageIds([]); setFImageUrls([]);
+          // URL imports may carry a cover image captured server-side (JSON-LD image / og:image).
+          if (r.imageStorageId) { setFImageIds([r.imageStorageId]); setFImageUrls([r.imageUrl || '']); }
+          else { setFImageIds([]); setFImageUrls([]); }
           setFSourceType(srcType); setFSourceUrl(srcUrl || '');
           setShowImport(false); setImportUrl(''); setPendingPages([]);
           setErrorMsg('');

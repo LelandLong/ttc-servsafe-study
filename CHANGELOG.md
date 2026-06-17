@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-16-2026-6] - June 16, 2026
+
+### Added
+- **Recipes — URL imports now capture the cover photo automatically.** URL import used to discard the page's image, leaving recipes photo-less. Now the import grabs the recipe image (`schema.org` JSON-LD `image`, falling back to `og:image`/`twitter:image`), **downloads and stores it server-side** (CORS-free, with the same Googlebot retry for blocked image CDNs), and pre-fills it as the cover in the review editor. Best-effort: if the page exposes no usable image (e.g. masterclass.com SSRs a broken `og:image` stub for non-JS clients) or the fetch is blocked, the recipe still imports without a cover and you can **📋 Paste** or "+ Photo" one in. Verified: budgetbytes (JSON-LD) now imports with its cover stored to Convex; masterclass degrades cleanly to no-cover. Deployed to prod + dev.
+
+---
+
 ## [06-16-2026-5] - June 16, 2026
 
 ### Added

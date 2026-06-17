@@ -918,9 +918,66 @@ async function fetchPageHtml(url: string): Promise<{ html?: string; error?: stri
   }
 }
 
+// Pull a usable cover-image URL from the page's social meta tags (og:image /
+// twitter:image), resolving protocol-relative + root-relative forms. Skips broken
+// placeholder values (some sites SSR a stub like content="h" for non-JS clients).
+function ogImage(html: string, baseUrl: string): string | null {
+  const metas = html.match(/<meta[^>]+>/gi) || [];
+  for (const tag of metas) {
+    if (!/(property|name)=["'](og:image(:secure_url)?|twitter:image(:src)?)["']/i.test(tag)) continue;
+    const m = tag.match(/content=["']([^"']+)["']/i);
+    if (!m) continue;
+    let u = decodeEntities(m[1]).trim();
+    if (u.length < 8) continue;
+    if (/^\/\//.test(u)) u = "https:" + u;
+    else if (/^\//.test(u)) { try { u = new URL(u, baseUrl).href; } catch (e) { continue; } }
+    if (/^https?:\/\//i.test(u)) return u;
+  }
+  return null;
+}
+
+// Fetch a remote image server-side (Googlebot retry for blocked CDNs) and store it in
+// Convex storage. Server-side avoids browser CORS entirely. Returns null on any failure
+// (caller keeps the recipe without a cover — the user can paste/upload one).
+async function fetchAndStoreImage(ctx: any, imageUrl: string): Promise<{ storageId: any; url: string } | null> {
+  try {
+    const doFetch = (ua: string) => fetch(imageUrl, {
+      headers: { "User-Agent": ua, "Accept": "image/avif,image/webp,image/*,*/*;q=0.8" },
+    });
+    let res = await doFetch(BROWSER_UA);
+    if (!res.ok && (res.status === 403 || res.status === 429 || res.status === 451 || res.status === 503)) {
+      res = await doFetch(GOOGLEBOT_UA);
+    }
+    if (!res.ok) return null;
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    if (ct && ct.indexOf("image/") !== 0) return null;
+    const blob = await res.blob();
+    if (!blob || blob.size < 200 || blob.size > 8_000_000) return null; // skip tracking pixels / oversized
+    const storageId = await ctx.storage.store(blob);
+    const url = await ctx.storage.getUrl(storageId);
+    if (!url) return null;
+    return { storageId, url };
+  } catch (e) {
+    return null;
+  }
+}
+
+// Best-effort: give an imported recipe a cover image from the page (JSON-LD image or
+// og:image), downloaded + stored server-side. Sets imageStorageId + a stored preview url.
+async function attachCoverImage(ctx: any, recipe: any, html: string): Promise<void> {
+  let imgUrl: string | null = null;
+  const fromRecipe = (recipe.imageUrl || "").trim();
+  if (/^\/\//.test(fromRecipe)) imgUrl = "https:" + fromRecipe;
+  else if (/^https?:\/\//i.test(fromRecipe)) imgUrl = fromRecipe;
+  if (!imgUrl) imgUrl = ogImage(html, recipe.sourceUrl || "");
+  if (!imgUrl) return;
+  const stored = await fetchAndStoreImage(ctx, imgUrl);
+  if (stored) { recipe.imageStorageId = stored.storageId; recipe.imageUrl = stored.url; }
+}
+
 export const importRecipeFromUrl = action({
   args: { url: v.string() },
-  handler: async (_ctx, args) => {
+  handler: async (ctx, args) => {
     const url = (args.url || "").trim();
     if (!/^https?:\/\//i.test(url)) {
       return { ok: false, error: "Please enter a full URL starting with http:// or https://" };
@@ -946,6 +1003,7 @@ export const importRecipeFromUrl = action({
           if (apiKey) {
             try { recipe.notes = await tipsOnlyExtract(htmlToText(html), apiKey); } catch (e) { /* keep core recipe */ }
           }
+          await attachCoverImage(ctx, recipe, html);
           return { ok: true, method: "json-ld", recipe };
         }
       }
@@ -958,6 +1016,7 @@ export const importRecipeFromUrl = action({
     }
     try {
       const recipe = await aiExtract(htmlToText(html), url, apiKey);
+      await attachCoverImage(ctx, recipe, html);
       return { ok: true, method: "ai", recipe };
     } catch (e: any) {
       return { ok: false, error: "AI import failed: " + (e.message || "unknown error") };
