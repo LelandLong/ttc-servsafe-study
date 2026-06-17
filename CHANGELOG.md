@@ -6,6 +6,20 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-17-2026-4] - June 17, 2026
+
+### Fixed
+- **Recipes — Back from a recipe returns to where you opened it.** Opening a recipe from inside a menu and hitting Back always dropped you on the recipe list, losing your place. The detail screen now **remembers its origin** (`detailFrom`): open a recipe from the list → Back goes to the list ("Back to recipes"); open it from a menu → Back goes to that menu ("Back to menu"). The label updates to match. Verified both paths in-app, zero console errors.
+
+---
+
+## [06-17-2026-3] - June 17, 2026
+
+### Fixed
+- **Recipes — tapping a recipe inside a menu now opens it.** On the menu detail screen, the recipe rows looked tappable but only opened the recipe if it happened to be in the already-loaded library list — otherwise the tap silently did nothing, forcing you to back out to "My Recipes" and find it by hand. The **whole row (cover + name) is now a button**, and a new `openRecipeById` helper opens the loaded copy when available, otherwise **fetches the full recipe from the server** — so it always works, including recipes not yet loaded. Verified in-app, zero console errors.
+
+---
+
 ## [06-17-2026-2] - June 17, 2026
 
 ### Added

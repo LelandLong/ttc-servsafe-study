@@ -4339,6 +4339,7 @@
         const [activeFilters, setActiveFilters] = useState({});
         const [view, setView] = useState('list');      // 'list' | 'detail' | 'edit'
         const [activeRecipe, setActiveRecipe] = useState(null);
+        const [detailFrom, setDetailFrom] = useState('list'); // where a recipe detail was opened from, so Back returns there
         const [saving, setSaving] = useState(false);
         const [errorMsg, setErrorMsg] = useState('');
 
@@ -4812,6 +4813,9 @@
         }
 
         function openDetail(r) {
+          // Remember where we came from (recipe list, a menu, the grocery list) so Back
+          // returns there instead of always dumping the user on the recipe list.
+          setDetailFrom((view === 'detail' || view === 'edit') ? detailFrom : view);
           setActiveRecipe(r);
           setShowRateForm(false);
           setScores([]);
@@ -4826,6 +4830,17 @@
           loadScores(r._id);
           loadCookLog(r._id);
           setView('detail');
+        }
+
+        // Open a recipe's detail by id. Menus carry only a lightweight recipe shape, so use
+        // the fully-decorated copy from the loaded library if present, otherwise fetch it —
+        // this way tapping a recipe in a menu always works (no silent dead-end).
+        function openRecipeById(id) {
+          var full = (recipes || []).find(function(x){ return x._id === id; });
+          if (full) { openDetail(full); return; }
+          convexQuery('recipes:getRecipe', { recipeId: id, ownerId: user.userId })
+            .then(function(rec){ if (rec) openDetail(rec); else setErrorMsg('Could not open that recipe — it may have been deleted.'); })
+            .catch(function(err){ setErrorMsg('Could not open recipe: ' + err.message); });
         }
 
         function saveNote() {
@@ -5017,10 +5032,11 @@
                   if (view === 'list') { onBack(); }
                   else if (view === 'grocery') { setView('menu'); }
                   else if (view === 'menu') { openMenus(); }
+                  else if (view === 'detail') { setView(detailFrom); }
                   else { setView('list'); }
                 },
                 className: 'text-white/90 hover:text-white text-sm font-medium'
-              }, '← ' + (view === 'list' ? 'Back to courses' : view === 'grocery' ? 'Back to menu' : view === 'menu' ? 'Back to menus' : view === 'menus' ? 'Back to recipes' : 'Back to recipes')),
+              }, '← ' + (view === 'list' ? 'Back to courses' : view === 'grocery' ? 'Back to menu' : view === 'menu' ? 'Back to menus' : view === 'detail' ? (detailFrom === 'menu' ? 'Back to menu' : detailFrom === 'grocery' ? 'Back to grocery list' : 'Back to recipes') : 'Back to recipes')),
               createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION)
             ),
             createElement('div', { className: 'text-center' },
@@ -5106,24 +5122,25 @@
                 : createElement('div', { className: 'flex flex-col gap-2 mb-4' },
                     m.recipes.map(function(r){
                       return createElement('div', { key: r._id, className: 'card-bg rounded-lg p-2 border border-themed flex gap-2 items-center' },
-                        r.imageUrl ? createElement('img', { src: r.imageUrl, style: { width: '44px', height: '44px', objectFit: 'cover', borderRadius: '6px' } }) : createElement('div', { style: { width: '44px', height: '44px', borderRadius: '6px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '🍴'),
-                        createElement('div', { className: 'flex-1 min-w-0' },
-                          createElement('button', { onClick: function(){ var full = (recipes || []).find(function(x){ return x._id === r._id; }); if (full) openDetail(full); }, className: 'text-left w-full' },
-                            createElement('div', { className: 'font-semibold text-primary text-sm truncate' }, r.title)
-                          ),
-                          // Read-only serving info. A recipe's serving size belongs to the
-                          // recipe (edit it on the recipe screen) — a menu never changes it.
-                          // Portion-count recipes scale to the menu headcount; volume yields
-                          // and no-serving recipes show at single batch.
-                          (function(){
-                            var hb = parseHeadcountBase(r.servings);
-                            var txt, warn = false;
-                            if (hb != null) { txt = 'serves ' + decimalToNice(hb) + (menuTarget ? ' → scales to ' + menuTarget : ''); }
-                            else if (r.servings && r.servings.trim()) { txt = 'makes ' + r.servings.trim(); warn = !!menuTarget; }
-                            else { txt = 'no serving size'; warn = !!menuTarget; }
-                            return createElement('div', { className: 'text-xs mt-0.5', style: { color: warn ? '#a16207' : 'var(--text-muted,#6b7280)' } },
-                              (warn ? '⚠️ ' : '') + txt + (warn ? ' • single batch (not scaled)' : ''));
-                          })()
+                        // Whole row (image + name) taps through to the recipe — no dead-ends.
+                        createElement('button', { onClick: function(){ openRecipeById(r._id); }, className: 'flex gap-2 items-center flex-1 min-w-0 text-left', title: 'View recipe' },
+                          r.imageUrl ? createElement('img', { src: r.imageUrl, style: { width: '44px', height: '44px', objectFit: 'cover', borderRadius: '6px' } }) : createElement('div', { style: { width: '44px', height: '44px', borderRadius: '6px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '🍴'),
+                          createElement('div', { className: 'flex-1 min-w-0' },
+                            createElement('div', { className: 'font-semibold text-primary text-sm truncate' }, r.title),
+                            // Read-only serving info. A recipe's serving size belongs to the
+                            // recipe (edit it on the recipe screen) — a menu never changes it.
+                            // Portion-count recipes scale to the menu headcount; volume yields
+                            // and no-serving recipes show at single batch.
+                            (function(){
+                              var hb = parseHeadcountBase(r.servings);
+                              var txt, warn = false;
+                              if (hb != null) { txt = 'serves ' + decimalToNice(hb) + (menuTarget ? ' → scales to ' + menuTarget : ''); }
+                              else if (r.servings && r.servings.trim()) { txt = 'makes ' + r.servings.trim(); warn = !!menuTarget; }
+                              else { txt = 'no serving size'; warn = !!menuTarget; }
+                              return createElement('div', { className: 'text-xs mt-0.5', style: { color: warn ? '#a16207' : 'var(--text-muted,#6b7280)' } },
+                                (warn ? '⚠️ ' : '') + txt + (warn ? ' • single batch (not scaled)' : ''));
+                            })()
+                          )
                         ),
                         createElement('button', { onClick: function(){ removeRecipeFromMenu(r._id); }, className: 'text-red-500 px-2', title: 'Remove from menu' }, '×')
                       );
