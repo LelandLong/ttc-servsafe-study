@@ -4182,6 +4182,73 @@
         return { qty: decimalToNice(scaled), unit: u }; // count units (clove, each, pinch…) — scale only
       }
 
+      // ---- Meal planning: combine a menu's recipe ingredients into a grocery list ----
+      // Merge key for an ingredient: lowercase, drop a trailing ", diced"/parenthetical,
+      // and common prep words, so "onion, diced" + "1/2 onion" combine to one "onion" line.
+      function normalizeItemKey(item) {
+        var s = String(item || '').toLowerCase().trim();
+        s = s.split(',')[0].trim();
+        s = s.replace(/\([^)]*\)/g, ' ');
+        s = s.replace(/\b(fresh|dried|chopped|minced|sliced|diced|ground|grated|shredded|peeled|large|small|medium|ripe|to taste|as needed|optional|for serving|for garnish|plus more|softened|melted|room temperature|cold|warm|cooked|raw|boneless|skinless)\b/g, ' ');
+        s = s.replace(/\s+/g, ' ').trim();
+        return s || String(item || '').toLowerCase().trim();
+      }
+      function titleCaseItem(s) { return String(s || '').replace(/\b\w/g, function(c){ return c.toUpperCase(); }); }
+      var GROCERY_SECTIONS = ['Produce', 'Meat', 'Seafood', 'Dairy & Eggs', 'Bakery & Dry Goods', 'Spices & Seasonings', 'Canned & Condiments', 'Beverages', 'Frozen', 'Other'];
+      function groceryAisle(key) {
+        function has(words) { return words.some(function(w){ return key.indexOf(w) >= 0; }); }
+        if (has(['lettuce','spinach','kale','arugula','tomato','onion','garlic','pepper','carrot','celery','potato','zucchini','squash','cucumber','avocado','lemon','lime','orange','apple','pear','mango','berry','strawberr','blueberr','parsley','cilantro','basil','thyme','rosemary','sage','mint','dill','mushroom','broccoli','cauliflower','cabbage','scallion','green onion','ginger','shallot','leek','corn','eggplant','asparagus','bean sprout','herb','jalapeno','jalapeño','chile','chili pepper'])) return 'Produce';
+        if (has(['fish','salmon','shrimp','scallop','crab','tuna','tilapia','catfish','cod','halibut','snapper','seafood','clam','oyster','lobster','mussel','calamari','squid','anchov'])) return 'Seafood';
+        if (has(['chicken','beef','pork','turkey','lamb','sausage','bacon','ham ','steak','ground meat','ground beef','ground pork','veal','duck','brisket','andouille','chorizo','meatball','hock','rib'])) return 'Meat';
+        if (has(['milk','cream','butter','cheese','yogurt','egg','parmesan','mozzarella','cheddar','gruyere','ricotta','feta','provolone','buttermilk'])) return 'Dairy & Eggs';
+        if (has(['salt','pepper','paprika','cumin','cinnamon','nutmeg','oregano','cayenne','seasoning','bay leaf','chili powder','garlic powder','onion powder','allspice','clove','coriander','turmeric','spice','vanilla'])) return 'Spices & Seasonings';
+        if (has(['flour','sugar','rice','pasta','spaghetti','noodle','bread','breadcrumb','panko','oil','vinegar','baking powder','baking soda','yeast','cornmeal','cornstarch','oat','quinoa','bisquick','molasses','cocoa'])) return 'Bakery & Dry Goods';
+        if (has(['broth','stock','sauce','tomato paste','beans','chickpea','hominy','coconut milk','soy sauce','ketchup','mustard','mayonnaise','jam','jelly','honey','syrup','salsa','enchilada','adobo','chipotle','olive','caper','peanut butter','can '])) return 'Canned & Condiments';
+        if (has(['wine','beer','brandy','vodka','rum','whiskey','liquor','juice','soda','sparkling','water','cola'])) return 'Beverages';
+        if (has(['frozen','ice cream'])) return 'Frozen';
+        return 'Other';
+      }
+      // Build the combined, scaled grocery list for a set of menu recipes.
+      // targetServings (optional): scale every recipe to that headcount.
+      function combineMenuGroceries(recipes, targetServings) {
+        var FAM = { vol: VOL_TSP, wt: WT_OZ, mvol: MVOL_ML, mwt: MWT_G };
+        var groups = {};
+        (recipes || []).forEach(function(r) {
+          var base = parseServingsBase(r.servings);
+          var cf = (targetServings && base) ? (targetServings / base) : 1;
+          (r.ingredients || []).forEach(function(ing) {
+            var isObj = ing && typeof ing === 'object';
+            var item = isObj ? (ing.item || '') : String(ing || '');
+            if (!item.trim()) return;
+            var key = normalizeItemKey(item);
+            if (!groups[key]) groups[key] = { display: titleCaseItem(key), vol: 0, wt: 0, mvol: 0, mwt: 0, counts: {}, raw: [], titles: {} };
+            var g = groups[key];
+            if (r.title) g.titles[r.title] = true;
+            var qtyStr = isObj ? (ing.qty || '') : '';
+            var unit = isObj ? (ing.unit || '') : '';
+            var num = parseQtyNumber(qtyStr);
+            var fam = unitFamily(unit), k = unitKey(unit);
+            if (num != null && fam) { g[fam] += num * cf * FAM[fam][k]; }
+            else if (num != null && unit) { var uk = unit.toLowerCase(); g.counts[uk] = (g.counts[uk] || 0) + num * cf; }
+            else if (num != null) { g.counts[''] = (g.counts[''] || 0) + num * cf; }
+            else { var rawTxt = ((qtyStr ? scaleQtyDisplay(qtyStr, cf) + ' ' : '') + (unit || '')).trim(); if (rawTxt) g.raw.push(rawTxt); }
+          });
+        });
+        return Object.keys(groups).map(function(key) {
+          var g = groups[key], parts = [];
+          if (g.vol > 0) parts.push(renderVolume(g.vol));
+          if (g.wt > 0) parts.push(renderWeight(g.wt));
+          if (g.mvol > 0) parts.push(renderMetricVol(g.mvol));
+          if (g.mwt > 0) parts.push(renderMetricWt(g.mwt));
+          Object.keys(g.counts).forEach(function(u) { parts.push(decimalToNice(g.counts[u]) + (u ? ' ' + u : '')); });
+          g.raw.forEach(function(rt) { if (parts.indexOf(rt) === -1) parts.push(rt); });
+          return { itemKey: key, display: g.display, qtyText: parts.join(' + '), titles: Object.keys(g.titles), section: groceryAisle(key) };
+        }).sort(function(a, b) {
+          var sa = GROCERY_SECTIONS.indexOf(a.section), sb = GROCERY_SECTIONS.indexOf(b.section);
+          return (sa - sb) || a.display.localeCompare(b.display);
+        });
+      }
+
       // ---- Cook-log date helpers (R10) ----
       function todayInputValue() {
         var d = new Date();
@@ -4264,6 +4331,16 @@
         const [cNotes, setCNotes] = useState('');
         const [savingCook, setSavingCook] = useState(false);
 
+        // ---- Meal planning (menus + grocery) ----
+        const [menus, setMenus] = useState(null);          // null = unloaded
+        const [activeMenu, setActiveMenu] = useState(null); // loaded menu w/ recipes
+        const [menuTarget, setMenuTarget] = useState(null); // headcount scaler for the active menu
+        const [groceryState, setGroceryState] = useState({}); // itemKey -> {have, checkedOff, note}
+        const [showAddToMenu, setShowAddToMenu] = useState(false); // add-to-menu picker open (on a recipe)
+        const [newMenuName, setNewMenuName] = useState('');
+        const [menuBusy, setMenuBusy] = useState(false);
+        const [cookedMsg, setCookedMsg] = useState('');
+
         // Type-ahead suggestion data
         const [dinerNames, setDinerNames] = useState([]);       // per-user, from past ratings
         const [ingredientCatalog, setIngredientCatalog] = useState([]); // global
@@ -4316,6 +4393,101 @@
           convexMutation('recipes:deleteCookLog', { logId: logId, ownerId: user.userId })
             .then(function() { loadCookLog(activeRecipe._id); })
             .catch(function(err) { setErrorMsg('Could not delete entry: ' + err.message); });
+        }
+
+        // ---- Meal planning actions ----
+        function loadMenus() {
+          if (!user) { setMenus([]); return; }
+          convexQuery('menus:getMyMenus', { ownerId: user.userId })
+            .then(function(list){ setMenus(list || []); })
+            .catch(function(err){ setErrorMsg('Could not load menus: ' + err.message); });
+        }
+        function openMenus() { setCookedMsg(''); loadMenus(); setView('menus'); }
+        function openMenu(menuId) {
+          setCookedMsg(''); setErrorMsg('');
+          convexQuery('menus:getMenu', { menuId: menuId, ownerId: user.userId })
+            .then(function(m){
+              setActiveMenu(m);
+              setMenuTarget(m && m.servings ? m.servings : null);
+              setView('menu');
+            })
+            .catch(function(err){ setErrorMsg('Could not open menu: ' + err.message); });
+        }
+        function reloadActiveMenu() {
+          if (!activeMenu) return Promise.resolve();
+          return convexQuery('menus:getMenu', { menuId: activeMenu._id, ownerId: user.userId })
+            .then(function(m){ setActiveMenu(m); });
+        }
+        function createMenuWith(recipeId) {
+          var name = (newMenuName || '').trim() || 'New menu';
+          setMenuBusy(true);
+          return convexMutation('menus:createMenu', { ownerId: user.userId, name: name, recipeId: recipeId })
+            .then(function(res){ setMenuBusy(false); setNewMenuName(''); return res.menuId; })
+            .catch(function(err){ setMenuBusy(false); setErrorMsg('Could not create menu: ' + err.message); });
+        }
+        function addRecipeToMenu(menuId, recipeId) {
+          return convexMutation('menus:addRecipeToMenu', { menuId: menuId, ownerId: user.userId, recipeId: recipeId })
+            .catch(function(err){ setErrorMsg('Could not add to menu: ' + err.message); });
+        }
+        function removeRecipeFromMenu(recipeId) {
+          if (!activeMenu) return;
+          convexMutation('menus:removeRecipeFromMenu', { menuId: activeMenu._id, ownerId: user.userId, recipeId: recipeId })
+            .then(reloadActiveMenu)
+            .catch(function(err){ setErrorMsg('Could not remove: ' + err.message); });
+        }
+        function renameMenu(name) {
+          if (!activeMenu) return;
+          setActiveMenu(Object.assign({}, activeMenu, { name: name })); // optimistic
+          convexMutation('menus:updateMenu', { menuId: activeMenu._id, ownerId: user.userId, name: name });
+        }
+        function setMenuServings(n) {
+          setMenuTarget(n);
+          if (activeMenu) convexMutation('menus:updateMenu', { menuId: activeMenu._id, ownerId: user.userId, servings: n || 0 });
+        }
+        function deleteMenu() {
+          if (!activeMenu) return;
+          if (!window.confirm('Delete menu "' + activeMenu.name + '"? (Your recipes are not affected.)')) return;
+          convexMutation('menus:deleteMenu', { menuId: activeMenu._id, ownerId: user.userId })
+            .then(function(){ setActiveMenu(null); openMenus(); })
+            .catch(function(err){ setErrorMsg('Could not delete menu: ' + err.message); });
+        }
+        // One-tap "I cooked this": log every recipe in the menu to the cook log.
+        function cookedWholeMenu() {
+          if (!activeMenu || !activeMenu.recipes || !activeMenu.recipes.length) return;
+          setMenuBusy(true); setCookedMsg('');
+          var when = dateInputToMillis(todayInputValue());
+          var diners = menuTarget || (activeMenu.servings || undefined);
+          Promise.all(activeMenu.recipes.map(function(r){
+            return convexMutation('recipes:addCookLog', { recipeId: r._id, ownerId: user.userId, cookedOn: when, dinerCount: diners ? Number(diners) : undefined, notes: 'Cooked for menu: ' + activeMenu.name });
+          })).then(function(){ setMenuBusy(false); setCookedMsg('Logged ' + activeMenu.recipes.length + ' dishes to your cook log. 🍴'); })
+            .catch(function(err){ setMenuBusy(false); setErrorMsg('Could not log meals: ' + err.message); });
+        }
+        // ---- Grocery list ----
+        function groceryListKey() { return activeMenu ? ('menu:' + activeMenu._id) : ''; }
+        function loadGroceryState() {
+          if (!activeMenu) return;
+          convexQuery('menus:getGroceryState', { ownerId: user.userId, listKey: groceryListKey() })
+            .then(function(rows){
+              var map = {};
+              (rows || []).forEach(function(r){ map[r.itemKey] = { have: r.have, checkedOff: r.checkedOff, note: r.note }; });
+              setGroceryState(map);
+            })
+            .catch(function(err){ setErrorMsg('Could not load grocery state: ' + err.message); });
+        }
+        function openGrocery() { setView('grocery'); loadGroceryState(); }
+        function setGrocery(itemKey, patch) {
+          setGroceryState(function(prev){
+            var next = Object.assign({}, prev);
+            next[itemKey] = Object.assign({ have: false, checkedOff: false, note: '' }, prev[itemKey] || {}, patch);
+            return next;
+          });
+          convexMutation('menus:setGroceryItem', Object.assign({ ownerId: user.userId, listKey: groceryListKey(), itemKey: itemKey }, patch))
+            .catch(function(err){ setErrorMsg('Could not save: ' + err.message); });
+        }
+        function clearGroceryChecks() {
+          convexMutation('menus:clearGroceryChecks', { ownerId: user.userId, listKey: groceryListKey() })
+            .then(loadGroceryState)
+            .catch(function(err){ setErrorMsg('Could not clear checks: ' + err.message); });
         }
 
         function submitScore() {
@@ -4759,9 +4931,15 @@
             // avatar (top-right), so they sit side-by-side instead of overlapping.
             createElement('div', { className: 'flex justify-between items-center', style: { paddingRight: '3.5rem' } },
               createElement('button', {
-                onClick: function() { if (view === 'list') { onBack(); } else { setView('list'); setErrorMsg(''); } },
+                onClick: function() {
+                  setErrorMsg('');
+                  if (view === 'list') { onBack(); }
+                  else if (view === 'grocery') { setView('menu'); }
+                  else if (view === 'menu') { openMenus(); }
+                  else { setView('list'); }
+                },
                 className: 'text-white/90 hover:text-white text-sm font-medium'
-              }, '← ' + (view === 'list' ? 'Back to courses' : 'Back to recipes')),
+              }, '← ' + (view === 'list' ? 'Back to courses' : view === 'grocery' ? 'Back to menu' : view === 'menu' ? 'Back to menus' : view === 'menus' ? 'Back to recipes' : 'Back to recipes')),
               createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION)
             ),
             createElement('div', { className: 'text-center' },
@@ -4776,6 +4954,171 @@
           className: 'mb-4 p-3 rounded-lg text-sm',
           style: { backgroundColor: 'rgba(220,38,38,0.1)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.3)' }
         }, errorMsg) : null;
+
+        var mpBtn = 'w-full sm:w-auto px-4 py-2 rounded-lg font-bold text-sm';
+        // ---- MENUS LIST ----
+        if (view === 'menus') {
+          return createElement('div', { className: 'min-h-screen' }, headerEl,
+            createElement('main', { className: 'max-w-2xl mx-auto p-6' },
+              errorEl,
+              createElement('div', { className: 'flex items-center justify-between mb-4' },
+                createElement('h2', { className: 'text-xl font-bold text-primary' }, '🍽️ My Menus'),
+                createElement('button', {
+                  onClick: function(){ createMenuWith(null).then(function(id){ if (id) openMenu(id); }); },
+                  className: 'bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-lg'
+                }, '+ New menu')
+              ),
+              createElement('p', { className: 'text-sm text-muted mb-4' }, 'Plan a meal: collect recipes into a menu, then get a combined grocery list and prep plan.'),
+              menus === null
+                ? createElement('p', { className: 'text-muted text-center py-10' }, 'Loading…')
+                : (menus.length === 0
+                    ? createElement('div', { className: 'text-center py-12' },
+                        createElement('div', { className: 'text-5xl mb-3' }, '🍽️'),
+                        createElement('p', { className: 'text-secondary mb-1' }, 'No menus yet.'),
+                        createElement('p', { className: 'text-muted text-sm' }, 'Tap “+ New menu”, or open a recipe and “Add to a menu”.'))
+                    : createElement('div', { className: 'grid grid-cols-1 gap-3' },
+                        menus.map(function(m){
+                          return createElement('button', {
+                            key: m._id, onClick: function(){ openMenu(m._id); },
+                            className: 'mode-card card-bg rounded-xl p-3 border-2 border-themed text-left flex gap-3 items-center hover:border-orange-300'
+                          },
+                            m.cover
+                              ? createElement('img', { src: m.cover, style: { width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px' } })
+                              : createElement('div', { style: { width: '56px', height: '56px', borderRadius: '8px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem' } }, '🍽️'),
+                            createElement('div', { className: 'flex-1 min-w-0' },
+                              createElement('div', { className: 'font-bold text-primary' }, m.name),
+                              createElement('div', { className: 'text-sm text-muted' },
+                                m.recipeCount + (m.recipeCount === 1 ? ' recipe' : ' recipes') + (m.servings ? ' • for ' + m.servings : '') + (m.plannedDate ? ' • ' + m.plannedDate : ''))
+                            ),
+                            createElement('span', { className: 'text-muted' }, '›')
+                          );
+                        })))
+            )
+          );
+        }
+
+        // ---- MENU DETAIL ----
+        if (view === 'menu' && activeMenu) {
+          var m = activeMenu;
+          return createElement('div', { className: 'min-h-screen' }, headerEl,
+            createElement('main', { className: 'max-w-2xl mx-auto p-6' },
+              errorEl,
+              createElement('input', {
+                className: 'w-full text-xl font-bold p-2 rounded-lg border mb-3',
+                style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                value: m.name, onChange: function(e){ renameMenu(e.target.value); }, placeholder: 'Menu name'
+              }),
+              // headcount scaler
+              createElement('div', { className: 'flex items-center gap-2 mb-4 text-sm' },
+                createElement('span', { className: 'text-secondary font-semibold' }, '👥 Cooking for'),
+                createElement('button', { onClick: function(){ setMenuServings(Math.max(1, (menuTarget || 4) - 1)); }, className: 'px-2 py-0.5 rounded border font-bold', style: { borderColor: 'var(--border-color)', color: 'var(--text-primary)' } }, '−'),
+                createElement('span', { className: 'font-bold text-primary', style: { minWidth: '2rem', textAlign: 'center' } }, menuTarget || '—'),
+                createElement('button', { onClick: function(){ setMenuServings((menuTarget || 0) + 1); }, className: 'px-2 py-0.5 rounded border font-bold', style: { borderColor: 'var(--border-color)', color: 'var(--text-primary)' } }, '+'),
+                createElement('span', { className: 'text-muted' }, 'people'),
+                menuTarget ? createElement('button', { onClick: function(){ setMenuServings(0); }, className: 'underline ml-1', style: { color: 'var(--text-muted,#6b7280)' } }, 'clear') : null
+              ),
+              cookedMsg ? createElement('div', { className: 'mb-3 p-2 rounded-lg text-sm', style: { backgroundColor: 'rgba(22,163,74,0.12)', color: '#16a34a' } }, cookedMsg) : null,
+              // recipes in this menu
+              createElement('h3', { className: 'text-lg font-bold text-primary mb-2' }, 'Recipes (' + (m.recipes ? m.recipes.length : 0) + ')'),
+              (!m.recipes || m.recipes.length === 0)
+                ? createElement('p', { className: 'text-muted text-sm mb-3' }, 'No recipes yet — open a recipe and tap “Add to a menu”.')
+                : createElement('div', { className: 'flex flex-col gap-2 mb-4' },
+                    m.recipes.map(function(r){
+                      return createElement('div', { key: r._id, className: 'card-bg rounded-lg p-2 border border-themed flex gap-2 items-center' },
+                        r.imageUrl ? createElement('img', { src: r.imageUrl, style: { width: '44px', height: '44px', objectFit: 'cover', borderRadius: '6px' } }) : createElement('div', { style: { width: '44px', height: '44px', borderRadius: '6px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '🍴'),
+                        createElement('button', { onClick: function(){ var full = (recipes || []).find(function(x){ return x._id === r._id; }); if (full) openDetail(full); }, className: 'flex-1 text-left min-w-0' },
+                          createElement('div', { className: 'font-semibold text-primary text-sm truncate' }, r.title),
+                          r.servings ? createElement('div', { className: 'text-xs text-muted' }, 'serves ' + r.servings) : null
+                        ),
+                        createElement('button', { onClick: function(){ removeRecipeFromMenu(r._id); }, className: 'text-red-500 px-2', title: 'Remove from menu' }, '×')
+                      );
+                    })),
+              // actions
+              createElement('div', { className: 'grid grid-cols-1 gap-2 mb-3' },
+                createElement('button', { onClick: openGrocery, disabled: !m.recipes || !m.recipes.length, className: 'bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl disabled:opacity-50' }, '🛒 Grocery list'),
+                createElement('button', { onClick: cookedWholeMenu, disabled: menuBusy || !m.recipes || !m.recipes.length, className: 'py-3 rounded-xl border-2 border-themed text-primary font-bold disabled:opacity-50' }, menuBusy ? 'Logging…' : '🍴 I cooked this'),
+                createElement('button', { onClick: deleteMenu, className: 'py-2 rounded-xl border-2 border-red-300 text-red-600 text-sm' }, 'Delete menu')
+              )
+            )
+          );
+        }
+
+        // ---- GROCERY LIST ----
+        if (view === 'grocery' && activeMenu) {
+          var gm = activeMenu;
+          var lines = combineMenuGroceries(gm.recipes || [], menuTarget);
+          var needLines = lines.filter(function(l){ var st = groceryState[l.itemKey] || {}; return !st.have; });
+          var bySection = {};
+          needLines.forEach(function(l){ (bySection[l.section] = bySection[l.section] || []).push(l); });
+          var sections = GROCERY_SECTIONS.filter(function(s){ return bySection[s] && bySection[s].length; });
+          var haveCount = lines.length - needLines.length;
+          function shareText() {
+            var out = ['Grocery list — ' + gm.name + (menuTarget ? ' (for ' + menuTarget + ')' : ''), ''];
+            sections.forEach(function(s){
+              out.push(s.toUpperCase());
+              bySection[s].forEach(function(l){ var st = groceryState[l.itemKey] || {}; out.push('- ' + l.display + (l.qtyText ? ': ' + l.qtyText : '') + (st.note ? '  (' + st.note + ')' : '')); });
+              out.push('');
+            });
+            return out.join('\n').trim();
+          }
+          function doShare() {
+            var txt = shareText();
+            if (navigator.share) { navigator.share({ title: gm.name + ' — grocery list', text: txt }).catch(function(){}); }
+            else if (navigator.clipboard) { navigator.clipboard.writeText(txt).then(function(){ setCookedMsg('Grocery list copied to clipboard.'); }); }
+          }
+          return createElement('div', { className: 'min-h-screen' }, headerEl,
+            createElement('main', { className: 'max-w-2xl mx-auto p-6' },
+              errorEl,
+              createElement('div', { className: 'flex items-center justify-between mb-1' },
+                createElement('h2', { className: 'text-xl font-bold text-primary' }, '🛒 ' + gm.name),
+                createElement('button', { onClick: doShare, className: 'text-sm font-bold text-orange-600' }, '⬆️ Share')
+              ),
+              createElement('p', { className: 'text-sm text-muted mb-3' },
+                needLines.length + ' to buy' + (haveCount ? ' • ' + haveCount + ' already have' : '') + (menuTarget ? ' • scaled for ' + menuTarget : '')),
+              cookedMsg ? createElement('div', { className: 'mb-3 p-2 rounded-lg text-sm', style: { backgroundColor: 'rgba(22,163,74,0.12)', color: '#16a34a' } }, cookedMsg) : null,
+              sections.length === 0
+                ? createElement('p', { className: 'text-muted text-center py-10' }, lines.length ? 'Everything’s checked as “have”. 🎉' : 'No ingredients found.')
+                : sections.map(function(s){
+                    return createElement('div', { key: s, className: 'mb-4' },
+                      createElement('div', { className: 'text-xs font-bold uppercase text-muted mb-1', style: { letterSpacing: '0.05em' } }, s),
+                      bySection[s].map(function(l){
+                        var st = groceryState[l.itemKey] || {};
+                        return createElement('div', { key: l.itemKey, className: 'card-bg rounded-lg p-2 border border-themed mb-2' },
+                          createElement('div', { className: 'flex items-center gap-2' },
+                            createElement('button', {
+                              onClick: function(){ setGrocery(l.itemKey, { checkedOff: !st.checkedOff }); },
+                              style: { fontSize: '1.2rem', lineHeight: 1 }, title: 'Check off in store'
+                            }, st.checkedOff ? '☑️' : '⬜'),
+                            createElement('div', { className: 'flex-1 min-w-0' },
+                              createElement('div', { className: 'font-semibold text-primary text-sm', style: st.checkedOff ? { textDecoration: 'line-through', opacity: 0.55 } : null }, l.display),
+                              l.qtyText ? createElement('div', { className: 'text-xs text-muted' }, l.qtyText) : null
+                            ),
+                            createElement('button', {
+                              onClick: function(){ setGrocery(l.itemKey, { have: true }); },
+                              className: 'text-xs px-2 py-1 rounded border', style: { borderColor: 'var(--border-color)', color: 'var(--text-muted,#6b7280)' }, title: 'I already have this'
+                            }, 'Have it')
+                          ),
+                          createElement('input', {
+                            className: 'w-full mt-2 p-1 rounded border text-xs', style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                            value: st.note || '', onChange: function(e){ setGrocery(l.itemKey, { note: e.target.value }); }, placeholder: 'note (e.g. “1 jar”, brand, size)'
+                          })
+                        );
+                      }));
+                  }),
+              haveCount > 0 && createElement('div', { className: 'mt-2 pt-3', style: { borderTop: '1px solid var(--border-color)' } },
+                createElement('div', { className: 'text-xs font-bold uppercase text-muted mb-1' }, 'Already have (' + haveCount + ')'),
+                lines.filter(function(l){ return (groceryState[l.itemKey] || {}).have; }).map(function(l){
+                  return createElement('div', { key: l.itemKey, className: 'flex items-center gap-2 text-sm text-muted mb-1' },
+                    createElement('span', null, '✓ ' + l.display + (l.qtyText ? ' (' + l.qtyText + ')' : '')),
+                    createElement('button', { onClick: function(){ setGrocery(l.itemKey, { have: false }); }, className: 'underline text-xs' }, 'need it')
+                  );
+                })),
+              needLines.some(function(l){ return (groceryState[l.itemKey] || {}).checkedOff; }) && createElement('button', {
+                onClick: clearGroceryChecks, className: 'mt-4 text-sm underline', style: { color: 'var(--text-muted,#6b7280)' }
+              }, 'Uncheck all (new shopping run)')
+            )
+          );
+        }
 
         // ---- EDIT / ADD form ----
         if (view === 'edit') {
@@ -5145,6 +5488,38 @@
                     )
               ),
 
+              // ---- Add to a menu (meal planning) ----
+              createElement('div', { className: 'mb-4 pt-4', style: { borderTop: '1px solid var(--border-color)' } },
+                createElement('button', {
+                  onClick: function(){ setShowAddToMenu(!showAddToMenu); setCookedMsg(''); if (!showAddToMenu && menus === null) loadMenus(); },
+                  className: 'w-full py-2 rounded-lg border-2 font-bold', style: { borderColor: '#fdba74', color: '#ea580c' }
+                }, '🍽️ Add to a menu'),
+                cookedMsg ? createElement('div', { className: 'mt-2 p-2 rounded-lg text-sm', style: { backgroundColor: 'rgba(22,163,74,0.12)', color: '#16a34a' } }, cookedMsg) : null,
+                showAddToMenu && createElement('div', { className: 'card-bg rounded-xl p-3 mt-2 border-2 border-themed' },
+                  createElement('div', { className: 'flex gap-2 mb-2' },
+                    createElement('input', {
+                      className: 'flex-1 p-2 rounded-lg border', style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                      value: newMenuName, onChange: function(e){ setNewMenuName(e.target.value); }, placeholder: 'New menu name (e.g. Houston Saturday Dinner)'
+                    }),
+                    createElement('button', {
+                      onClick: function(){ createMenuWith(r._id).then(function(id){ if (id) { setShowAddToMenu(false); setCookedMsg('Added to “' + ((newMenuName||'').trim() || 'New menu') + '”.'); loadMenus(); } }); },
+                      disabled: menuBusy, className: 'bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 rounded-lg disabled:opacity-50'
+                    }, 'Create')
+                  ),
+                  (menus && menus.length > 0) && createElement('div', null,
+                    createElement('div', { className: 'text-xs text-muted mb-1' }, 'or add to an existing menu:'),
+                    createElement('div', { className: 'flex flex-col gap-1' },
+                      menus.map(function(mm){
+                        var inIt = false; // we don't have recipeIds here; allow add (backend dedupes)
+                        return createElement('button', {
+                          key: mm._id,
+                          onClick: function(){ addRecipeToMenu(mm._id, r._id).then(function(){ setShowAddToMenu(false); setCookedMsg('Added to “' + mm.name + '”.'); loadMenus(); }); },
+                          className: 'text-left px-3 py-2 rounded-lg border border-themed text-sm text-primary hover:border-orange-300'
+                        }, '🍽️ ' + mm.name + '  ', createElement('span', { className: 'text-muted' }, '(' + mm.recipeCount + ')'));
+                      })))
+                )
+              ),
+
               createElement('div', { className: 'flex gap-3' },
                 createElement('button', { onClick: function(){ startEdit(r); }, className: 'flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl' },
                   r.isGlobal ? 'Customize (save my copy)' : 'Edit'),
@@ -5253,6 +5628,12 @@
         return createElement('div', { className: 'min-h-screen' }, headerEl,
           createElement('main', { className: 'max-w-2xl mx-auto p-6' },
             errorEl,
+            // Entry to meal planning (menus → grocery list).
+            createElement('button', {
+              onClick: openMenus,
+              className: 'w-full mb-4 py-2 rounded-lg border-2 font-bold flex items-center justify-center gap-2',
+              style: { borderColor: '#fdba74', color: '#ea580c', background: 'transparent' }
+            }, '🍽️ Menus & grocery lists'),
             filterBarEl,
             createElement('div', { className: 'flex gap-3 mb-4' },
               createElement('input', {

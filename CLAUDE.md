@@ -71,7 +71,7 @@ Ratatouille-inspired rat chef character. The mascot appears on the login screen 
 
 ## Technical Overview
 
-- **Current Version:** 06-16-2026-7
+- **Current Version:** 06-16-2026-8
 - **Framework:** React 18 via CDN (no build step, no JSX)
 - **Styling:** Tailwind CSS via CDN + CSS variables for theming
 - **Backend:** Convex Cloud (production: `cautious-monitor-526.convex.cloud`)

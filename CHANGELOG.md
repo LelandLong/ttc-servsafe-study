@@ -6,6 +6,18 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-16-2026-8] - June 16, 2026
+
+### Added
+- **Recipes — Meal planning, Phase 1: menus + smart grocery list.** A new **🍽️ Menus & grocery lists** section in Recipes lets you plan a meal end-to-end:
+  - **Build a menu** — open any recipe → **🍽️ Add to a menu** (create a new one or add to an existing). Menus list shows recipe count, cover, headcount, and date.
+  - **Menu detail** — rename inline, **scale the whole menu to a headcount** (👥 "Cooking for N" rescales every recipe via the conversion-factor scaler), see/remove recipes, and **🍴 I cooked this** logs every dish to the cook log in one tap (date + diners).
+  - **Smart grocery list** — combines every recipe's ingredients into one list, **summing like quantities** (with the kitchen-unit conversions/compound measures from the serving scaler) and **grouping by store section** (Produce, Meat, Seafood, Dairy, Dry Goods, Spices, Canned & Condiments, Beverages, Frozen). Each line has **"Have it"** (pantry check — moves it to an "already have" group), an **in-store check-off**, and a **personal note** ("1 jar", brand, size). **⬆️ Share** exports the list (native share / clipboard), and "uncheck all" starts a fresh shopping run.
+  - Backend: new `menus` + `groceryItems` tables and `convex/menus.ts` (menu CRUD + per-item grocery state). Grocery state is keyed by list so it persists per menu. Verified end-to-end in-browser (build menu → 2 recipes → scale → grocery list with sections, have-it, notes), zero console errors. Deployed to prod + dev.
+  - Coming next: mise en place prep flow (Phase 2) and combined multi-menu shopping trips (Phase 3).
+
+---
+
 ## [06-16-2026-7] - June 16, 2026
 
 ### Fixed

@@ -162,4 +162,39 @@ export default defineSchema({
   ingredientCatalog: defineTable({
     name: v.string(),
   }).index("by_name", ["name"]),
+
+  // ============ MEAL PLANNING (menus, grocery, shopping trips) ============
+  // A menu = a named meal/occasion the user is planning, holding a set of recipes.
+  menus: defineTable({
+    ownerId: v.id("users"),
+    name: v.string(),
+    recipeIds: v.array(v.id("recipes")),
+    servings: v.optional(v.number()),       // headcount target; scales recipes for the grocery list
+    plannedDate: v.optional(v.string()),    // optional yyyy-mm-dd
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_owner", ["ownerId"]),
+
+  // Per-(list, item) grocery state: have-it, checked-off in store, and a personal note
+  // ("1 jar"). listKey is "menu:<menuId>" for one menu or "trip:<tripId>" for a combined run.
+  groceryItems: defineTable({
+    ownerId: v.id("users"),
+    listKey: v.string(),
+    itemKey: v.string(),                    // normalized ingredient name (the aggregation key)
+    have: v.optional(v.boolean()),
+    checkedOff: v.optional(v.boolean()),
+    note: v.optional(v.string()),
+    updatedAt: v.number(),
+  }).index("by_list", ["listKey"])
+    .index("by_list_item", ["listKey", "itemKey"]),
+
+  // A shopping trip combines several menus into one grocery run (Phase 3).
+  shoppingTrips: defineTable({
+    ownerId: v.id("users"),
+    name: v.string(),
+    menuIds: v.array(v.id("menus")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_owner", ["ownerId"]),
 });
