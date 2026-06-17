@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-16-2026-9] - June 16, 2026
+
+### Fixed
+- **Recipes — stale "Added to {menu}" message on other recipes.** The add-to-menu confirmation reused a shared state that wasn't cleared when opening a different recipe, so an untouched recipe could show "Added to X" left over from the previous one. Opening a recipe now resets that message (and closes the add-to-menu picker / clears the new-menu field). Verified: confirmation shows on the recipe you added, and a freshly opened recipe shows nothing.
+
+---
+
 ## [06-16-2026-8] - June 16, 2026
 
 ### Added
