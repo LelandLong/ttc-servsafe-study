@@ -6,6 +6,38 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-16-2026-4] - June 16, 2026
+
+### Added
+- **Recipes — tips now captured on JSON-LD URL imports too.** URL imports that read a site's `schema.org/Recipe` markup get the core recipe for free, but tips/variations/storage live in the article body, not the structured data. Those imports now also run a **quick tips-only AI pass** over the page text and fill the recipe's **Tips & Notes** — so every import path (JSON-LD URL, AI-fallback URL, photo, Notes) captures tips. Best-effort and resilient: if the key is missing or the pass errors, the free JSON-LD recipe still imports (just without notes). Verified on a budgetbytes recipe (`method: json-ld`): core recipe imported free **and** its brining tip + "Budget-Saving Tips" section were captured into notes. Deployed to prod + dev.
+
+---
+
+## [06-16-2026-3] - June 16, 2026
+
+### Added
+- **Recipes — tips & notes are now captured and stored.** Recipe pages often have a "3 Tips for…", Variations, Storage/Make-Ahead, or chef's-notes section that the importer used to throw away. Recipes now have a **recipe-level `notes` field** (shared with everyone, distinct from your private "My Notes"). AI imports — **URL** (AI fallback), **photo**, and **Notes** — now extract all that supplementary info into it; the prompt was changed to *keep* tips/variations/storage/serving suggestions instead of discarding them. Shows as a **Tips & Notes** box in the editor (review-before-save / editable) and a **💡 Tips & Notes** section on the recipe detail screen.
+  - Schema: added `notes` to the `recipes` table + `recipeFields` (optional, backward-compatible — existing recipes simply have none). Verified on the masterclass Keller zucchini article: the full "3 Tips for Perfectly Roasted Zucchini" plus the Vierge-sauce make-ahead tip and chef's note were captured, populated the editor, and rendered on the detail screen with zero console errors. Deployed to prod + dev.
+  - Note: at this version, **JSON-LD** URL imports (the free path) still only carried structured-data fields — resolved in **06-16-2026-4** below, where they also run a tips pass.
+
+---
+
+## [06-16-2026-2] - June 16, 2026
+
+### Fixed
+- **Recipes — URL import now works on sites that block scrapers (e.g. masterclass.com).** Many publishers return **HTTP 403/429** to a generic fetch but still serve the full page to **Googlebot** for SEO. URL import now retries blocked fetches with a Googlebot user-agent before giving up, so those pages import normally instead of erroring. Future-proofs the whole class of "blocks scrapers" sites — refactored the fetch into a reusable `fetchPageHtml()` helper (browser UA → Googlebot retry on 403/429/451/503). Verified live on the previously-failing masterclass Thomas Keller zucchini article: now imports the title, 10 ingredients (incl. the Vierge sauce), and 9 steps. Deployed to prod + dev.
+
+---
+
+## [06-16-2026-1] - June 16, 2026
+
+### Added
+- **Recipes — multi-page photo import.** A recipe that spans several cookbook pages can now be scanned as **one recipe**. The import panel's photo section now **stages pages**: **📸 Take photo** (one page at a time — snap, then "Add page") and **🖼 Choose photo(s)** (multi-select from the library). Staged pages show as numbered thumbnails (p1, p2…) you can remove. **Parse recipe (N pages)** sends them to Claude vision **in one request**, with instructions that they're consecutive pages of a single recipe — so an ingredient list or step sequence cut off at the bottom of one page is stitched to the top of the next, and repeated headers/footers/page numbers are dropped. Review-before-save as before.
+  - Backend: `importRecipeFromPhoto` now accepts `imagesBase64: string[]` (still backward-compatible with the single `imageBase64`); multi-page calls use a higher token budget (4000) for longer recipes. New `MULTIPAGE_PROMPT` appended only when 2+ pages are sent. Single-photo scanning is unchanged.
+  - Verified: a synthetic 2-page recipe (title + partial ingredients on p1, remaining ingredients + steps on p2) merged into one recipe — title from p1, all 7 ingredients combined across both pages, steps from p2, "continued" headers dropped; full in-app stage → parse → editor flow with zero console errors. Deployed to prod + dev.
+
+---
+
 ## [06-15-2026-15] - June 15, 2026
 
 ### Changed

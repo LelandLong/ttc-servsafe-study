@@ -109,6 +109,7 @@ export default defineSchema({
       })
     )),
     steps: v.array(v.string()),          // ordered instructions
+    notes: v.optional(v.string()),       // recipe-level tips/variations/storage/serving (shared with everyone; distinct from per-user recipeNotes)
     imageIds: v.optional(v.array(v.id("_storage"))), // 1+ images; [0] is the cover
     sourceType: v.optional(v.string()),  // "manual" | "url" | "photo"
     sourceUrl: v.optional(v.string()),   // for url imports

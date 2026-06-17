@@ -78,6 +78,7 @@ const recipeFields = {
   description: v.optional(v.string()),
   ingredients: v.array(ingredientValidator),
   steps: v.array(v.string()),
+  notes: v.optional(v.string()),       // tips, variations, storage, serving suggestions (recipe-level, shared)
   imageIds: v.optional(v.array(v.id("_storage"))),
   sourceType: v.optional(v.string()), // "manual" | "url" | "photo"
   sourceUrl: v.optional(v.string()),
@@ -790,6 +791,7 @@ function mapRecipe(r: any, url: string) {
     prepMinutes: durationToMinutes(r.prepTime),
     cookMinutes: durationToMinutes(r.cookTime),
     tags: tagsFrom(r),
+    notes: "",                 // filled by the tips-only AI pass (JSON-LD has no tips field)
     imageUrl: firstImageUrl(r.image),
     sourceType: "url",
     sourceUrl: url,
@@ -797,12 +799,17 @@ function mapRecipe(r: any, url: string) {
 }
 
 const AI_PROMPT = `You extract a single recipe from the provided content — the text of a web page, or a photo of a recipe card / cookbook page (which may be handwritten or printed). Return ONLY a JSON object (no markdown, no commentary) with exactly these keys:
-{"title": string, "description": string, "ingredients": string[], "steps": string[], "servings": string, "prepMinutes": number|null, "cookMinutes": number|null, "tags": string[]}
+{"title": string, "description": string, "ingredients": string[], "steps": string[], "servings": string, "prepMinutes": number|null, "cookMinutes": number|null, "tags": string[], "notes": string}
 - ingredients: one string per ingredient line, e.g. "2 cups flour".
 - steps: one string per instruction step, in order, with no leading numbers.
-- Exclude ads, navigation, comments, and life-story preambles.
+- notes: ALL the useful extra recipe information that isn't an ingredient or a numbered step — tips, "X tips for…" sections, variations, substitutions, storage/make-ahead/reheating instructions, serving suggestions, equipment, and chef's notes. Preserve it as readable text; keep sub-headings and use "- " bullets or blank lines between items. Do NOT invent any; "" if there genuinely is none.
+- Exclude ads, navigation, comments, related-recipe links, newsletter prompts, and life-story preambles (but DO keep real cooking tips/variations in notes).
 - Unknown text fields -> "", unknown minute fields -> null, unknown arrays -> [].
 Return the JSON object only.`;
+
+// Appended when more than one photo is supplied: the images are consecutive pages
+// of ONE recipe (a book/cookbook recipe spanning pages), so they must be merged.
+const MULTIPAGE_PROMPT = `IMPORTANT: The images above are CONSECUTIVE PAGES of a SINGLE recipe, in order. Combine them into ONE recipe — do not produce separate recipes. An ingredient list or step sequence that is cut off at the bottom of one page CONTINUES at the top of the next page; stitch them into one continuous list. Ignore anything repeated across pages that isn't recipe content (page numbers, running headers/footers, the book title). If a page shows only a finished-dish photo with no text, just use it for context.`;
 
 function htmlToText(html: string): string {
   return decodeEntities(
@@ -821,7 +828,7 @@ const IMPORT_MODEL = "claude-haiku-4-5";
 
 // Call the Claude Messages API and return the model's text. `content` is either a
 // string (URL text) or a content-block array (image + prompt for photo import).
-async function callClaude(apiKey: string, content: any): Promise<string> {
+async function callClaude(apiKey: string, content: any, maxTokens?: number): Promise<string> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -829,7 +836,7 @@ async function callClaude(apiKey: string, content: any): Promise<string> {
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
     },
-    body: JSON.stringify({ model: IMPORT_MODEL, max_tokens: 2000, messages: [{ role: "user", content }] }),
+    body: JSON.stringify({ model: IMPORT_MODEL, max_tokens: maxTokens || 2000, messages: [{ role: "user", content }] }),
   });
   if (!res.ok) {
     const t = await res.text();
@@ -854,6 +861,7 @@ function recipeFromAiText(raw: string, sourceType: string, sourceUrl: string | n
     prepMinutes: typeof obj.prepMinutes === "number" ? obj.prepMinutes : null,
     cookMinutes: typeof obj.cookMinutes === "number" ? obj.cookMinutes : null,
     tags: Array.isArray(obj.tags) ? obj.tags : [],
+    notes: typeof obj.notes === "string" ? obj.notes : "",
     imageUrl: null,
     sourceType,
     sourceUrl,
@@ -865,6 +873,51 @@ async function aiExtract(text: string, url: string, apiKey: string) {
   return recipeFromAiText(raw, "url", url);
 }
 
+// Tips-only AI pass for JSON-LD imports: the structured data gives us the core recipe
+// for free, but tips/variations/storage live in the article body. This pulls JUST those.
+const TIPS_PROMPT = `From the recipe web page text below, extract ONLY the supplementary tips and notes — any "tips" sections, variations, substitutions, storage / make-ahead / reheating, serving suggestions, equipment, and chef's notes. Do NOT include the ingredient list or the numbered cooking steps. Exclude ads, navigation, comments, related-recipe links, and newsletter prompts. Return ONLY a JSON object: {"notes": string} — readable text with "- " bullets / kept sub-headings; use "" if there genuinely are no such extras.`;
+
+async function tipsOnlyExtract(text: string, apiKey: string): Promise<string> {
+  const raw = await callClaude(apiKey, TIPS_PROMPT + "\n\nPAGE CONTENT:\n" + text.slice(0, 16000), 1000);
+  const start = raw.indexOf("{"), end = raw.lastIndexOf("}");
+  if (start === -1 || end === -1) return "";
+  try {
+    const obj = JSON.parse(raw.slice(start, end + 1));
+    return typeof obj.notes === "string" ? obj.notes : "";
+  } catch (e) { return ""; }
+}
+
+const BROWSER_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36";
+// Sites with bot protection (e.g. masterclass.com, many publishers) 403/429 a generic
+// scraper but still serve the FULL page to Googlebot for SEO. So we identify as Googlebot
+// on the retry. Future-proofs URL import against the whole class of "blocks scrapers" sites.
+const GOOGLEBOT_UA = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
+
+function fetchWithUA(url: string, ua: string): Promise<Response> {
+  return fetch(url, {
+    headers: {
+      "User-Agent": ua,
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9",
+    },
+  });
+}
+
+// Fetch a page's HTML, retrying as Googlebot if the normal request is blocked.
+// Returns { html } on success or { error } describing the failure.
+async function fetchPageHtml(url: string): Promise<{ html?: string; error?: string }> {
+  try {
+    let res = await fetchWithUA(url, BROWSER_UA);
+    if (!res.ok && (res.status === 403 || res.status === 429 || res.status === 451 || res.status === 503)) {
+      res = await fetchWithUA(url, GOOGLEBOT_UA);
+    }
+    if (!res.ok) return { error: "Could not fetch the page (HTTP " + res.status + ")." };
+    return { html: await res.text() };
+  } catch (e: any) {
+    return { error: "Could not reach that URL." };
+  }
+}
+
 export const importRecipeFromUrl = action({
   args: { url: v.string() },
   handler: async (_ctx, args) => {
@@ -872,20 +925,9 @@ export const importRecipeFromUrl = action({
     if (!/^https?:\/\//i.test(url)) {
       return { ok: false, error: "Please enter a full URL starting with http:// or https://" };
     }
-    let html: string;
-    try {
-      const res = await fetch(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.9",
-        },
-      });
-      if (!res.ok) return { ok: false, error: "Could not fetch the page (HTTP " + res.status + ")." };
-      html = await res.text();
-    } catch (e: any) {
-      return { ok: false, error: "Could not reach that URL." };
-    }
+    const fetched = await fetchPageHtml(url);
+    if (fetched.error || !fetched.html) return { ok: false, error: fetched.error || "Could not reach that URL." };
+    const html: string = fetched.html;
 
     // Primary: schema.org/Recipe JSON-LD.
     const blocks = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi) || [];
@@ -897,6 +939,13 @@ export const importRecipeFromUrl = action({
       if (node) {
         const recipe = mapRecipe(node, url);
         if (recipe.ingredients.length || recipe.steps.length) {
+          // JSON-LD gives the core recipe for free but no tips. Do a quick tips-only
+          // AI pass on the article body so these imports get tips/variations/storage
+          // too. Best-effort: if it fails or the key is missing, keep the free recipe.
+          const apiKey = resolveApiKey();
+          if (apiKey) {
+            try { recipe.notes = await tipsOnlyExtract(htmlToText(html), apiKey); } catch (e) { /* keep core recipe */ }
+          }
           return { ok: true, method: "json-ld", recipe };
         }
       }
@@ -921,21 +970,33 @@ export const importRecipeFromUrl = action({
 // base64 here; Claude vision extracts the same structured fields as URL import,
 // returned for review-before-save. Requires the deployment ANTHROPIC_API_KEY.
 export const importRecipeFromPhoto = action({
-  args: { imageBase64: v.string(), mediaType: v.optional(v.string()) },
+  // Accepts a single photo (imageBase64) OR multiple page photos (imagesBase64).
+  // Multiple pages of one book recipe are sent together and merged into one recipe.
+  args: {
+    imageBase64: v.optional(v.string()),
+    imagesBase64: v.optional(v.array(v.string())),
+    mediaType: v.optional(v.string()),
+  },
   handler: async (_ctx, args) => {
     const apiKey = resolveApiKey();
     if (!apiKey) {
       return { ok: false, error: "AI photo import isn't enabled yet (ANTHROPIC_API_KEY not set on this deployment)." };
     }
-    if (!args.imageBase64) return { ok: false, error: "No image was provided." };
+    const pages = (args.imagesBase64 && args.imagesBase64.length)
+      ? args.imagesBase64
+      : (args.imageBase64 ? [args.imageBase64] : []);
+    if (pages.length === 0) return { ok: false, error: "No image was provided." };
     const mediaType = args.mediaType || "image/jpeg";
+    const multi = pages.length > 1;
     try {
-      const raw = await callClaude(apiKey, [
-        { type: "image", source: { type: "base64", media_type: mediaType, data: args.imageBase64 } },
-        { type: "text", text: AI_PROMPT },
-      ]);
+      const content: any[] = pages.map((data) => ({
+        type: "image", source: { type: "base64", media_type: mediaType, data },
+      }));
+      content.push({ type: "text", text: multi ? AI_PROMPT + "\n\n" + MULTIPAGE_PROMPT : AI_PROMPT });
+      // Multi-page recipes produce longer output (more steps) — give them more room.
+      const raw = await callClaude(apiKey, content, multi ? 4000 : 2000);
       const recipe = recipeFromAiText(raw, "photo", null);
-      return { ok: true, method: "ai-vision", recipe };
+      return { ok: true, method: "ai-vision", recipe, pages: pages.length };
     } catch (e: any) {
       return { ok: false, error: "Photo import failed: " + (e.message || "unknown error") };
     }
@@ -947,9 +1008,10 @@ export const importRecipeFromPhoto = action({
 // isRecipe:false for non-recipes (shopping lists, quotes, addresses) so the
 // caller can skip them. Used to bulk-import macOS Notes recipes.
 const NOTE_PROMPT = `Decide whether the following note is a cooking recipe, then respond with ONLY a JSON object (no markdown):
-{"isRecipe": true|false, "title": string, "description": string, "ingredients": string[], "steps": string[], "servings": string, "prepMinutes": number|null, "cookMinutes": number|null, "tags": string[]}
+{"isRecipe": true|false, "title": string, "description": string, "ingredients": string[], "steps": string[], "servings": string, "prepMinutes": number|null, "cookMinutes": number|null, "tags": string[], "notes": string}
 - If it is NOT a recipe (shopping list, address, phone number, quote, reminder, story), set "isRecipe": false and leave the other fields empty.
 - title: the dish name (clean it up; don't include emoji). ingredients: one string per line e.g. "2 cups flour". steps: ordered, no leading numbers.
+- notes: any extra info that isn't an ingredient or step — tips, variations, substitutions, storage/serving suggestions. Preserve as readable text; "" if none.
 - Unknown text fields -> "", unknown minutes -> null, unknown arrays -> [].
 Return the JSON object only.`;
 
@@ -978,6 +1040,7 @@ export const importRecipeFromText = action({
           prepMinutes: typeof obj.prepMinutes === "number" ? obj.prepMinutes : null,
           cookMinutes: typeof obj.cookMinutes === "number" ? obj.cookMinutes : null,
           tags: Array.isArray(obj.tags) ? obj.tags : [],
+          notes: typeof obj.notes === "string" ? obj.notes : "",
         },
       };
     } catch (e: any) {

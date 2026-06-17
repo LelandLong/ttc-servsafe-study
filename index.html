@@ -4219,6 +4219,7 @@
         // Structured ingredient rows: [{qty, unit, item}, ...]
         const [fIngredients, setFIngredients] = useState([{ qty: '', unit: '', item: '' }]);
         const [fSteps, setFSteps] = useState('');             // textarea, one per line
+        const [fNotes, setFNotes] = useState('');             // recipe-level tips/variations/storage
         const [fServings, setFServings] = useState('');
         const [fPrep, setFPrep] = useState('');
         const [fCook, setFCook] = useState('');
@@ -4234,6 +4235,8 @@
         const [importUrl, setImportUrl] = useState('');
         const [importing, setImporting] = useState(false);
         const [importError, setImportError] = useState('');
+        const [pendingPages, setPendingPages] = useState([]); // [{preview, base64}] staged recipe-page photos
+        const [addingPages, setAddingPages] = useState(false); // downscaling newly added photos
 
         // Diner scores (R2) for the recipe currently open in detail
         const [scores, setScores] = useState([]);
@@ -4387,7 +4390,7 @@
           setActiveRecipe(null);
           setFTitle(''); setFDescription('');
           setFIngredients([{ qty: '', unit: '', item: '' }]);
-          setFSteps('');
+          setFSteps(''); setFNotes('');
           setFServings(''); setFPrep(''); setFCook(''); setFTags('');
           setFImageIds([]); setFImageUrls([]);
           setFSourceType('manual'); setFSourceUrl('');
@@ -4401,6 +4404,7 @@
           setFDescription(r.description || '');
           setFIngredients(ingredientsToRows(r.ingredients));
           setFSteps((r.steps || []).join('\n'));
+          setFNotes(r.notes || '');
           setFServings(r.servings || '');
           setFPrep(r.prepMinutes != null ? String(r.prepMinutes) : '');
           setFCook(r.cookMinutes != null ? String(r.cookMinutes) : '');
@@ -4419,13 +4423,14 @@
           setFDescription(r.description || '');
           setFIngredients(ingredientsToRows(r.ingredients));
           setFSteps((r.steps || []).join('\n'));
+          setFNotes(r.notes || '');
           setFServings(r.servings || '');
           setFPrep(r.prepMinutes != null ? String(r.prepMinutes) : '');
           setFCook(r.cookMinutes != null ? String(r.cookMinutes) : '');
           setFTags((r.tags || []).join(', '));
           setFImageIds([]); setFImageUrls([]);
           setFSourceType(srcType); setFSourceUrl(srcUrl || '');
-          setShowImport(false); setImportUrl('');
+          setShowImport(false); setImportUrl(''); setPendingPages([]);
           setErrorMsg('');
           setView('edit');
         }
@@ -4464,21 +4469,42 @@
           });
         }
 
-        // Photo import (R4): downscale → Claude vision → review-before-save.
+        // Photo import (R4 + multi-page): stage one or more page photos, then parse
+        // them together. Selecting/snapping photos here ACCUMULATES pages (a recipe
+        // that spans book pages = one photo per page); "Parse" sends them in order as
+        // a single recipe. Downscale each to keep upload small and vision cost low.
         function handlePhotoImport(ev) {
-          var file = ev.target.files && ev.target.files[0];
+          var files = ev.target.files ? Array.prototype.slice.call(ev.target.files) : [];
           ev.target.value = '';
-          if (!file) return;
+          if (!files.length) return;
           setShowImport(true);
-          setImporting(true); setImportError('');
-          downscaleImage(file, 1568, 0.82)
-            .then(function(dataUrl) {
-              var base64 = dataUrl.split(',')[1];
-              return convexAction('recipes:importRecipeFromPhoto', { imageBase64: base64, mediaType: 'image/jpeg' });
+          setImportError(''); setAddingPages(true);
+          Promise.all(files.map(function(f){ return downscaleImage(f, 1568, 0.82); }))
+            .then(function(dataUrls) {
+              setAddingPages(false);
+              setPendingPages(function(prev) {
+                return prev.concat(dataUrls.map(function(d){ return { preview: d, base64: d.split(',')[1] }; }));
+              });
             })
+            .catch(function(err) { setAddingPages(false); setImportError('Could not read image: ' + err.message); });
+        }
+
+        function removePendingPage(idx) {
+          setPendingPages(function(prev){ return prev.filter(function(_, i){ return i !== idx; }); });
+        }
+
+        // Send all staged pages to Claude vision as ONE recipe, then open the editor.
+        function parsePhotoPages() {
+          if (!pendingPages.length) return;
+          setImporting(true); setImportError('');
+          convexAction('recipes:importRecipeFromPhoto', {
+            imagesBase64: pendingPages.map(function(p){ return p.base64; }),
+            mediaType: 'image/jpeg'
+          })
             .then(function(res) {
               setImporting(false);
-              if (!res || !res.ok) { setImportError((res && res.error) || 'Could not read that photo.'); return; }
+              if (!res || !res.ok) { setImportError((res && res.error) || 'Could not read those photos.'); return; }
+              setPendingPages([]);
               applyImportedRecipe(res.recipe, 'photo', '');
             })
             .catch(function(err) { setImporting(false); setImportError('Photo import failed: ' + err.message); });
@@ -4597,6 +4623,7 @@
             description: fDescription.trim() || undefined,
             ingredients: cleanIngredients,
             steps: fSteps.split('\n').map(function(s){return s.trim();}).filter(Boolean),
+            notes: fNotes.trim() || undefined,
             servings: fServings.trim() || undefined,
             prepMinutes: fPrep.trim() ? Number(fPrep) : undefined,
             cookMinutes: fCook.trim() ? Number(fCook) : undefined,
@@ -4728,6 +4755,9 @@
 
               createElement('label', { style: labelStyle }, 'Steps (one per line)'),
               createElement('textarea', { className: inputCls, style: inputStyle, rows: 6, value: fSteps, onChange: function(e){ setFSteps(e.target.value); }, placeholder: 'Brown the beef\nAdd onions\n...' }),
+
+              createElement('label', { style: labelStyle }, 'Tips & Notes'),
+              createElement('textarea', { className: inputCls, style: inputStyle, rows: 4, value: fNotes, onChange: function(e){ setFNotes(e.target.value); }, placeholder: 'Tips, variations, substitutions, storage & serving suggestions…' }),
 
               createElement('div', { className: 'grid grid-cols-3 gap-3' },
                 createElement('div', null,
@@ -4862,6 +4892,12 @@
               createElement('h3', { className: 'text-lg font-bold text-primary mt-4 mb-2' }, 'Steps'),
               createElement('ol', { className: 'list-decimal pl-5 mb-6 text-secondary' },
                 (r.steps || []).map(function(st, i){ return createElement('li', { key: i, className: 'mb-2' }, st); })
+              ),
+
+              // ---- Tips & Notes — recipe-level extras (tips/variations/storage), shared with everyone ----
+              (r.notes && r.notes.trim()) && createElement('div', { className: 'mb-6' },
+                createElement('h3', { className: 'text-lg font-bold text-primary mt-4 mb-2' }, '💡 Tips & Notes'),
+                createElement('div', { className: 'text-secondary', style: { whiteSpace: 'pre-wrap' } }, r.notes)
               ),
 
               // ---- My Notes (R9b) — private per-user annotation, never alters a shared recipe ----
@@ -5134,7 +5170,7 @@
               }),
               createElement('button', { onClick: startAdd, className: 'bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 rounded-lg' }, '+ Add'),
               createElement('button', {
-                onClick: function(){ setShowImport(!showImport); setImportError(''); },
+                onClick: function(){ var opening = !showImport; setShowImport(opening); setImportError(''); if (!opening) { setPendingPages([]); setImportUrl(''); } },
                 className: 'px-3 rounded-lg border-2 font-bold',
                 style: { borderColor: '#fdba74', color: '#ea580c' },
                 title: 'Import a recipe from a URL'
@@ -5170,14 +5206,42 @@
                 createElement('span', { className: 'text-xs text-muted' }, 'or'),
                 createElement('div', { style: { flex: 1, height: '1px', backgroundColor: 'var(--border-color)' } })
               ),
-              createElement('label', {
-                className: 'flex items-center justify-center gap-2 w-full py-2 rounded-lg border-2 cursor-pointer font-bold',
-                style: { borderColor: '#fdba74', color: '#ea580c' }
-              },
-                '📷 Scan a recipe photo',
-                createElement('input', { type: 'file', accept: 'image/*', capture: 'environment', style: { display: 'none' }, onChange: handlePhotoImport })
+              createElement('label', { style: { display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' } }, 'Scan a recipe photo'),
+              // Staged page thumbnails (multi-page recipes add several pages).
+              pendingPages.length > 0 && createElement('div', { className: 'flex flex-wrap gap-2 mb-2' },
+                pendingPages.map(function(p, i) {
+                  return createElement('div', { key: i, style: { position: 'relative', width: '64px' } },
+                    createElement('img', { src: p.preview, style: { width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' } }),
+                    createElement('span', { style: { position: 'absolute', bottom: '2px', left: '2px', background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '0.6rem', padding: '0 4px', borderRadius: '4px' } }, 'p' + (i + 1)),
+                    createElement('button', {
+                      onClick: function(){ removePendingPage(i); }, title: 'Remove page',
+                      style: { position: 'absolute', top: '-6px', right: '-6px', background: '#dc2626', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', fontSize: '0.7rem', lineHeight: '16px', textAlign: 'center', border: 'none', cursor: 'pointer' }
+                    }, '×')
+                  );
+                })
               ),
-              createElement('p', { className: 'text-xs text-muted mt-2' }, 'Snap a recipe card or cookbook page (handwritten or printed) and we’ll read it for you.'),
+              createElement('div', { className: 'flex gap-2' },
+                createElement('label', {
+                  className: 'flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border-2 cursor-pointer font-bold text-sm',
+                  style: { borderColor: '#fdba74', color: '#ea580c' }
+                },
+                  pendingPages.length ? '📸 Add page' : '📸 Take photo',
+                  createElement('input', { type: 'file', accept: 'image/*', capture: 'environment', style: { display: 'none' }, onChange: handlePhotoImport })
+                ),
+                createElement('label', {
+                  className: 'flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border-2 cursor-pointer font-bold text-sm',
+                  style: { borderColor: '#fdba74', color: '#ea580c' }
+                },
+                  '🖼 Choose photo(s)',
+                  createElement('input', { type: 'file', accept: 'image/*', multiple: true, style: { display: 'none' }, onChange: handlePhotoImport })
+                )
+              ),
+              pendingPages.length > 0 && createElement('button', {
+                onClick: parsePhotoPages, disabled: importing || addingPages,
+                className: 'w-full mt-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg disabled:opacity-50'
+              }, importing ? 'Reading…' : ('Parse recipe (' + pendingPages.length + (pendingPages.length === 1 ? ' page)' : ' pages)'))),
+              createElement('p', { className: 'text-xs text-muted mt-2' }, 'Snap a card or cookbook page (handwritten or printed). For a recipe that spans several book pages, add each page in order and we’ll combine them into one recipe.'),
+              addingPages && createElement('p', { className: 'text-sm mt-2 text-orange-600 font-medium' }, 'Adding page…'),
               importing && createElement('p', { className: 'text-sm mt-2 text-orange-600 font-medium' }, 'Working… reading your recipe.'),
               importError && createElement('p', { className: 'text-sm mt-2', style: { color: '#dc2626' } }, importError)
             ),
