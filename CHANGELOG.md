@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-16-2026-10] - June 16, 2026
+
+### Added
+- **Recipes — grocery list shows scaled + original quantities.** When a menu is scaled to a headcount, each grocery line now shows the scaled amount **and** the original recipe total beside it (e.g. `1 qt · recipe: 2 cup`, `2 lb · recipe: 1 lb`), so you can weigh the mathematical conversion against real-world judgment and adjust. Only shows the "recipe:" part when a scale is applied and the two differ.
+
+---
+
 ## [06-16-2026-9] - June 16, 2026
 
 ### Fixed

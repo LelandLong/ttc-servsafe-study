@@ -5048,6 +5048,10 @@
         if (view === 'grocery' && activeMenu) {
           var gm = activeMenu;
           var lines = combineMenuGroceries(gm.recipes || [], menuTarget);
+          // When scaled to a headcount, also compute the unscaled (recipe-as-written) totals
+          // so each line can show both — math vs. reality — for the cook to judge.
+          var baseQty = {};
+          if (menuTarget) combineMenuGroceries(gm.recipes || [], null).forEach(function(b){ baseQty[b.itemKey] = b.qtyText; });
           var needLines = lines.filter(function(l){ var st = groceryState[l.itemKey] || {}; return !st.have; });
           var bySection = {};
           needLines.forEach(function(l){ (bySection[l.section] = bySection[l.section] || []).push(l); });
@@ -5092,7 +5096,12 @@
                             }, st.checkedOff ? '☑️' : '⬜'),
                             createElement('div', { className: 'flex-1 min-w-0' },
                               createElement('div', { className: 'font-semibold text-primary text-sm', style: st.checkedOff ? { textDecoration: 'line-through', opacity: 0.55 } : null }, l.display),
-                              l.qtyText ? createElement('div', { className: 'text-xs text-muted' }, l.qtyText) : null
+                              l.qtyText ? createElement('div', { className: 'text-xs text-muted' },
+                                l.qtyText,
+                                (menuTarget && baseQty[l.itemKey] && baseQty[l.itemKey] !== l.qtyText)
+                                  ? createElement('span', { style: { opacity: 0.8 } }, '  ·  recipe: ' + baseQty[l.itemKey])
+                                  : null
+                              ) : null
                             ),
                             createElement('button', {
                               onClick: function(){ setGrocery(l.itemKey, { have: true }); },
