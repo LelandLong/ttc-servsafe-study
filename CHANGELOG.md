@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-16-2026-5] - June 16, 2026
+
+### Added
+- **Recipes — paste an image into the editor.** You can now add a recipe photo by **pasting a copied image** — handy when an import didn't grab a photo and you found one yourself. In the editor's Photos row there's a **📋 Paste** tile (uses the clipboard), and **⌘/Ctrl+V anywhere in the editor** pastes a copied image too. Pasted images go through the same ≤1080px downscale + upload as the "+ Photo" picker. Also: the editor's "+ Photo" no longer forces the camera, so you can pick a saved image from your library on mobile. Verified in-browser: both the Paste button and ⌘/Ctrl+V added the copied image with zero console errors. (Front-end only — no backend change.)
+
+---
+
 ## [06-16-2026-4] - June 16, 2026
 
 ### Added

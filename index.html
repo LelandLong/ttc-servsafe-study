@@ -4555,20 +4555,18 @@
         }
 
         // Upload an image file: get a signed URL, POST the file, store its id.
-        function handleImageUpload(ev) {
-          var file = ev.target.files && ev.target.files[0];
-          ev.target.value = ''; // allow re-selecting the same file
-          if (!file || !user) return;
+        // Downscale a File/Blob (camera, file picker, OR pasted clipboard image) to a
+        // sensible cover size (≤1080px JPEG) and store it; append to the recipe's photos.
+        function uploadImageBlob(blob) {
+          if (!blob || !user) return;
           setUploading(true);
           setErrorMsg('');
-          // Downscale to a sensible cover size (≤1080px JPEG) before storing — we
-          // never display larger than this, so don't store multi-MB originals.
-          downscaleImage(file, 1080, 0.82)
+          downscaleImage(blob, 1080, 0.82)
             .then(function(dataUrl) {
               return convexMutation('recipes:generateUploadUrl', { ownerId: user.userId })
                 .then(function(uploadUrl) {
-                  return fetch(dataUrl).then(function(r){ return r.blob(); }).then(function(blob) {
-                    return fetch(uploadUrl, { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob });
+                  return fetch(dataUrl).then(function(r){ return r.blob(); }).then(function(b) {
+                    return fetch(uploadUrl, { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: b });
                   });
                 })
                 .then(function(res) { return res.json(); })
@@ -4583,6 +4581,46 @@
               setUploading(false);
             });
         }
+
+        function handleImageUpload(ev) {
+          var file = ev.target.files && ev.target.files[0];
+          ev.target.value = ''; // allow re-selecting the same file
+          uploadImageBlob(file);
+        }
+
+        // Paste an image from the clipboard via the Clipboard API (explicit button).
+        function pasteImageFromClipboard() {
+          if (!navigator.clipboard || !navigator.clipboard.read) {
+            setErrorMsg('Pasting isn’t supported here — use “+ Photo”, or press ⌘/Ctrl+V.');
+            return;
+          }
+          navigator.clipboard.read()
+            .then(function(items) {
+              for (var i = 0; i < items.length; i++) {
+                var t = (items[i].types || []).find(function(x){ return x.indexOf('image/') === 0; });
+                if (t) return items[i].getType(t).then(uploadImageBlob);
+              }
+              setErrorMsg('No image found on the clipboard — copy an image first.');
+            })
+            .catch(function(err) { setErrorMsg('Could not read the clipboard: ' + err.message); });
+        }
+
+        // While the editor is open, ⌘/Ctrl+V anywhere pastes a copied image as a photo.
+        useEffect(function() {
+          if (view !== 'edit') return undefined;
+          function onPaste(e) {
+            var items = (e.clipboardData && e.clipboardData.items) || [];
+            for (var i = 0; i < items.length; i++) {
+              if (items[i].type && items[i].type.indexOf('image/') === 0) {
+                var blob = items[i].getAsFile();
+                if (blob) { e.preventDefault(); uploadImageBlob(blob); }
+                return;
+              }
+            }
+          }
+          document.addEventListener('paste', onPaste);
+          return function(){ document.removeEventListener('paste', onPaste); };
+        }, [view, user]);
 
         function removeImageAt(idx) {
           setFImageIds(function(prev) { return prev.filter(function(_, i) { return i !== idx; }); });
@@ -4793,9 +4831,15 @@
                   style: { width: '80px', height: '80px', borderRadius: '8px', border: '2px dashed var(--border-color)', color: 'var(--text-muted)', fontSize: '0.7rem', textAlign: 'center' }
                 },
                   uploading ? 'Uploading…' : '+ Photo',
-                  createElement('input', { type: 'file', accept: 'image/*', capture: 'environment', style: { display: 'none' }, onChange: handleImageUpload })
-                )
+                  createElement('input', { type: 'file', accept: 'image/*', style: { display: 'none' }, onChange: handleImageUpload })
+                ),
+                createElement('button', {
+                  type: 'button', onClick: pasteImageFromClipboard, disabled: uploading, title: 'Paste a copied image (or press ⌘/Ctrl+V)',
+                  className: 'flex items-center justify-center cursor-pointer disabled:opacity-50',
+                  style: { width: '80px', height: '80px', borderRadius: '8px', border: '2px dashed var(--border-color)', color: 'var(--text-muted)', fontSize: '0.7rem', textAlign: 'center', background: 'transparent' }
+                }, '📋 Paste')
               ),
+              createElement('p', { className: 'text-xs text-muted -mt-1 mb-3' }, 'Tip: copy an image, then tap Paste (or press ⌘/Ctrl+V) to add it.'),
 
               createElement('div', { className: 'flex gap-3 mt-4' },
                 createElement('button', {
