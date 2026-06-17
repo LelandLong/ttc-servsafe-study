@@ -247,6 +247,7 @@ export const updateRecipe = mutation({
     description: v.optional(v.string()),
     ingredients: v.optional(v.array(ingredientValidator)),
     steps: v.optional(v.array(v.string())),
+    notes: v.optional(v.string()),
     imageIds: v.optional(v.array(v.id("_storage"))),
     sourceType: v.optional(v.string()),
     sourceUrl: v.optional(v.string()),

@@ -6,6 +6,16 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-16-2026-7] - June 16, 2026
+
+### Fixed
+- **Recipes — "Save failed: server error" when editing a recipe that has tips/notes.** The editor's save always sends a `notes` field, but `updateRecipe`'s argument validator didn't list it, and Convex strictly rejects unknown args — so editing any recipe with notes (e.g. one imported with tips, or after adding a photo to it) failed with a server error. Added `notes` to `updateRecipe`. Backend-only fix (deployed to prod) — no app update needed to save again. Verified: update-with-notes now succeeds.
+
+### Added
+- **Recipes — paste an image to scan a recipe (not just to set a cover).** The import panel's photo scanner now has a **📋 Paste** option (and **⌘/Ctrl+V** while the panel is open): paste a copied recipe image — a screenshot, a card, a cookbook page — and it stages as a page, then **Parse recipe** turns it into a recipe (combines with any other staged pages). Complements the editor's cover-image paste (06-16-2026-5). Verified in-browser: a pasted image staged as a page and the Parse button appeared, zero console errors.
+
+---
+
 ## [06-16-2026-6] - June 16, 2026
 
 ### Added

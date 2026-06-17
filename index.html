@@ -4491,6 +4491,53 @@
             .catch(function(err) { setAddingPages(false); setImportError('Could not read image: ' + err.message); });
         }
 
+        // Stage a single image (e.g. a pasted recipe screenshot) as a recipe page.
+        function addPageBlob(blob) {
+          if (!blob) return;
+          setShowImport(true); setImportError(''); setAddingPages(true);
+          downscaleImage(blob, 1568, 0.82)
+            .then(function(dataUrl) {
+              setAddingPages(false);
+              setPendingPages(function(prev){ return prev.concat([{ preview: dataUrl, base64: dataUrl.split(',')[1] }]); });
+            })
+            .catch(function(err) { setAddingPages(false); setImportError('Could not read image: ' + err.message); });
+        }
+
+        // Paste a copied image into the importer as a page to scan into a recipe.
+        function pastePageFromClipboard() {
+          if (!navigator.clipboard || !navigator.clipboard.read) {
+            setImportError('Pasting isn’t supported here — use Take photo / Choose photo, or press ⌘/Ctrl+V.');
+            return;
+          }
+          navigator.clipboard.read()
+            .then(function(items) {
+              for (var i = 0; i < items.length; i++) {
+                var t = (items[i].types || []).find(function(x){ return x.indexOf('image/') === 0; });
+                if (t) return items[i].getType(t).then(addPageBlob);
+              }
+              setImportError('No image found on the clipboard — copy a recipe image first.');
+            })
+            .catch(function(err) { setImportError('Could not read the clipboard: ' + err.message); });
+        }
+
+        // While the import panel is open (and not in the editor), ⌘/Ctrl+V pastes a
+        // copied recipe image as a page to scan.
+        useEffect(function() {
+          if (!showImport || view === 'edit') return undefined;
+          function onPaste(e) {
+            var items = (e.clipboardData && e.clipboardData.items) || [];
+            for (var i = 0; i < items.length; i++) {
+              if (items[i].type && items[i].type.indexOf('image/') === 0) {
+                var blob = items[i].getAsFile();
+                if (blob) { e.preventDefault(); addPageBlob(blob); }
+                return;
+              }
+            }
+          }
+          document.addEventListener('paste', onPaste);
+          return function(){ document.removeEventListener('paste', onPaste); };
+        }, [showImport, view, user]);
+
         function removePendingPage(idx) {
           setPendingPages(function(prev){ return prev.filter(function(_, i){ return i !== idx; }); });
         }
@@ -5280,13 +5327,19 @@
                 },
                   '🖼 Choose photo(s)',
                   createElement('input', { type: 'file', accept: 'image/*', multiple: true, style: { display: 'none' }, onChange: handlePhotoImport })
-                )
+                ),
+                createElement('button', {
+                  type: 'button', onClick: pastePageFromClipboard, disabled: addingPages || importing,
+                  className: 'flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border-2 cursor-pointer font-bold text-sm disabled:opacity-50',
+                  style: { borderColor: '#fdba74', color: '#ea580c', background: 'transparent' },
+                  title: 'Paste a copied recipe image (or press ⌘/Ctrl+V)'
+                }, '📋 Paste')
               ),
               pendingPages.length > 0 && createElement('button', {
                 onClick: parsePhotoPages, disabled: importing || addingPages,
                 className: 'w-full mt-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg disabled:opacity-50'
               }, importing ? 'Reading…' : ('Parse recipe (' + pendingPages.length + (pendingPages.length === 1 ? ' page)' : ' pages)'))),
-              createElement('p', { className: 'text-xs text-muted mt-2' }, 'Snap a card or cookbook page (handwritten or printed). For a recipe that spans several book pages, add each page in order and we’ll combine them into one recipe.'),
+              createElement('p', { className: 'text-xs text-muted mt-2' }, 'Snap, choose, or paste a recipe image (a card, cookbook page, or screenshot — handwritten or printed). For a recipe that spans several book pages, add each page in order and we’ll combine them into one recipe.'),
               addingPages && createElement('p', { className: 'text-sm mt-2 text-orange-600 font-medium' }, 'Adding page…'),
               importing && createElement('p', { className: 'text-sm mt-2 text-orange-600 font-medium' }, 'Working… reading your recipe.'),
               importError && createElement('p', { className: 'text-sm mt-2', style: { color: '#dc2626' } }, importError)
