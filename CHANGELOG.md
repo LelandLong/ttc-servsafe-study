@@ -6,6 +6,24 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-17-2026-2] - June 17, 2026
+
+### Added
+- **Recipes — metric weights now show a US (pounds/ounces) reading right beside them, everywhere.** Most imported recipes carry weights in grams (the "On Cooking" metric column), so a scaled grocery total read like "1.25 kg to buy" — not friendly for a US cook. Every **weight in grams/kg now appends a US equivalent** in parentheses: `750 g (≈1.7 lb)`, `1.25 kg (≈2.8 lb)`, `190 g (≈6.7 oz)` (oz under a pound, decimal lb above). Done at the single weight renderer (`renderMetricWt`) plus the recipe-detail ingredient path, so it flows through the **recipe detail (scaled and unscaled), the grocery list (both the "to buy" total and the per-recipe reference), and the "already have" list**. US-native weights (lb/oz) are left alone — no grams added — and **volume is untouched** (fluid ounces / ml / cups stay as written, by request). Verified in-app, zero console errors: Mon dinner (purée serves 3 → menu 5) shows `1.25 kg (≈2.8 lb) to buy · per recipe: 750 g (≈1.7 lb)`, and the recipe detail lists `750 g (≈1.7 lb)`, `225 g (≈7.9 oz)`, etc.
+
+---
+
+## [06-17-2026-1] - June 17, 2026
+
+### Changed
+- **Recipes — serving size is now fully separated from menus, and the grocery list distinguishes a recipe's *portion count* from a *volume yield*.** Investigating the confusing menu-scaling behavior surfaced the real root cause: a recipe's free-text yield mixes two incompatible meanings, and the scaler treated them the same. Of 282 imported recipes, **163 state a portion count** (`"4 servings"`, `"6 crêpes"`, `"2 each"`), **103 state a volume/weight yield** (`"1 quart"`, `"14 lb."`, `"24 fl oz"` — the stocks/sauces/soups), and **16 are blank**. The old code grabbed the first number from *any* of these, so a sauce that "makes 1 quart" was read as "serves 1" and scaled 5× for 5 people.
+  - **New `parseHeadcountBase`** powers all menu math: it returns a serving count **only** for portion-count yields and **null** for volume/weight yields and blanks. So portion-count recipes scale by the menu's headcount, while volume yields and no-serving recipes are shown at **single batch (not scaled)** — never silently mis-multiplied. (The recipe-detail batch scaler is unchanged — doubling a "1 quart" sauce on its own screen is still fine.)
+  - **A menu never edits a recipe's serving size.** The inline "serves [ ]" editors on the menu detail and inside the grocery warning (added 06-16) are **removed** — a recipe's serving size lives only on its recipe screen. The menu now shows it **read-only** (`serves 4 → scales to 6`, or `⚠️ makes 2 quarts • single batch (not scaled)`, or `no serving size`).
+  - **Every grocery line shows both numbers, never one alone:** the scaled **"to buy"** total and the **"(per recipe: …)"** reference (e.g. `Shallots 25 g to buy · (per recipe: 5 g)`); unscalable lines read `… · single batch (not scaled)`. The header reads "scaled for N" only when something actually scaled, else "for N (single batch)".
+  - Verified in-app (localhost, zero console errors): Mon lunch (zucchini serves 1 → menu 5) scales every line ×5 with both amounts shown including ranges (`30–40 oz to buy · (per recipe: 6-8 oz)`); a volume-yield menu (Barbecue Sauce "2 quarts", target 8) shows the read-only single-batch banner and unscaled lines.
+
+---
+
 ## [06-16-2026-13] - June 16, 2026
 
 ### Fixed

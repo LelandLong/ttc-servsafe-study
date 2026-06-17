@@ -4039,6 +4039,27 @@
         var m = String(s || '').match(/\d+(?:\.\d+)?\s*([A-Za-z.]+)/);
         return (m && m[1]) ? m[1].replace(/\.$/, '') : 'servings';
       }
+      // Volume/weight measure words. A yield like "1 quart" / "14 lb" / "24 fl oz" is a
+      // TOTAL output, NOT a count of people — so it can't be scaled by a menu headcount.
+      var MEASURE_WORDS = { quart:1, quarts:1, qt:1, gallon:1, gallons:1, gal:1, pint:1, pints:1, pt:1,
+        cup:1, cups:1, fl:1, fluid:1, ounce:1, ounces:1, oz:1, pound:1, pounds:1, lb:1, lbs:1,
+        gram:1, grams:1, g:1, kg:1, kilogram:1, kilograms:1, liter:1, liters:1, litre:1, l:1, ml:1,
+        milliliter:1, milliliters:1, cl:1, tbsp:1, tablespoon:1, tablespoons:1, tsp:1, teaspoon:1, teaspoons:1 };
+      // People/portion base for MENU headcount scaling: how many servings a recipe yields,
+      // ONLY when the yield is a portion count ("4 servings", "6 crêpes", "2 each"). Returns
+      // null for volume/weight yields ("1 quart", "14 lb") and for empty servings — those are
+      // NOT scalable by a headcount and must be shown at single-batch instead. (Distinct from
+      // parseServingsBase, which grabs any leading number for the recipe-detail batch scaler.)
+      function parseHeadcountBase(s) {
+        if (!s) return null;
+        var m = String(s).trim().match(/(\d+\/\d+|\d+(?:\.\d+)?(?:\s+\d+\/\d+)?)\s*([A-Za-z]*)/);
+        if (!m) return null;
+        var n = parseFloat(m[1]);
+        if (!(isFinite(n) && n > 0)) return null;
+        var word = (m[2] || '').toLowerCase().replace(/\.$/, '');
+        if (word && MEASURE_WORDS[word]) return null; // volume/weight yield → not a headcount
+        return n;
+      }
       // Parse a qty token ("2", "1/2", "2 1/2", "1.5") to a number, or null if it
       // isn't a clean numeric form (e.g. "2 lb. 8" — left unscaled rather than mangled).
       function parseQtyNumber(s) {
@@ -4154,7 +4175,19 @@
       }
       function trimNum(n) { return String(Math.round(n * 100) / 100); }
       function renderMetricVol(ml) { return ml >= 1000 ? trimNum(ml / 1000) + ' l' : String(Math.round(ml)) + ' ml'; }
-      function renderMetricWt(g) { return g >= 1000 ? trimNum(g / 1000) + ' kg' : String(Math.round(g)) + ' g'; }
+      // Compact US weight reading for a gram amount: oz under a pound, decimal lb above.
+      function usFromGrams(g) {
+        var oz = g / 28.3495;
+        if (oz < 1)  return (Math.round(oz * 100) / 100) + ' oz';
+        if (oz < 16) return (Math.round(oz * 10) / 10) + ' oz';
+        return (Math.round((oz / 16) * 10) / 10) + ' lb';
+      }
+      // Metric weight ALWAYS pairs with a US (lb/oz) reading for US cooks — e.g. "750 g (≈1.7 lb)".
+      // Volume is intentionally left alone (fluid ounces / ml stay as written).
+      function renderMetricWt(g) {
+        var metric = g >= 1000 ? trimNum(g / 1000) + ' kg' : String(Math.round(g)) + ' g';
+        return metric + ' (≈' + usFromGrams(g) + ')';
+      }
 
       // Scale one ingredient's qty+unit by a conversion factor, rendering measures
       // with standard kitchen conversions + compound measures. Returns { qty, unit }.
@@ -4162,6 +4195,15 @@
       // (clove, each, pinch…) and "to taste" keep their original unit.
       function scaleIngredient(qtyStr, unit, cf) {
         var u = String(unit || '').trim();
+        // Metric weight always renders with its US (lb/oz) equivalent — scaled or not — so
+        // grams show pounds even when the recipe isn't being scaled.
+        if (unitFamily(u) === 'mwt') {
+          var tw = String(qtyStr == null ? '' : qtyStr).trim();
+          if (tw && !/[-–]/.test(tw)) {
+            var nw = parseQtyNumber(tw);
+            if (nw != null) return { qty: renderMetricWt(nw * cf * MWT_G[unitKey(u)]), unit: '' };
+          }
+        }
         if (cf === 1) return { qty: (qtyStr == null ? '' : String(qtyStr)), unit: u };
         if (qtyStr == null || String(qtyStr).trim() === '') return { qty: '', unit: u };
         var t = String(qtyStr).trim();
@@ -4229,7 +4271,7 @@
         var FAM = { vol: VOL_TSP, wt: WT_OZ, mvol: MVOL_ML, mwt: MWT_G };
         var groups = {};
         (recipes || []).forEach(function(r) {
-          var base = parseServingsBase(r.servings);
+          var base = parseHeadcountBase(r.servings);
           var cf = (targetServings && base) ? (targetServings / base) : 1;
           (r.ingredients || []).forEach(function(ing) {
             var isObj = ing && typeof ing === 'object';
@@ -4459,13 +4501,6 @@
           if (!activeMenu) return;
           setActiveMenu(Object.assign({}, activeMenu, { name: name })); // optimistic
           convexMutation('menus:updateMenu', { menuId: activeMenu._id, ownerId: user.userId, name: name });
-        }
-        // Set a recipe's base serving count (so the menu can scale it). Owned recipes only;
-        // updates the recipe itself. Reloads the menu so the grocery list rescales.
-        function setRecipeBaseServings(recipeId, n) {
-          convexMutation('recipes:updateRecipe', { recipeId: recipeId, ownerId: user.userId, servings: n ? String(n) : '' })
-            .then(reloadActiveMenu).then(function(){ loadRecipes(); })
-            .catch(function(err){ setErrorMsg('Could not set serving size: ' + err.message); });
         }
         function setMenuServings(n) {
           setMenuTarget(n);
@@ -5076,21 +5111,19 @@
                           createElement('button', { onClick: function(){ var full = (recipes || []).find(function(x){ return x._id === r._id; }); if (full) openDetail(full); }, className: 'text-left w-full' },
                             createElement('div', { className: 'font-semibold text-primary text-sm truncate' }, r.title)
                           ),
-                          // Editable base serving size — the scaler needs it. Owned recipes edit
-                          // in place; globals show read-only (Customize to change).
-                          createElement('div', { className: 'flex items-center gap-1 text-xs text-muted mt-0.5' },
-                            createElement('span', null, 'serves'),
-                            r.isGlobal
-                              ? createElement('span', { className: 'font-semibold' }, parseServingsBase(r.servings) || '—')
-                              : createElement('input', {
-                                  type: 'number', min: '1',
-                                  defaultValue: parseServingsBase(r.servings) || '',
-                                  onBlur: function(e){ var n = parseInt(e.target.value, 10); if (n > 0) setRecipeBaseServings(r._id, n); },
-                                  className: 'w-12 px-1 rounded border', style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
-                                  placeholder: '—', title: 'Base servings (needed to scale)'
-                                }),
-                            (menuTarget && !parseServingsBase(r.servings)) ? createElement('span', { style: { color: '#dc2626' } }, '• set to scale') : null
-                          )
+                          // Read-only serving info. A recipe's serving size belongs to the
+                          // recipe (edit it on the recipe screen) — a menu never changes it.
+                          // Portion-count recipes scale to the menu headcount; volume yields
+                          // and no-serving recipes show at single batch.
+                          (function(){
+                            var hb = parseHeadcountBase(r.servings);
+                            var txt, warn = false;
+                            if (hb != null) { txt = 'serves ' + decimalToNice(hb) + (menuTarget ? ' → scales to ' + menuTarget : ''); }
+                            else if (r.servings && r.servings.trim()) { txt = 'makes ' + r.servings.trim(); warn = !!menuTarget; }
+                            else { txt = 'no serving size'; warn = !!menuTarget; }
+                            return createElement('div', { className: 'text-xs mt-0.5', style: { color: warn ? '#a16207' : 'var(--text-muted,#6b7280)' } },
+                              (warn ? '⚠️ ' : '') + txt + (warn ? ' • single batch (not scaled)' : ''));
+                          })()
                         ),
                         createElement('button', { onClick: function(){ removeRecipeFromMenu(r._id); }, className: 'text-red-500 px-2', title: 'Remove from menu' }, '×')
                       );
@@ -5113,6 +5146,11 @@
           // so each line can show both — math vs. reality — for the cook to judge.
           var baseQty = {};
           if (menuTarget) combineMenuGroceries(gm.recipes || [], null).forEach(function(b){ baseQty[b.itemKey] = b.qtyText; });
+          // True when the menu contains a recipe that can't be headcount-scaled (volume yield
+          // or no serving size) — so a line whose total equals its base really IS single-batch,
+          // not just a coincidental ×1. Drives the per-line "not scaled" vs "per recipe" label.
+          var hasUnscalable = !!menuTarget && (gm.recipes || []).some(function(r){ return parseHeadcountBase(r.servings) == null; });
+          var hasScalable = (gm.recipes || []).some(function(r){ return parseHeadcountBase(r.servings) != null; });
           var needLines = lines.filter(function(l){ var st = groceryState[l.itemKey] || {}; return !st.have; });
           var bySection = {};
           needLines.forEach(function(l){ (bySection[l.section] = bySection[l.section] || []).push(l); });
@@ -5140,33 +5178,24 @@
                 createElement('button', { onClick: doShare, className: 'text-sm font-bold text-orange-600' }, '⬆️ Share')
               ),
               createElement('p', { className: 'text-sm text-muted mb-3' },
-                needLines.length + ' to buy' + (haveCount ? ' • ' + haveCount + ' already have' : '') + (menuTarget ? ' • scaled for ' + menuTarget : '')),
+                needLines.length + ' to buy' + (haveCount ? ' • ' + haveCount + ' already have' : '') + (menuTarget ? (hasScalable ? ' • scaled for ' + menuTarget : ' • for ' + menuTarget + ' (single batch)') : '')),
               cookedMsg ? createElement('div', { className: 'mb-3 p-2 rounded-lg text-sm', style: { backgroundColor: 'rgba(22,163,74,0.12)', color: '#16a34a' } }, cookedMsg) : null,
-              // When scaling can't apply to a recipe (no serving size), let the user fix it
-              // RIGHT HERE: set how many it serves and it rescales on the spot.
+              // Read-only heads-up: which recipes couldn't be headcount-scaled (volume yields
+              // like "1 quart", or no serving size) and so appear at single batch. We never
+              // edit the recipe from here — to scale one, set its serving size on the recipe.
               (function(){
-                var unscaled = menuTarget ? (gm.recipes || []).filter(function(r){ return !parseServingsBase(r.servings); }) : [];
+                if (!menuTarget) return null;
+                var unscaled = (gm.recipes || []).filter(function(r){ return parseHeadcountBase(r.servings) == null; });
                 if (!unscaled.length) return null;
                 return createElement('div', { className: 'mb-3 p-3 rounded-lg text-sm', style: { backgroundColor: 'rgba(234,179,8,0.15)', color: '#a16207' } },
-                  createElement('div', { className: 'font-semibold mb-2' }, '⚠️ Set a serving size to scale these for ' + menuTarget + ':'),
+                  createElement('div', { className: 'font-semibold mb-1' }, '⚠️ Shown at single batch (not scaled for ' + menuTarget + '):'),
                   unscaled.map(function(r){
-                    return createElement('div', { key: r._id, className: 'flex items-center gap-2 mb-1' },
-                      createElement('span', { className: 'flex-1 min-w-0 truncate' }, r.title),
-                      createElement('span', null, 'serves'),
-                      r.isGlobal
-                        ? createElement('span', { className: 'italic' }, '(Customize recipe to set)')
-                        : createElement('input', {
-                            type: 'number', min: '1', inputMode: 'numeric',
-                            defaultValue: '',
-                            onBlur: function(e){ var n = parseInt(e.target.value, 10); if (n > 0) setRecipeBaseServings(r._id, n); },
-                            onKeyDown: function(e){ if (e.key === 'Enter') { var n = parseInt(e.target.value, 10); if (n > 0) setRecipeBaseServings(r._id, n); } },
-                            className: 'w-14 px-1 py-0.5 rounded border text-center',
-                            style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
-                            placeholder: '#'
-                          })
-                    );
+                    var why = (r.servings && r.servings.trim()) ? 'makes ' + r.servings.trim() : 'no serving size';
+                    return createElement('div', { key: r._id, className: 'flex items-baseline gap-1' },
+                      createElement('span', { className: 'font-medium' }, r.title),
+                      createElement('span', { style: { opacity: 0.8 } }, '— ' + why));
                   }),
-                  createElement('div', { className: 'text-xs mt-1', style: { opacity: 0.85 } }, 'e.g. if the recipe as written feeds 4, type 4 — we’ll scale it to ' + menuTarget + '.')
+                  createElement('div', { className: 'text-xs mt-1', style: { opacity: 0.85 } }, 'These are sauces/stocks or recipes without a portion count. To scale one by people, give it a “Serves N” on its recipe screen.')
                 );
               })(),
               sections.length === 0
@@ -5184,12 +5213,24 @@
                             }, st.checkedOff ? '☑️' : '⬜'),
                             createElement('div', { className: 'flex-1 min-w-0' },
                               createElement('div', { className: 'font-semibold text-primary text-sm', style: st.checkedOff ? { textDecoration: 'line-through', opacity: 0.55 } : null }, l.display),
-                              l.qtyText ? createElement('div', { className: 'text-xs text-muted' },
-                                l.qtyText,
-                                (menuTarget && baseQty[l.itemKey] && baseQty[l.itemKey] !== l.qtyText)
-                                  ? createElement('span', { style: { opacity: 0.8 } }, '  ·  recipe: ' + baseQty[l.itemKey])
-                                  : null
-                              ) : null
+                              l.qtyText ? (function(){
+                                // Never show a lone number: pair the "to buy" total with a
+                                // per-recipe reference. When a line didn't scale (its total ==
+                                // single-batch and the menu has an unscalable recipe), say so.
+                                var base = baseQty[l.itemKey];
+                                if (menuTarget && base && base !== l.qtyText) {
+                                  return createElement('div', { className: 'text-xs text-muted' },
+                                    createElement('span', { className: 'font-medium', style: { color: 'var(--text-secondary)' } }, l.qtyText + ' to buy'),
+                                    createElement('span', { style: { opacity: 0.8 } }, '  ·  per recipe: ' + base));
+                                }
+                                if (menuTarget && hasUnscalable && base === l.qtyText) {
+                                  return createElement('div', { className: 'text-xs text-muted' },
+                                    l.qtyText, createElement('span', { style: { opacity: 0.8 } }, '  ·  single batch (not scaled)'));
+                                }
+                                return createElement('div', { className: 'text-xs text-muted' },
+                                  (menuTarget ? l.qtyText + ' to buy' : l.qtyText),
+                                  createElement('span', { style: { opacity: 0.8 } }, '  ·  per recipe'));
+                              })() : null
                             ),
                             createElement('button', {
                               onClick: function(){ setGrocery(l.itemKey, { have: true }); },
@@ -5207,7 +5248,7 @@
                 createElement('div', { className: 'text-xs font-bold uppercase text-muted mb-1' }, 'Already have (' + haveCount + ')'),
                 lines.filter(function(l){ return (groceryState[l.itemKey] || {}).have; }).map(function(l){
                   return createElement('div', { key: l.itemKey, className: 'flex items-center gap-2 text-sm text-muted mb-1' },
-                    createElement('span', null, '✓ ' + l.display + (l.qtyText ? ' (' + l.qtyText + ')' : '')),
+                    createElement('span', null, '✓ ' + l.display + (l.qtyText ? ' — ' + l.qtyText : '')),
                     createElement('button', { onClick: function(){ setGrocery(l.itemKey, { have: false }); }, className: 'underline text-xs' }, 'need it')
                   );
                 })),
