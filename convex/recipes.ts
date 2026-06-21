@@ -996,16 +996,40 @@ function fetchWithUA(url: string, ua: string): Promise<Response> {
   });
 }
 
+// Status codes that signal bot-blocking (not a genuine 404). We retry these as Googlebot,
+// and if STILL blocked, return a friendly "this site blocks import" message instead of a raw code.
+const BLOCK_CODES = [401, 403, 406, 412, 429, 451, 460, 503];
+
+function hostOf(url: string): string {
+  try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) { return "that site"; }
+}
+// Some sites (allrecipes, seriouseats, …) sit behind a Cloudflare JS challenge that returns a
+// "Just a moment…" interstitial INSTEAD of the recipe — sometimes with a 200. Detect it so we
+// don't feed a challenge page to the AI and produce a bogus recipe.
+function isBotChallenge(html: string): boolean {
+  if (!html) return false;
+  const head = html.slice(0, 4000).toLowerCase();
+  if (/just a moment\.\.\.|challenge-platform|challenges\.cloudflare\.com|cf-browser-verification|cf_chl_|attention required|enable javascript and cookies to continue|verifying you are human/.test(head)) return true;
+  return html.length < 3000 && /(captcha|access denied|forbidden)/.test(head);
+}
+function blockedMsg(url: string): string {
+  return hostOf(url) + " blocks automated import (bot protection), so we can’t read it from here. Use “Scan a recipe photo” below — screenshot the recipe — or copy the recipe text and paste it.";
+}
+
 // Fetch a page's HTML, retrying as Googlebot if the normal request is blocked.
-// Returns { html } on success or { error } describing the failure.
+// Returns { html } on success or { error } describing the failure (friendly when bot-blocked).
 async function fetchPageHtml(url: string): Promise<{ html?: string; error?: string }> {
   try {
     let res = await fetchWithUA(url, BROWSER_UA);
-    if (!res.ok && (res.status === 403 || res.status === 429 || res.status === 451 || res.status === 503)) {
+    if (!res.ok && BLOCK_CODES.indexOf(res.status) !== -1) {
       res = await fetchWithUA(url, GOOGLEBOT_UA);
     }
-    if (!res.ok) return { error: "Could not fetch the page (HTTP " + res.status + ")." };
-    return { html: await res.text() };
+    if (!res.ok) {
+      return { error: BLOCK_CODES.indexOf(res.status) !== -1 ? blockedMsg(url) : ("Could not fetch the page (HTTP " + res.status + ").") };
+    }
+    const html = await res.text();
+    if (isBotChallenge(html)) return { error: blockedMsg(url) };
+    return { html };
   } catch (e: any) {
     return { error: "Could not reach that URL." };
   }

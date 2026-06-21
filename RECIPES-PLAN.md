@@ -1,6 +1,6 @@
 # Chef's Kitchen — Recipes Feature Plan
 
-**Status:** R1 + R2 + R3 + R4 + R8 + R9 + R10 shipped & verified; class filters shipped — R5–R7, R11 planned
+**Status:** R1 + R2 + R3 + R4 + R8 + R9 + R10 shipped & verified; class filters shipped; **Meal-Planning Phase 1 (menus + per-menu grocery lists) and Phase 3 (multi-menu shopping trips) shipped** — R5–R7, R11, and Meal-Planning Phase 2 (mise en place) planned
 **Created:** June 11, 2026
 **Owner:** Leland Long
 
@@ -262,6 +262,26 @@ Builds on R10 (and the R6 meal-planning vision).
 - **Running totals / rollups**: meals per week/month, total diners served, most-cooked dishes,
   best-scoring dishes over time — turning the cook log into a planning + retrospective tool.
 - Surfacing ideas: "haven't made X in a while," crowd-pleasers to re-run, menu planning around a date.
+
+### Meal-Planning sub-phases (the working-kitchen build-out of the R6 vision)
+This thread post-dates the original R-numbering; it's the concrete build of "plan a meal, shop, cook."
+
+- **Meal-Planning Phase 1 — Menus + per-menu grocery lists** ✅ DONE
+  `menus` table (ownerId, name, recipeIds[], servings headcount, plannedDate, notes) + `groceryItems`
+  (per-(list,item) have / checked-off / note, keyed `"menu:<id>"`). A menu collects recipes; a
+  per-menu **headcount** scales each recipe (portion-count yields only — volume yields show single
+  batch); the combined grocery list groups by store section, shows scaled "to buy" + per-recipe
+  reference, **pounds beside grams**, have/need toggle, in-store check-off, notes, share/export.
+- **Meal-Planning Phase 2 — Mise en place prep flow** (planned)
+  A pre-cook prep checklist per menu: consolidated chop/measure/prep tasks gathered from the recipes.
+- **Meal-Planning Phase 3 — Multi-menu shopping trips** ✅ DONE (06-17-2026-5)
+  `shoppingTrips` table (ownerId, name, menuIds[]). A trip combines a **user-chosen subset** of menus
+  (the builder asks which to include — never all) into ONE grocery run; each menu contributes its own
+  headcount-scaled amounts, **summed** per ingredient (same recipe on 2 menus = 2 batches), with
+  per-line provenance (`from: <menu names>`). Grocery state reuses `groceryItems` keyed `"trip:<id>"`.
+  The grocery combiner is shared (`accumulateGroceries` + `finalizeGroceries`) so menu and trip lists
+  use identical math.
+- **Meal-Planning Phase 4 — Cook-log history/analytics** = Phase R11 above.
 
 ---
 

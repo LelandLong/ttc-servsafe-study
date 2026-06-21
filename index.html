@@ -4265,11 +4265,12 @@
         if (has(['frozen','ice cream'])) return 'Frozen';
         return 'Other';
       }
-      // Build the combined, scaled grocery list for a set of menu recipes.
-      // targetServings (optional): scale every recipe to that headcount.
-      function combineMenuGroceries(recipes, targetServings) {
+      // Accumulate a set of recipes into the shared `groups` buckets, each recipe scaled by
+      // `targetServings` (its own headcount base). `sourceLabel` (optional) tags which menu a
+      // quantity came from, for shopping-trip provenance. Used by both the per-menu and the
+      // multi-menu (trip) combiners so the math + parsing live in exactly one place.
+      function accumulateGroceries(groups, recipes, targetServings, sourceLabel) {
         var FAM = { vol: VOL_TSP, wt: WT_OZ, mvol: MVOL_ML, mwt: MWT_G };
-        var groups = {};
         (recipes || []).forEach(function(r) {
           var base = parseHeadcountBase(r.servings);
           var cf = (targetServings && base) ? (targetServings / base) : 1;
@@ -4285,9 +4286,10 @@
               if (led) { qtyStr = led.qty; unit = led.unit; item = led.item; }
             }
             var key = normalizeItemKey(item);
-            if (!groups[key]) groups[key] = { display: titleCaseItem(key), vol: 0, wt: 0, mvol: 0, mwt: 0, counts: {}, raw: [], titles: {} };
+            if (!groups[key]) groups[key] = { display: titleCaseItem(key), vol: 0, wt: 0, mvol: 0, mwt: 0, counts: {}, raw: [], titles: {}, sources: {} };
             var g = groups[key];
             if (r.title) g.titles[r.title] = true;
+            if (sourceLabel) g.sources[sourceLabel] = true;
             var num = parseQtyNumber(qtyStr);
             var fam = unitFamily(unit), k = unitKey(unit);
             if (num != null && fam) { g[fam] += num * cf * FAM[fam][k]; }
@@ -4296,6 +4298,9 @@
             else { var rawTxt = ((qtyStr ? scaleQtyDisplay(qtyStr, cf) + ' ' : '') + (unit || '')).trim(); if (rawTxt) g.raw.push(rawTxt); }
           });
         });
+      }
+      // Render the accumulated `groups` into sorted grocery line objects.
+      function finalizeGroceries(groups) {
         return Object.keys(groups).map(function(key) {
           var g = groups[key], parts = [];
           if (g.vol > 0) parts.push(renderVolume(g.vol));
@@ -4304,11 +4309,28 @@
           if (g.mwt > 0) parts.push(renderMetricWt(g.mwt));
           Object.keys(g.counts).forEach(function(u) { parts.push(decimalToNice(g.counts[u]) + (u ? ' ' + u : '')); });
           g.raw.forEach(function(rt) { if (parts.indexOf(rt) === -1) parts.push(rt); });
-          return { itemKey: key, display: g.display, qtyText: parts.join(' + '), titles: Object.keys(g.titles), section: groceryAisle(key) };
+          return { itemKey: key, display: g.display, qtyText: parts.join(' + '), titles: Object.keys(g.titles), sources: Object.keys(g.sources), section: groceryAisle(key) };
         }).sort(function(a, b) {
           var sa = GROCERY_SECTIONS.indexOf(a.section), sb = GROCERY_SECTIONS.indexOf(b.section);
           return (sa - sb) || a.display.localeCompare(b.display);
         });
+      }
+      // Build the combined, scaled grocery list for ONE menu's recipes.
+      // targetServings (optional): scale every recipe to that headcount.
+      function combineMenuGroceries(recipes, targetServings) {
+        var groups = {};
+        accumulateGroceries(groups, recipes, targetServings, null);
+        return finalizeGroceries(groups);
+      }
+      // Build the combined grocery list for a SHOPPING TRIP — several menus summed into one run.
+      // Each menu contributes its OWN headcount-scaled amounts; the same recipe on two menus is
+      // summed (two meals = two batches). Lines carry `sources` = the menu names that need them.
+      function combineTripGroceries(menus) {
+        var groups = {};
+        (menus || []).forEach(function(m) {
+          accumulateGroceries(groups, m.recipes, m.servings || null, m.name);
+        });
+        return finalizeGroceries(groups);
       }
 
       // ---- Cook-log date helpers (R10) ----
@@ -4365,6 +4387,7 @@
         const [importUrl, setImportUrl] = useState('');
         const [importing, setImporting] = useState(false);
         const [importError, setImportError] = useState('');
+        const [importText, setImportText] = useState('');     // pasted full-page text → AI extracts the recipe
         const [pendingPages, setPendingPages] = useState([]); // [{preview, base64}] staged recipe-page photos
         const [addingPages, setAddingPages] = useState(false); // downscaling newly added photos
 
@@ -4403,6 +4426,11 @@
         const [newMenuName, setNewMenuName] = useState('');
         const [menuBusy, setMenuBusy] = useState(false);
         const [cookedMsg, setCookedMsg] = useState('');
+
+        // ---- Shopping trips (Phase 3: combine a user-chosen subset of menus) ----
+        const [trips, setTrips] = useState(null);            // null = unloaded
+        const [activeTrip, setActiveTrip] = useState(null);  // loaded trip w/ member menus + recipes
+        const [tripPick, setTripPick] = useState({});        // menuId -> true, the menus chosen for a trip
 
         // Type-ahead suggestion data
         const [dinerNames, setDinerNames] = useState([]);       // per-user, from past ratings
@@ -4488,6 +4516,86 @@
             .then(function(res){ setMenuBusy(false); setNewMenuName(''); return res.menuId; })
             .catch(function(err){ setMenuBusy(false); setErrorMsg('Could not create menu: ' + err.message); });
         }
+
+        // ---- Shopping trips (Phase 3) ----
+        function loadTrips() {
+          if (!user) { setTrips([]); return; }
+          convexQuery('menus:getMyShoppingTrips', { ownerId: user.userId })
+            .then(function(list){ setTrips(list || []); })
+            .catch(function(err){ setErrorMsg('Could not load shopping trips: ' + err.message); });
+        }
+        // Open the trips list. Also (re)loads the menus so the "new trip" picker has them.
+        function openTrips() { setCookedMsg(''); setErrorMsg(''); loadTrips(); loadMenus(); setView('trips'); }
+        function openTrip(tripId) {
+          setCookedMsg(''); setErrorMsg('');
+          convexQuery('menus:getShoppingTrip', { tripId: tripId, ownerId: user.userId })
+            .then(function(t){ setActiveTrip(t); setView('trip'); loadTripGroceryState(t); })
+            .catch(function(err){ setErrorMsg('Could not open trip: ' + err.message); });
+        }
+        // Load a trip's grocery state, INHERITING "have" from each member menu (an item you
+        // already marked "have" on a menu shouldn't reappear on the trip's shopping list). Have
+        // is OR'd across the trip's own state + all member menus; check-off and notes are the
+        // trip's own (this shopping run). So a one-menu trip mirrors that menu's have-marks.
+        function loadTripGroceryState(trip) {
+          if (!trip || !user) return;
+          var keys = ['trip:' + trip._id].concat((trip.menus || []).map(function(m){ return 'menu:' + m._id; }));
+          Promise.all(keys.map(function(k){
+            return convexQuery('menus:getGroceryState', { ownerId: user.userId, listKey: k }).catch(function(){ return []; });
+          })).then(function(results){
+            var map = {};
+            function ensure(k){ if (!map[k]) map[k] = { have: false, checkedOff: false, note: '' }; return map[k]; }
+            // Member menus (results[1..]) contribute HAVE only.
+            for (var i = 1; i < results.length; i++) {
+              (results[i] || []).forEach(function(r){ if (r.have) ensure(r.itemKey).have = true; });
+            }
+            // Trip's own state: OR its have, and own the check-off + note for this run.
+            (results[0] || []).forEach(function(r){
+              var g = ensure(r.itemKey);
+              if (r.have) g.have = true;
+              g.checkedOff = r.checkedOff;
+              if (r.note) g.note = r.note;
+            });
+            setGroceryState(map);
+          }).catch(function(err){ setErrorMsg('Could not load grocery state: ' + err.message); });
+        }
+        function reloadActiveTrip() {
+          if (!activeTrip) return Promise.resolve(null);
+          return convexQuery('menus:getShoppingTrip', { tripId: activeTrip._id, ownerId: user.userId })
+            .then(function(t){ setActiveTrip(t); return t; });
+        }
+        // Create a trip from the currently picked menus, then open it. Requires ≥1 menu chosen.
+        function createTripFromPick() {
+          var ids = Object.keys(tripPick).filter(function(id){ return tripPick[id]; });
+          if (!ids.length) { setErrorMsg('Pick at least one menu for this trip.'); return; }
+          var name = (newMenuName || '').trim() || 'Shopping trip';
+          setMenuBusy(true);
+          convexMutation('menus:createShoppingTrip', { ownerId: user.userId, name: name, menuIds: ids })
+            .then(function(res){ setMenuBusy(false); setNewMenuName(''); setTripPick({}); openTrip(res.tripId); })
+            .catch(function(err){ setMenuBusy(false); setErrorMsg('Could not create trip: ' + err.message); });
+        }
+        function renameTrip(name) {
+          if (!activeTrip) return;
+          setActiveTrip(Object.assign({}, activeTrip, { name: name })); // optimistic
+          convexMutation('menus:updateShoppingTrip', { tripId: activeTrip._id, ownerId: user.userId, name: name });
+        }
+        // Add or remove a menu from the open trip (keeps the combined list current).
+        function toggleTripMenu(menuId) {
+          if (!activeTrip) return;
+          var have = (activeTrip.menus || []).some(function(m){ return m._id === menuId; });
+          var ids = (activeTrip.menus || []).map(function(m){ return m._id; });
+          ids = have ? ids.filter(function(id){ return id !== menuId; }) : ids.concat([menuId]);
+          convexMutation('menus:updateShoppingTrip', { tripId: activeTrip._id, ownerId: user.userId, menuIds: ids })
+            .then(reloadActiveTrip)
+            .then(function(t){ if (t) loadTripGroceryState(t); }) // re-inherit have from the new menu set
+            .catch(function(err){ setErrorMsg('Could not update trip: ' + err.message); });
+        }
+        function deleteTrip() {
+          if (!activeTrip) return;
+          if (!window.confirm('Delete shopping trip "' + activeTrip.name + '"? (Your menus are not affected.)')) return;
+          convexMutation('menus:deleteShoppingTrip', { tripId: activeTrip._id, ownerId: user.userId })
+            .then(function(){ setActiveTrip(null); openTrips(); })
+            .catch(function(err){ setErrorMsg('Could not delete trip: ' + err.message); });
+        }
         function addRecipeToMenu(menuId, recipeId) {
           return convexMutation('menus:addRecipeToMenu', { menuId: menuId, ownerId: user.userId, recipeId: recipeId })
             .catch(function(err){ setErrorMsg('Could not add to menu: ' + err.message); });
@@ -4526,10 +4634,15 @@
             .catch(function(err){ setMenuBusy(false); setErrorMsg('Could not log meals: ' + err.message); });
         }
         // ---- Grocery list ----
-        function groceryListKey() { return activeMenu ? ('menu:' + activeMenu._id) : ''; }
-        function loadGroceryState() {
-          if (!activeMenu) return;
-          convexQuery('menus:getGroceryState', { ownerId: user.userId, listKey: groceryListKey() })
+        // A grocery list belongs to either one menu ("menu:<id>") or a shopping trip ("trip:<id>").
+        // The trip view takes precedence when one is open so its check-offs persist separately.
+        function groceryListKey() {
+          if (view === 'trip' && activeTrip) return 'trip:' + activeTrip._id;
+          return activeMenu ? ('menu:' + activeMenu._id) : '';
+        }
+        function loadGroceryStateFor(listKey) {
+          if (!listKey) return;
+          convexQuery('menus:getGroceryState', { ownerId: user.userId, listKey: listKey })
             .then(function(rows){
               var map = {};
               (rows || []).forEach(function(r){ map[r.itemKey] = { have: r.have, checkedOff: r.checkedOff, note: r.note }; });
@@ -4537,7 +4650,8 @@
             })
             .catch(function(err){ setErrorMsg('Could not load grocery state: ' + err.message); });
         }
-        function openGrocery() { setView('grocery'); loadGroceryState(); }
+        function loadGroceryState() { loadGroceryStateFor(groceryListKey()); }
+        function openGrocery() { setView('grocery'); loadGroceryStateFor('menu:' + activeMenu._id); }
         function setGrocery(itemKey, patch) {
           setGroceryState(function(prev){
             var next = Object.assign({}, prev);
@@ -4685,7 +4799,7 @@
           if (r.imageStorageId) { setFImageIds([r.imageStorageId]); setFImageUrls([r.imageUrl || '']); }
           else { setFImageIds([]); setFImageUrls([]); }
           setFSourceType(srcType); setFSourceUrl(srcUrl || '');
-          setShowImport(false); setImportUrl(''); setPendingPages([]);
+          setShowImport(false); setImportUrl(''); setImportText(''); setPendingPages([]);
           setErrorMsg('');
           setView('edit');
         }
@@ -4700,6 +4814,25 @@
               setImporting(false);
               if (!res || !res.ok) { setImportError((res && res.error) || 'Could not import that page.'); return; }
               applyImportedRecipe(res.recipe, 'url', res.recipe.sourceUrl || url);
+            })
+            .catch(function(err) { setImporting(false); setImportError('Import failed: ' + err.message); });
+        }
+
+        // Text import: paste a whole recipe page (Select-All → Copy → Paste, ads and all) and the
+        // AI pulls out just the recipe. The escape hatch for bot-blocked sites (allrecipes, etc.)
+        // that can't be fetched server-side — no photos needed.
+        function runTextImport() {
+          var text = importText.trim();
+          if (text.length < 40) { setImportError('Paste the recipe text first (select the whole page and copy).'); return; }
+          setImporting(true); setImportError('');
+          convexAction('recipes:importRecipeFromText', { text: text })
+            .then(function(res) {
+              setImporting(false);
+              if (!res || !res.ok) { setImportError((res && res.error) || 'Could not read that text.'); return; }
+              if (!res.isRecipe) { setImportError('That didn’t look like a recipe — make sure you copied the ingredients and steps.'); return; }
+              var srcUrl = importUrl.trim();
+              applyImportedRecipe(res.recipe, srcUrl ? 'url' : 'manual', srcUrl || undefined);
+              setImportText('');
             })
             .catch(function(err) { setImporting(false); setImportError('Import failed: ' + err.message); });
         }
@@ -5032,11 +5165,13 @@
                   if (view === 'list') { onBack(); }
                   else if (view === 'grocery') { setView('menu'); }
                   else if (view === 'menu') { openMenus(); }
+                  else if (view === 'trip') { openTrips(); }
+                  else if (view === 'trips') { openMenus(); }
                   else if (view === 'detail') { setView(detailFrom); }
                   else { setView('list'); }
                 },
                 className: 'text-white/90 hover:text-white text-sm font-medium'
-              }, '← ' + (view === 'list' ? 'Back to courses' : view === 'grocery' ? 'Back to menu' : view === 'menu' ? 'Back to menus' : view === 'detail' ? (detailFrom === 'menu' ? 'Back to menu' : detailFrom === 'grocery' ? 'Back to grocery list' : 'Back to recipes') : 'Back to recipes')),
+              }, '← ' + (view === 'list' ? 'Back to courses' : view === 'grocery' ? 'Back to menu' : view === 'menu' ? 'Back to menus' : view === 'trip' ? 'Back to trips' : view === 'trips' ? 'Back to menus' : view === 'detail' ? (detailFrom === 'menu' ? 'Back to menu' : detailFrom === 'grocery' ? 'Back to grocery list' : 'Back to recipes') : 'Back to recipes')),
               createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION)
             ),
             createElement('div', { className: 'text-center' },
@@ -5066,6 +5201,11 @@
                 }, '+ New menu')
               ),
               createElement('p', { className: 'text-sm text-muted mb-4' }, 'Plan a meal: collect recipes into a menu, then get a combined grocery list and prep plan.'),
+              // Shopping trips: combine a chosen subset of menus into one grocery run.
+              createElement('button', {
+                onClick: openTrips,
+                className: 'w-full mb-4 py-3 rounded-xl border-2 border-themed text-primary font-bold flex items-center justify-center gap-2 hover:border-orange-300'
+              }, '🧺 Shopping trips', createElement('span', { className: 'text-sm text-muted font-normal' }, '— combine menus into one grocery run')),
               menus === null
                 ? createElement('p', { className: 'text-muted text-center py-10' }, 'Loading…')
                 : (menus.length === 0
@@ -5090,6 +5230,137 @@
                             createElement('span', { className: 'text-muted' }, '›')
                           );
                         })))
+            )
+          );
+        }
+
+        // ---- SHOPPING TRIPS LIST (+ new-trip menu picker) ----
+        if (view === 'trips') {
+          var chosenIds = Object.keys(tripPick).filter(function(id){ return tripPick[id]; });
+          var tripInputStyle = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' };
+          return createElement('div', { className: 'min-h-screen' }, headerEl,
+            createElement('main', { className: 'max-w-2xl mx-auto p-6' },
+              errorEl,
+              createElement('h2', { className: 'text-xl font-bold text-primary mb-1' }, '🧺 Shopping Trips'),
+              createElement('p', { className: 'text-sm text-muted mb-4' }, 'Combine a few menus into one grocery run — pick just the meals you’re shopping for now, not your whole plan.'),
+              // New-trip builder: CHOOSE which menus go in (never assume all).
+              createElement('div', { className: 'card-bg rounded-xl p-4 border border-themed mb-5' },
+                createElement('div', { className: 'font-bold text-primary mb-2' }, '+ New trip'),
+                menus === null
+                  ? createElement('p', { className: 'text-muted text-sm' }, 'Loading menus…')
+                  : (menus.length === 0
+                      ? createElement('p', { className: 'text-muted text-sm' }, 'You have no menus yet — make some menus first, then combine them into a trip.')
+                      : createElement('div', null,
+                          createElement('p', { className: 'text-sm text-secondary mb-2' }, 'Which menus are you shopping for?'),
+                          createElement('div', { className: 'flex flex-col gap-1 mb-3' },
+                            menus.map(function(mm){
+                              return createElement('label', { key: mm._id, className: 'flex items-center gap-2 text-sm text-primary cursor-pointer' },
+                                createElement('input', { type: 'checkbox', checked: !!tripPick[mm._id], onChange: function(){ setTripPick(function(prev){ var n = Object.assign({}, prev); if (n[mm._id]) delete n[mm._id]; else n[mm._id] = true; return n; }); } }),
+                                createElement('span', null, mm.name + (mm.servings ? ' (for ' + mm.servings + ')' : '') + ' · ' + mm.recipeCount + (mm.recipeCount === 1 ? ' recipe' : ' recipes'))
+                              );
+                            })
+                          ),
+                          createElement('input', { className: 'w-full p-2 rounded-lg border mb-2', style: tripInputStyle, value: newMenuName, onChange: function(e){ setNewMenuName(e.target.value); }, placeholder: 'Trip name (e.g. “Weekend shop”)' }),
+                          createElement('button', { onClick: createTripFromPick, disabled: menuBusy || chosenIds.length === 0, className: 'w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg disabled:opacity-50' },
+                            menuBusy ? 'Creating…' : ('🛒 Create trip' + (chosenIds.length ? ' (' + chosenIds.length + ' menu' + (chosenIds.length === 1 ? '' : 's') + ')' : '')))
+                        ))
+              ),
+              createElement('h3', { className: 'text-lg font-bold text-primary mb-2' }, 'Your trips'),
+              trips === null
+                ? createElement('p', { className: 'text-muted text-center py-6' }, 'Loading…')
+                : (trips.length === 0
+                    ? createElement('p', { className: 'text-muted text-sm' }, 'No saved trips yet.')
+                    : createElement('div', { className: 'grid grid-cols-1 gap-3' },
+                        trips.map(function(t){
+                          return createElement('button', { key: t._id, onClick: function(){ openTrip(t._id); }, className: 'mode-card card-bg rounded-xl p-3 border-2 border-themed text-left flex gap-3 items-center hover:border-orange-300' },
+                            t.cover
+                              ? createElement('img', { src: t.cover, style: { width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px' } })
+                              : createElement('div', { style: { width: '56px', height: '56px', borderRadius: '8px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem' } }, '🧺'),
+                            createElement('div', { className: 'flex-1 min-w-0' },
+                              createElement('div', { className: 'font-bold text-primary' }, t.name),
+                              createElement('div', { className: 'text-sm text-muted truncate' }, t.menuCount + (t.menuCount === 1 ? ' menu' : ' menus') + (t.menuNames && t.menuNames.length ? ' • ' + t.menuNames.join(', ') : ''))
+                            ),
+                            createElement('span', { className: 'text-muted' }, '›')
+                          );
+                        })))
+            )
+          );
+        }
+
+        // ---- SHOPPING TRIP DETAIL (combined grocery list across chosen menus) ----
+        if (view === 'trip' && activeTrip) {
+          var tr = activeTrip;
+          var tripMenus = tr.menus || [];
+          var tripInTrip = {}; tripMenus.forEach(function(mm){ tripInTrip[mm._id] = true; });
+          var tLines = combineTripGroceries(tripMenus);
+          var tNeed = tLines.filter(function(l){ var st = groceryState[l.itemKey] || {}; return !st.have; });
+          var tBySection = {};
+          tNeed.forEach(function(l){ (tBySection[l.section] = tBySection[l.section] || []).push(l); });
+          var tSections = GROCERY_SECTIONS.filter(function(s){ return tBySection[s] && tBySection[s].length; });
+          var tHave = tLines.length - tNeed.length;
+          var trInputStyle = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' };
+          var tripShareText = function(){
+            var out = ['Shopping trip — ' + tr.name, ''];
+            tSections.forEach(function(s){ out.push(s.toUpperCase()); tBySection[s].forEach(function(l){ var st = groceryState[l.itemKey] || {}; out.push('- ' + l.display + (l.qtyText ? ': ' + l.qtyText : '') + (st.note ? '  (' + st.note + ')' : '')); }); out.push(''); });
+            return out.join('\n').trim();
+          };
+          var tripShare = function(){ var txt = tripShareText(); if (navigator.share) { navigator.share({ title: tr.name + ' — shopping list', text: txt }).catch(function(){}); } else if (navigator.clipboard) { navigator.clipboard.writeText(txt).then(function(){ setCookedMsg('Shopping list copied to clipboard.'); }); } };
+          return createElement('div', { className: 'min-h-screen' }, headerEl,
+            createElement('main', { className: 'max-w-2xl mx-auto p-6' },
+              errorEl,
+              createElement('input', { className: 'w-full text-xl font-bold p-2 rounded-lg border mb-3', style: trInputStyle, value: tr.name, onChange: function(e){ renameTrip(e.target.value); }, placeholder: 'Trip name' }),
+              // Which menus are in this trip — toggle any of your menus in/out.
+              createElement('div', { className: 'text-xs font-bold uppercase text-muted mb-1', style: { letterSpacing: '0.05em' } }, 'Menus in this trip'),
+              createElement('div', { className: 'flex flex-col gap-1 mb-3' },
+                (menus || []).length === 0
+                  ? createElement('p', { className: 'text-muted text-sm' }, 'No menus available.')
+                  : (menus || []).map(function(mm){
+                      var on = !!tripInTrip[mm._id];
+                      return createElement('label', { key: mm._id, className: 'flex items-center gap-2 text-sm cursor-pointer', style: { color: on ? 'var(--text-primary)' : 'var(--text-muted,#6b7280)' } },
+                        createElement('input', { type: 'checkbox', checked: on, onChange: function(){ toggleTripMenu(mm._id); } }),
+                        createElement('span', null, mm.name + (mm.servings ? ' (for ' + mm.servings + ')' : ''))
+                      );
+                    })
+              ),
+              cookedMsg ? createElement('div', { className: 'mb-3 p-2 rounded-lg text-sm', style: { backgroundColor: 'rgba(22,163,74,0.12)', color: '#16a34a' } }, cookedMsg) : null,
+              createElement('div', { className: 'flex items-center justify-between mb-1 mt-2' },
+                createElement('h2', { className: 'text-xl font-bold text-primary' }, '🛒 Shopping list'),
+                createElement('button', { onClick: tripShare, className: 'text-sm font-bold text-orange-600' }, '⬆️ Share')
+              ),
+              createElement('p', { className: 'text-sm text-muted mb-3' }, tNeed.length + ' to buy' + (tHave ? ' • ' + tHave + ' already have' : '') + ' • across ' + tripMenus.length + (tripMenus.length === 1 ? ' menu' : ' menus')),
+              tSections.length === 0
+                ? createElement('p', { className: 'text-muted text-center py-10' }, tLines.length ? 'Everything’s checked as “have”. 🎉' : 'No ingredients yet — add a menu above.')
+                : tSections.map(function(s){
+                    return createElement('div', { key: s, className: 'mb-4' },
+                      createElement('div', { className: 'text-xs font-bold uppercase text-muted mb-1', style: { letterSpacing: '0.05em' } }, s),
+                      tBySection[s].map(function(l){
+                        var st = groceryState[l.itemKey] || {};
+                        return createElement('div', { key: l.itemKey, className: 'card-bg rounded-lg p-2 border border-themed mb-2' },
+                          createElement('div', { className: 'flex items-center gap-2' },
+                            createElement('button', { onClick: function(){ setGrocery(l.itemKey, { checkedOff: !st.checkedOff }); }, style: { fontSize: '1.2rem', lineHeight: 1 }, title: 'Check off in store' }, st.checkedOff ? '☑️' : '⬜'),
+                            createElement('div', { className: 'flex-1 min-w-0' },
+                              createElement('div', { className: 'font-semibold text-primary text-sm', style: st.checkedOff ? { textDecoration: 'line-through', opacity: 0.55 } : null }, l.display),
+                              l.qtyText ? createElement('div', { className: 'text-xs text-muted' },
+                                l.qtyText + ' to buy',
+                                (l.sources && l.sources.length) ? createElement('span', { style: { opacity: 0.8 } }, '  ·  from: ' + l.sources.join(', ')) : null
+                              ) : null
+                            ),
+                            createElement('button', { onClick: function(){ setGrocery(l.itemKey, { have: true }); }, className: 'text-xs px-2 py-1 rounded border', style: { borderColor: 'var(--border-color)', color: 'var(--text-muted,#6b7280)' }, title: 'I already have this' }, 'Have it')
+                          ),
+                          createElement('input', { className: 'w-full mt-2 p-1 rounded border text-xs', style: trInputStyle, value: st.note || '', onChange: function(e){ setGrocery(l.itemKey, { note: e.target.value }); }, placeholder: 'note (e.g. “1 jar”, brand, size)' })
+                        );
+                      }));
+                  }),
+              tHave > 0 && createElement('div', { className: 'mt-2 pt-3', style: { borderTop: '1px solid var(--border-color)' } },
+                createElement('div', { className: 'text-xs font-bold uppercase text-muted mb-1' }, 'Already have (' + tHave + ')'),
+                tLines.filter(function(l){ return (groceryState[l.itemKey] || {}).have; }).map(function(l){
+                  return createElement('div', { key: l.itemKey, className: 'flex items-center gap-2 text-sm text-muted mb-1' },
+                    createElement('span', null, '✓ ' + l.display + (l.qtyText ? ' — ' + l.qtyText : '')),
+                    createElement('button', { onClick: function(){ setGrocery(l.itemKey, { have: false }); }, className: 'underline text-xs' }, 'need it')
+                  );
+                })),
+              tNeed.some(function(l){ return (groceryState[l.itemKey] || {}).checkedOff; }) && createElement('button', { onClick: clearGroceryChecks, className: 'mt-4 text-sm underline', style: { color: 'var(--text-muted,#6b7280)' } }, 'Uncheck all (new shopping run)'),
+              createElement('button', { onClick: deleteTrip, className: 'mt-6 w-full py-2 rounded-xl border-2 border-red-300 text-red-600 text-sm' }, 'Delete trip')
             )
           );
         }
@@ -5877,6 +6148,23 @@
                 className: 'w-full mt-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg disabled:opacity-50'
               }, importing ? 'Reading…' : ('Parse recipe (' + pendingPages.length + (pendingPages.length === 1 ? ' page)' : ' pages)'))),
               createElement('p', { className: 'text-xs text-muted mt-2' }, 'Snap, choose, or paste a recipe image (a card, cookbook page, or screenshot — handwritten or printed). For a recipe that spans several book pages, add each page in order and we’ll combine them into one recipe.'),
+              createElement('div', { className: 'flex items-center gap-3 my-3' },
+                createElement('div', { style: { flex: 1, height: '1px', backgroundColor: 'var(--border-color)' } }),
+                createElement('span', { className: 'text-xs text-muted' }, 'or'),
+                createElement('div', { style: { flex: 1, height: '1px', backgroundColor: 'var(--border-color)' } })
+              ),
+              createElement('label', { style: { display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' } }, 'Paste recipe text'),
+              createElement('textarea', {
+                className: 'w-full p-2 rounded-lg border', rows: 5,
+                style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
+                value: importText, onChange: function(e){ setImportText(e.target.value); },
+                placeholder: 'Paste the whole recipe page here (ads and all) — we’ll pull out just the recipe.'
+              }),
+              createElement('button', {
+                onClick: runTextImport, disabled: importing,
+                className: 'w-full mt-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg disabled:opacity-50'
+              }, importing ? 'Reading…' : 'Extract recipe from text'),
+              createElement('p', { className: 'text-xs text-muted mt-2' }, 'Best for sites that block import (e.g. allrecipes): open the recipe, Select All (⌘/Ctrl+A), Copy, and paste here. The AI keeps the ingredients and steps and skips the ads, nav, and life-story.'),
               addingPages && createElement('p', { className: 'text-sm mt-2 text-orange-600 font-medium' }, 'Adding page…'),
               importing && createElement('p', { className: 'text-sm mt-2 text-orange-600 font-medium' }, 'Working… reading your recipe.'),
               importError && createElement('p', { className: 'text-sm mt-2', style: { color: '#dc2626' } }, importError)

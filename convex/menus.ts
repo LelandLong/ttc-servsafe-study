@@ -199,3 +199,108 @@ export const clearGroceryChecks = mutation({
     return { ok: true };
   },
 });
+
+// ============ SHOPPING TRIPS (Phase 3): combine several menus into one grocery run ============
+// A trip references a USER-CHOSEN subset of menus (not all) — e.g. just the two or three meals
+// you're shopping for now. The combined grocery list is computed client-side: each member menu
+// contributes its OWN headcount-scaled amounts, summed per ingredient. Grocery state is the same
+// groceryItems table, keyed "trip:<tripId>".
+
+export const createShoppingTrip = mutation({
+  args: { ownerId: v.id("users"), name: v.optional(v.string()), menuIds: v.optional(v.array(v.id("menus"))) },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const tripId = await ctx.db.insert("shoppingTrips", {
+      ownerId: args.ownerId,
+      name: (args.name && args.name.trim()) || "New shopping trip",
+      menuIds: args.menuIds || [],
+      createdAt: now,
+      updatedAt: now,
+    });
+    return { tripId };
+  },
+});
+
+// All the user's shopping trips (newest first) with a menu count + cover thumbnail.
+export const getMyShoppingTrips = query({
+  args: { ownerId: v.id("users") },
+  handler: async (ctx, args) => {
+    const trips = await ctx.db
+      .query("shoppingTrips")
+      .withIndex("by_owner", (q) => q.eq("ownerId", args.ownerId))
+      .collect();
+    trips.sort((a, b) => b.updatedAt - a.updatedAt);
+    return await Promise.all(trips.map(async (t) => {
+      const names: string[] = [];
+      let cover: string | null = null;
+      for (const mid of t.menuIds) {
+        const m: any = await ctx.db.get(mid);
+        if (!m) continue;            // a menu may have been deleted since
+        names.push(m.name);
+        if (!cover) {
+          for (const rid of m.recipeIds) {
+            const r: any = await ctx.db.get(rid);
+            if (r && r.imageIds && r.imageIds.length) { cover = await ctx.storage.getUrl(r.imageIds[0]); if (cover) break; }
+          }
+        }
+      }
+      return { ...t, menuCount: names.length, menuNames: names, cover };
+    }));
+  },
+});
+
+// One trip with its member menus resolved (each with servings target + recipes), so the client
+// can scale each menu by its own headcount and sum into one combined grocery list. Skips any menu
+// that has since been deleted.
+export const getShoppingTrip = query({
+  args: { tripId: v.id("shoppingTrips"), ownerId: v.id("users") },
+  handler: async (ctx, args) => {
+    const trip = await ctx.db.get(args.tripId);
+    if (!trip || trip.ownerId !== args.ownerId) return null;
+    const menus: any[] = [];
+    for (const mid of trip.menuIds) {
+      const m: any = await ctx.db.get(mid);
+      if (!m) continue;
+      const recipes: any[] = [];
+      for (const rid of m.recipeIds) {
+        const r = await ctx.db.get(rid);
+        if (r) recipes.push(await publicMenuRecipe(ctx, r));
+      }
+      menus.push({ _id: m._id, name: m.name, servings: m.servings || 0, recipes });
+    }
+    return { ...trip, menus };
+  },
+});
+
+export const updateShoppingTrip = mutation({
+  args: {
+    tripId: v.id("shoppingTrips"),
+    ownerId: v.id("users"),
+    name: v.optional(v.string()),
+    menuIds: v.optional(v.array(v.id("menus"))),
+  },
+  handler: async (ctx, args) => {
+    const trip = await ctx.db.get(args.tripId);
+    if (!trip || trip.ownerId !== args.ownerId) throw new Error("Trip not found");
+    const updates: Record<string, any> = { updatedAt: Date.now() };
+    if (args.name !== undefined) updates.name = args.name.trim() || "Untitled trip";
+    if (args.menuIds !== undefined) updates.menuIds = args.menuIds;
+    await ctx.db.patch(args.tripId, updates);
+    return { ok: true };
+  },
+});
+
+export const deleteShoppingTrip = mutation({
+  args: { tripId: v.id("shoppingTrips"), ownerId: v.id("users") },
+  handler: async (ctx, args) => {
+    const trip = await ctx.db.get(args.tripId);
+    if (!trip || trip.ownerId !== args.ownerId) throw new Error("Trip not found");
+    const gs = await ctx.db
+      .query("groceryItems")
+      .withIndex("by_list", (q) => q.eq("listKey", "trip:" + args.tripId))
+      .collect();
+    for (const g of gs) await ctx.db.delete(g._id);
+    await ctx.db.delete(args.tripId);
+    return { ok: true };
+  },
+});

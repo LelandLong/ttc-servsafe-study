@@ -6,6 +6,36 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-17-2026-8] - June 17, 2026
+
+### Added
+- **Recipes — "Paste recipe text" import (the no-photos escape hatch for bot-blocked sites).** For sites that can't be fetched server-side (allrecipes and other Cloudflare-protected pages), you no longer have to take several careful screenshots. The import panel now has a **Paste recipe text** box: open the recipe in your own browser (which already loaded past the bot check), **Select All (⌘/Ctrl+A) → Copy → Paste** the whole page — ads and all — and the AI extracts just the recipe, skipping ads/nav/life-story. Wires the existing server-side `recipes:importRecipeFromText` action (which also classifies non-recipes) into the UI; result opens in the same review-before-save editor as URL/photo import, preserving the source URL if you also pasted the link. Verified end-to-end: 9 KB of messy full-page text → clean recipe (title, servings, 10 ingredients, 10 steps); UI smoke-tested, zero console errors.
+
+---
+
+## [06-17-2026-7] - June 17, 2026
+
+### Fixed
+- **Recipes — URL import now explains bot-blocked sites instead of throwing a cryptic code.** Sites behind a Cloudflare JS challenge (allrecipes.com, seriouseats, simplyrecipes, …) can't be read by any server-side fetch — they return codes like 403/406/460, or even a 200 whose body is a "Just a moment…" challenge page. Before, a 406 fell straight through to a raw "Could not fetch the page (HTTP 406)" (it wasn't even in the Googlebot-retry list). Now URL import: (1) retries as Googlebot on a broader set of block codes (401/403/406/412/429/451/460/503); (2) **detects challenge/interstitial pages** so it never feeds one to the AI and invents a bogus recipe; and (3) returns a **clear, actionable message** — e.g. *"allrecipes.com blocks automated import (bot protection)… Use 'Scan a recipe photo' below — screenshot the recipe — or copy the recipe text and paste it."* The photo-import and paste options are right there in the same panel. Verified: allrecipes returns the friendly message; a JSON-LD site (budgetbytes) still imports normally.
+
+---
+
+## [06-17-2026-6] - June 17, 2026
+
+### Fixed
+- **Recipes — a shopping trip now inherits the "have" marks from its menus.** A trip kept its own grocery state (`"trip:<id>"`), separate from each menu's (`"menu:<id>"`), so items you'd already marked "have" on a menu reappeared on the trip's list — e.g. a one-menu trip for a menu with 6 items marked "have" showed all 8 to buy. Now when a trip loads, "have" is **OR'd in from every member menu** (check-off and notes stay the trip's own, since they're per shopping run). A one-menu trip mirrors that menu exactly; a multi-menu trip treats an item as "have" if you marked it on any included menu. Re-inherits when you add/remove a menu from the trip. Verified: a trip with just Mon dinner now reads "2 to buy • 6 already have," zero console errors.
+
+---
+
+## [06-17-2026-5] - June 17, 2026
+
+### Added
+- **Recipes — Shopping trips: combine several menus into one grocery run (Meal-Planning Phase 3).** When you're shopping for a few specific meals — not your whole multi-week plan — a **trip** combines a **chosen subset of menus** into a single grocery list. New "🧺 Shopping trips" entry on the Menus screen; a **New-trip builder asks which menus to include** (checkboxes — never assumes all; "Create trip" is disabled until you pick at least one). The combined list **sums each ingredient across the chosen menus, with each menu contributing its OWN headcount-scaled amount** (the same recipe on two menus = two batches, summed), and every line shows where it came from (`from: Mon dinner, Tue lunch`). Carries over the dual-unit display (pounds beside grams), grocery sections, have/need toggle, in-store check-off (persisted separately per trip), per-item notes, and share/export. You can add/remove menus from a trip and rename/delete it.
+  - Backend: `shoppingTrips` table (already in schema) wired up — `createShoppingTrip` / `getMyShoppingTrips` / `getShoppingTrip` / `updateShoppingTrip` / `deleteShoppingTrip`; grocery state reuses the existing `groceryItems` table keyed `"trip:<id>"`. The grocery combiner was refactored into shared `accumulateGroceries` + `finalizeGroceries` so per-menu and multi-menu lists use identical math/parsing.
+  - Verified in-app: a trip across two menus (each "for 5", recipes serving 1/3/etc.) summed correctly with per-menu provenance and dual units, zero console errors.
+
+---
+
 ## [06-17-2026-4] - June 17, 2026
 
 ### Fixed
