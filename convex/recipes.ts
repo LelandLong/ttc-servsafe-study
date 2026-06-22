@@ -20,6 +20,46 @@ const ingredientValidator = v.union(
 // structured qty is present it pulls a leading quantity (and unit) out of the item text,
 // so count-style lines like "3 zucchini" become {qty:"3", item:"zucchini"} and can scale —
 // instead of dumping the amount into the item with an empty qty (which broke scaling).
+// Common cooking fractions, for tidying ugly decimals back into readable amounts
+// ("0.33333334326744" → "1/3"). ASCII form so the stored qty re-parses everywhere.
+const NICE_FRACTIONS: [number, string][] = [
+  [1/8, "1/8"], [1/6, "1/6"], [1/4, "1/4"], [1/3, "1/3"], [3/8, "3/8"], [1/2, "1/2"],
+  [5/8, "5/8"], [2/3, "2/3"], [3/4, "3/4"], [5/6, "5/6"], [7/8, "7/8"],
+];
+function decimalToNiceStr(n: number): string {
+  if (!isFinite(n)) return "";
+  const sign = n < 0 ? "-" : "";
+  n = Math.abs(n);
+  const whole = Math.floor(n + 1e-9);
+  const frac = n - whole;
+  if (frac < 0.02) return sign + String(whole);
+  if (frac > 0.98) return sign + String(whole + 1);
+  for (const [v, label] of NICE_FRACTIONS) {
+    if (Math.abs(frac - v) < 0.02) return sign + (whole ? whole + " " : "") + label;
+  }
+  return sign + String(Math.round(n * 100) / 100); // no clean fraction: 2-decimal round
+}
+// Tidy ONE numeric token: keep integers and simple/mixed fractions as written; convert an
+// ugly decimal (a float artifact like 0.33333334326744, or 1.5000001) to a clean fraction.
+function tidyQtyToken(tok: string): string {
+  tok = tok.trim();
+  if (!tok || /^\d+$/.test(tok) || /^\d+\/\d+$/.test(tok) || /^\d+\s+\d+\/\d+$/.test(tok)) return tok;
+  if (/^\d*\.\d+$|^\d+\.\d*$/.test(tok)) {
+    const n = parseFloat(tok);
+    if (isFinite(n)) return decimalToNiceStr(n);
+  }
+  return tok;
+}
+// Clean a quantity string (handles a "a-b" range), so no recipe ever shows a raw float qty.
+function cleanQtyString(qty?: string): string | undefined {
+  if (qty == null) return undefined;
+  const t = String(qty).trim();
+  if (!t) return undefined;
+  const parts = t.split(/\s*[-–]\s*/);
+  if (parts.length === 2 && parts[0] && parts[1]) return tidyQtyToken(parts[0]) + "-" + tidyQtyToken(parts[1]);
+  return tidyQtyToken(t);
+}
+
 function normalizeIngredient(ing: any) {
   let qty: string | undefined;
   let unit: any;
@@ -43,7 +83,7 @@ function normalizeIngredient(ing: any) {
   // to taste") → "TT"; a counted item with no measure unit ("3 zucchini") → "EA".
   if (!qty && !cu && isToTaste(item)) { cu = "TT"; item = stripToTaste(item); }
   if (qty && !cu) cu = "EA";
-  return { qty: qty || undefined, unit: cu || undefined, item };
+  return { qty: cleanQtyString(qty) || undefined, unit: cu || undefined, item };
 }
 
 // A line with no measured amount that's seasoned "to taste" (or is bare salt/pepper).
@@ -1138,6 +1178,23 @@ export const importRecipeFromUrl = action({
     } catch (e: any) {
       return { ok: false, error: "AI import failed: " + (e.message || "unknown error") };
     }
+  },
+});
+
+// Fetch + store a set of image URLs server-side (bypassing CORS, with the Googlebot retry),
+// returning the stored {storageId, url} for each that succeeded. Used by paste-text import:
+// the client pulls candidate <img> URLs out of the pasted page HTML, the user picks the recipe
+// photo(s), and these get downloaded into Convex storage as the recipe's cover. Best-effort —
+// URLs that 404/block/aren't images are silently skipped.
+export const storeImagesFromUrls = action({
+  args: { urls: v.array(v.string()) },
+  handler: async (ctx, args) => {
+    const images: { storageId: any; url: string }[] = [];
+    for (const u of (args.urls || []).slice(0, 6)) {
+      const stored = await fetchAndStoreImage(ctx, u);
+      if (stored) images.push({ storageId: stored.storageId, url: stored.url });
+    }
+    return { images };
   },
 });
 

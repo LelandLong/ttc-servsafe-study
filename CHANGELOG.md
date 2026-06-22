@@ -6,6 +6,20 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-17-2026-10] - June 17, 2026
+
+### Fixed
+- **Recipes — ingredient quantities can no longer be stored as ugly raw decimals.** An imported recipe (Korean Street Toast) had its 2nd ingredient as `0.33333334326744 cup julienned carrot` — a single-precision float of ⅓ that leaked in (the AI import emitted a decimal for the fraction). Now the **single server-side normalizer** (`normalizeIngredient`, which every create/update/import passes through) tidies each quantity: integers and simple/mixed fractions (`1/3`, `1 1/2`) are kept, and any ugly decimal is snapped to a clean cooking fraction (`0.33333334326744 → 1/3`, `0.6667 → 2/3`) or, failing that, rounded to 2 decimals. Mirrored in the client so the review-before-save editor shows the same tidy value. A one-time `repairIngredients` pass cleaned existing data — **41 recipes fixed**, and a full scan confirms zero raw-float quantities remain. Verified the carrot now reads `1/3 cup`; page loads clean.
+
+---
+
+## [06-17-2026-9] - June 17, 2026
+
+### Added
+- **Recipes — paste-text import can now grab the recipe photo(s) too.** When you copy a whole web page, the clipboard's HTML flavor still contains the `<img>` URLs even though the textarea only shows text. Pasting into "Paste recipe text" now reads that HTML, extracts the page's candidate images (filtering out logos, icons, sprites, tracking pixels, and tiny images; picking the largest from `srcset`), and shows them as **tap-to-select thumbnails** under the box. The ones you pick are fetched + stored server-side as the recipe's cover (reuses the URL-import image fetcher with its Googlebot retry, so it usually works even when the page itself is bot-blocked). New `recipes:storeImagesFromUrls` action; best-effort — if an image can't be fetched the recipe still imports. Verified: image-URL extraction filters correctly, the picker appears on paste, and the flow reaches the review editor; zero console errors.
+
+---
+
 ## [06-17-2026-8] - June 17, 2026
 
 ### Added

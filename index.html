@@ -4388,6 +4388,8 @@
         const [importing, setImporting] = useState(false);
         const [importError, setImportError] = useState('');
         const [importText, setImportText] = useState('');     // pasted full-page text → AI extracts the recipe
+        const [pastedImages, setPastedImages] = useState([]); // candidate image URLs pulled from pasted page HTML
+        const [pastedSel, setPastedSel] = useState({});       // url -> true: which pasted images to attach as cover
         const [pendingPages, setPendingPages] = useState([]); // [{preview, base64}] staged recipe-page photos
         const [addingPages, setAddingPages] = useState(false); // downscaling newly added photos
 
@@ -4743,11 +4745,41 @@
           return { qty: qty, unit: 'EA', item: rest }; // counted item, no measure unit
         }
 
+        // Tidy a quantity string for display/storage: keep integers & simple fractions, but turn an
+        // ugly decimal (float artifact like "0.33333334326744") into a clean fraction ("1/3"). Mirrors
+        // the server's cleanQtyString so the review editor shows the same tidy value it will save.
+        function cleanQtyStr(qty) {
+          if (qty == null) return '';
+          var t = String(qty).trim();
+          if (!t) return '';
+          function tok(s) {
+            s = s.trim();
+            if (!s || /^\d+$/.test(s) || /^\d+\/\d+$/.test(s) || /^\d+\s+\d+\/\d+$/.test(s)) return s;
+            if (/^\d*\.\d+$|^\d+\.\d*$/.test(s)) { var n = parseFloat(s); if (isFinite(n)) return decimalToNiceAscii(n); }
+            return s;
+          }
+          var parts = t.split(/\s*[-–]\s*/);
+          if (parts.length === 2 && parts[0] && parts[1]) return tok(parts[0]) + '-' + tok(parts[1]);
+          return tok(t);
+        }
+        // ASCII-fraction version of decimalToNice (stored qty must re-parse, so no unicode glyphs).
+        function decimalToNiceAscii(n) {
+          if (!isFinite(n)) return '';
+          var sign = n < 0 ? '-' : ''; n = Math.abs(n);
+          var whole = Math.floor(n + 1e-9), frac = n - whole;
+          if (frac < 0.02) return sign + String(whole);
+          if (frac > 0.98) return sign + String(whole + 1);
+          var fr = [[1/8,'1/8'],[1/6,'1/6'],[1/4,'1/4'],[1/3,'1/3'],[3/8,'3/8'],[1/2,'1/2'],[5/8,'5/8'],[2/3,'2/3'],[3/4,'3/4'],[5/6,'5/6'],[7/8,'7/8']];
+          for (var i = 0; i < fr.length; i++) { if (Math.abs(frac - fr[i][0]) < 0.02) return sign + (whole ? whole + ' ' : '') + fr[i][1]; }
+          return sign + String(Math.round(n * 100) / 100);
+        }
+
         // Convert stored ingredients (strings or {qty,unit,item}) to editable rows.
         function ingredientsToRows(arr) {
           var rows = (arr || []).map(function(ing) {
-            if (typeof ing === 'string') return parseLegacyIngredient(ing);
-            return { qty: ing.qty || '', unit: ing.unit || '', item: ing.item || '' };
+            var row = (typeof ing === 'string') ? parseLegacyIngredient(ing) : { qty: ing.qty || '', unit: ing.unit || '', item: ing.item || '' };
+            row.qty = cleanQtyStr(row.qty); // never surface a raw float quantity
+            return row;
           });
           if (rows.length === 0) rows = [{ qty: '', unit: '', item: '' }];
           return rows;
@@ -4800,6 +4832,7 @@
           else { setFImageIds([]); setFImageUrls([]); }
           setFSourceType(srcType); setFSourceUrl(srcUrl || '');
           setShowImport(false); setImportUrl(''); setImportText(''); setPendingPages([]);
+          setPastedImages([]); setPastedSel({});
           setErrorMsg('');
           setView('edit');
         }
@@ -4818,21 +4851,71 @@
             .catch(function(err) { setImporting(false); setImportError('Import failed: ' + err.message); });
         }
 
+        // When you copy a whole web page, the clipboard carries an HTML flavor (alongside the
+        // plain text) that still has the <img> URLs. Pull out usable candidate image URLs so the
+        // user can pick the recipe photo — even on sites we can't fetch the page from.
+        function extractImageUrlsFromHtml(html) {
+          if (!html) return [];
+          var urls = [], seen = {};
+          var doc;
+          try { doc = new DOMParser().parseFromString(html, 'text/html'); } catch (e) { return []; }
+          var imgs = doc.querySelectorAll('img');
+          for (var i = 0; i < imgs.length; i++) {
+            var el = imgs[i];
+            var src = el.getAttribute('src') || el.getAttribute('data-src') || el.getAttribute('data-lazy-src') || '';
+            // Prefer the largest candidate in a srcset if present.
+            var ss = el.getAttribute('srcset') || el.getAttribute('data-srcset');
+            if (ss) { var last = ss.split(',').pop().trim().split(/\s+/)[0]; if (last) src = last; }
+            src = (src || '').trim();
+            if (/^\/\//.test(src)) src = 'https:' + src;
+            if (!/^https?:\/\//i.test(src)) continue;                 // skip relative / data: / blank
+            if (/\.svg(\?|$)/i.test(src)) continue;                   // skip vector icons
+            if (/(sprite|icon|logo|avatar|favicon|pixel|1x1|placeholder|spacer|tracking|doubleclick)/i.test(src)) continue;
+            var w = parseInt(el.getAttribute('width') || '0', 10), h = parseInt(el.getAttribute('height') || '0', 10);
+            if ((w && w < 80) || (h && h < 80)) continue;             // skip tiny images
+            if (seen[src]) continue; seen[src] = true;
+            urls.push(src);
+            if (urls.length >= 12) break;
+          }
+          return urls;
+        }
+        // Capture image URLs from a rich (HTML) paste into the text box. Lets the plain-text paste
+        // proceed as normal (no preventDefault) — we only read the HTML flavor for images.
+        function handleTextPaste(e) {
+          try {
+            var html = e.clipboardData && e.clipboardData.getData ? e.clipboardData.getData('text/html') : '';
+            var urls = extractImageUrlsFromHtml(html);
+            if (urls.length) { setPastedImages(urls); setPastedSel({}); }
+          } catch (err) { /* ignore — text paste still works */ }
+        }
+
         // Text import: paste a whole recipe page (Select-All → Copy → Paste, ads and all) and the
-        // AI pulls out just the recipe. The escape hatch for bot-blocked sites (allrecipes, etc.)
-        // that can't be fetched server-side — no photos needed.
+        // AI pulls out just the recipe. The escape hatch for bot-blocked sites (allrecipes, etc.).
+        // If the user picked any pasted images, fetch + store them server-side as the cover.
         function runTextImport() {
           var text = importText.trim();
           if (text.length < 40) { setImportError('Paste the recipe text first (select the whole page and copy).'); return; }
           setImporting(true); setImportError('');
+          var chosenImgs = pastedImages.filter(function(u){ return pastedSel[u]; });
           convexAction('recipes:importRecipeFromText', { text: text })
             .then(function(res) {
-              setImporting(false);
-              if (!res || !res.ok) { setImportError((res && res.error) || 'Could not read that text.'); return; }
-              if (!res.isRecipe) { setImportError('That didn’t look like a recipe — make sure you copied the ingredients and steps.'); return; }
+              if (!res || !res.ok) { setImporting(false); setImportError((res && res.error) || 'Could not read that text.'); return; }
+              if (!res.isRecipe) { setImporting(false); setImportError('That didn’t look like a recipe — make sure you copied the ingredients and steps.'); return; }
               var srcUrl = importUrl.trim();
-              applyImportedRecipe(res.recipe, srcUrl ? 'url' : 'manual', srcUrl || undefined);
-              setImportText('');
+              var finish = function(ids, urls) {
+                setImporting(false);
+                applyImportedRecipe(res.recipe, srcUrl ? 'url' : 'manual', srcUrl || undefined);
+                if (ids && ids.length) { setFImageIds(ids); setFImageUrls(urls); } // override the empty default
+                setImportText('');
+              };
+              if (chosenImgs.length) {
+                convexAction('recipes:storeImagesFromUrls', { urls: chosenImgs })
+                  .then(function(r2) {
+                    var imgs = (r2 && r2.images) || [];
+                    finish(imgs.map(function(x){ return x.storageId; }), imgs.map(function(x){ return x.url; }));
+                  })
+                  .catch(function(){ finish([], []); }); // image fetch failed → keep the recipe anyway
+              } else { finish([], []); }
             })
             .catch(function(err) { setImporting(false); setImportError('Import failed: ' + err.message); });
         }
@@ -6071,7 +6154,7 @@
               }),
               createElement('button', { onClick: startAdd, className: 'bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 rounded-lg' }, '+ Add'),
               createElement('button', {
-                onClick: function(){ var opening = !showImport; setShowImport(opening); setImportError(''); if (!opening) { setPendingPages([]); setImportUrl(''); } },
+                onClick: function(){ var opening = !showImport; setShowImport(opening); setImportError(''); if (!opening) { setPendingPages([]); setImportUrl(''); setImportText(''); setPastedImages([]); setPastedSel({}); } },
                 className: 'px-3 rounded-lg border-2 font-bold',
                 style: { borderColor: '#fdba74', color: '#ea580c' },
                 title: 'Import a recipe from a URL'
@@ -6157,14 +6240,31 @@
               createElement('textarea', {
                 className: 'w-full p-2 rounded-lg border', rows: 5,
                 style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' },
-                value: importText, onChange: function(e){ setImportText(e.target.value); },
+                value: importText, onChange: function(e){ setImportText(e.target.value); }, onPaste: handleTextPaste,
                 placeholder: 'Paste the whole recipe page here (ads and all) — we’ll pull out just the recipe.'
               }),
+              // Image candidates found in the pasted page HTML — tap the recipe photo(s) to attach.
+              pastedImages.length > 0 && createElement('div', { className: 'mt-2' },
+                createElement('p', { className: 'text-xs text-muted mb-1' }, 'Tap the recipe photo(s) to include:'),
+                createElement('div', { className: 'flex flex-wrap gap-2' },
+                  pastedImages.map(function(u, i){
+                    var on = !!pastedSel[u];
+                    return createElement('button', {
+                      key: i, type: 'button',
+                      onClick: function(){ setPastedSel(function(prev){ var n = Object.assign({}, prev); if (n[u]) delete n[u]; else n[u] = true; return n; }); },
+                      style: { position: 'relative', width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', border: on ? '3px solid #f97316' : '1px solid var(--border-color)', padding: 0, cursor: 'pointer', background: 'var(--bg-secondary)' }
+                    },
+                      createElement('img', { src: u, loading: 'lazy', referrerPolicy: 'no-referrer', style: { width: '100%', height: '100%', objectFit: 'cover' }, onError: function(e){ e.target.parentNode.style.display = 'none'; } }),
+                      on && createElement('span', { style: { position: 'absolute', top: '2px', right: '2px', background: '#f97316', color: '#fff', borderRadius: '50%', width: '16px', height: '16px', fontSize: '0.65rem', lineHeight: '16px', textAlign: 'center' } }, '✓')
+                    );
+                  })
+                )
+              ),
               createElement('button', {
                 onClick: runTextImport, disabled: importing,
                 className: 'w-full mt-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg disabled:opacity-50'
               }, importing ? 'Reading…' : 'Extract recipe from text'),
-              createElement('p', { className: 'text-xs text-muted mt-2' }, 'Best for sites that block import (e.g. allrecipes): open the recipe, Select All (⌘/Ctrl+A), Copy, and paste here. The AI keeps the ingredients and steps and skips the ads, nav, and life-story.'),
+              createElement('p', { className: 'text-xs text-muted mt-2' }, 'Best for sites that block import (e.g. allrecipes): open the recipe, Select All (⌘/Ctrl+A), Copy, and paste here. The AI keeps the ingredients and steps and skips the ads, nav, and life-story — and any photos from the page appear above to pick from.'),
               addingPages && createElement('p', { className: 'text-sm mt-2 text-orange-600 font-medium' }, 'Adding page…'),
               importing && createElement('p', { className: 'text-sm mt-2 text-orange-600 font-medium' }, 'Working… reading your recipe.'),
               importError && createElement('p', { className: 'text-sm mt-2', style: { color: '#dc2626' } }, importError)
