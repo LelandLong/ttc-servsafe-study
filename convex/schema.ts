@@ -141,21 +141,27 @@ export default defineSchema({
     dinerName: v.optional(v.string()),   // who rated it (free text; not necessarily a user)
     notes: v.optional(v.string()),
     cookedOn: v.optional(v.number()),    // when the dish was made
+    cookEventId: v.optional(v.string()), // groups ratings entered for one cooked-meal event
     createdAt: v.number(),
   }).index("by_recipe", ["recipeId"])
     .index("by_owner", ["ownerId"]),
 
   // Cook log (Phase R10): one row each time a user actually cooks a recipe for a
   // meal. Per-user (ownerId = who cooked it); works on global recipes too.
+  // menuId + cookEventId tie the dishes of a single menu "I cooked this" into one
+  // editable meal event (Phase R11-ish).
   recipeCookLog: defineTable({
     recipeId: v.id("recipes"),
     ownerId: v.id("users"),
     cookedOn: v.number(),                // epoch millis of the meal date
     dinerCount: v.optional(v.number()),  // how many people were served
     notes: v.optional(v.string()),
+    menuId: v.optional(v.id("menus")),   // the menu this meal was cooked from
+    cookEventId: v.optional(v.string()), // one value per "I cooked this" press (groups the dishes)
     createdAt: v.number(),
   }).index("by_recipe", ["recipeId"])
-    .index("by_owner", ["ownerId"]),
+    .index("by_owner", ["ownerId"])
+    .index("by_menu", ["menuId"]),
 
   // Global catalog of ingredient names for type-ahead (everyone shares it —
   // onion/garlic/etc are not user-specific). Stored lowercase, deduped.

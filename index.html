@@ -4345,6 +4345,12 @@
         if (p.length !== 3) return Date.now();
         return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getTime();
       }
+      function todayFromMillis(ms) {
+        var d = new Date(ms);
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return d.getFullYear() + '-' + m + '-' + day;
+      }
       function formatCookDate(ms) {
         try { return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); }
         catch (e) { return ''; }
@@ -4433,7 +4439,12 @@
         const [mealDate, setMealDate] = useState('');
         const [mealPeople, setMealPeople] = useState('');
         const [mealNotes, setMealNotes] = useState('');
-        const [mealRatings, setMealRatings] = useState({}); // recipeId -> { score, diner }
+        const [mealRatings, setMealRatings] = useState({}); // recipeId -> [{ score, diner }] (multiple per dish)
+        const [menuMeals, setMenuMeals] = useState([]);     // cooked-meal events for the active menu
+        const [activeMeal, setActiveMeal] = useState(null); // a meal event opened for view/edit
+        const [emDate, setEmDate] = useState('');           // editable meal: date / people / notes
+        const [emPeople, setEmPeople] = useState('');
+        const [emNotes, setEmNotes] = useState('');
 
         // ---- Shopping trips (Phase 3: combine a user-chosen subset of menus) ----
         const [trips, setTrips] = useState(null);            // null = unloaded
@@ -4503,7 +4514,8 @@
         }
         function openMenus() { setCookedMsg(''); loadMenus(); setView('menus'); }
         function openMenu(menuId) {
-          setCookedMsg(''); setErrorMsg(''); setShowMealForm(false);
+          setCookedMsg(''); setErrorMsg(''); setShowMealForm(false); setMenuMeals([]);
+          loadMenuMeals(menuId);
           convexQuery('menus:getMenu', { menuId: menuId, ownerId: user.userId })
             .then(function(m){
               setActiveMenu(m);
@@ -4635,25 +4647,52 @@
             .catch(function(err){ setErrorMsg('Could not delete menu: ' + err.message); });
         }
         // "I cooked this": open the meal-log form, prefilled (today + the menu's headcount).
+        // Load the cooked-meal events for the active menu (for the dates list + re-cook guard).
+        function loadMenuMeals(menuId) {
+          var id = menuId || (activeMenu && activeMenu._id);
+          if (!id) { setMenuMeals([]); return; }
+          convexQuery('recipes:getMenuMeals', { ownerId: user.userId, menuId: id })
+            .then(function(list){ setMenuMeals(list || []); })
+            .catch(function(){ setMenuMeals([]); });
+        }
         function openMealForm() {
           if (!activeMenu) return;
           setMealDate(todayInputValue());
           setMealPeople(String(menuTarget || activeMenu.servings || ''));
           setMealNotes('');
-          setMealRatings({});
+          // start each dish with one blank rating row
+          var init = {};
+          (activeMenu.recipes || []).forEach(function(r){ init[r._id] = [{ score: '', diner: '' }]; });
+          setMealRatings(init);
           setCookedMsg('');
           loadSuggestions();        // diner-name type-ahead for the rating rows
           setShowMealForm(true);
         }
-        function setMealRating(recipeId, patch) {
-          setMealRatings(function(prev){
-            var next = Object.assign({}, prev);
-            next[recipeId] = Object.assign({ score: '', diner: '' }, prev[recipeId] || {}, patch);
-            return next;
-          });
+        // "I cooked this" with the re-cook guard: if this menu was cooked before, confirm first
+        // (showing the most recent meal) before starting a new log.
+        function startCookFlow() {
+          if (showMealForm) { setShowMealForm(false); return; }
+          if (menuMeals && menuMeals.length) {
+            var last = menuMeals[0];
+            var msg = 'You already logged this menu ' + menuMeals.length + ' time' + (menuMeals.length === 1 ? '' : 's') + '.\n' +
+              'Most recent: ' + formatCookDate(last.cookedOn) + (last.dinerCount ? ' for ' + last.dinerCount + (last.dinerCount === 1 ? ' person' : ' people') : '') + ' • ' + last.dishCount + ' dish' + (last.dishCount === 1 ? '' : 'es') + '.\n\n' +
+              'Log another time you cooked it? (To view or edit the existing one, tap its date below instead.)';
+            if (!window.confirm(msg)) return;
+          }
+          openMealForm();
         }
-        // Save the meal: a cook-log entry per dish (date + people + notes), plus a diner rating
-        // for any dish the user scored — all in one go.
+        // Per-dish rating rows (multiple allowed).
+        function addMealRatingRow(recipeId) {
+          setMealRatings(function(prev){ var n = Object.assign({}, prev); n[recipeId] = (n[recipeId] || []).concat([{ score: '', diner: '' }]); return n; });
+        }
+        function removeMealRatingRow(recipeId, idx) {
+          setMealRatings(function(prev){ var n = Object.assign({}, prev); n[recipeId] = (n[recipeId] || []).filter(function(_,i){ return i !== idx; }); if (!n[recipeId].length) n[recipeId] = [{ score: '', diner: '' }]; return n; });
+        }
+        function setMealRatingRow(recipeId, idx, patch) {
+          setMealRatings(function(prev){ var n = Object.assign({}, prev); var rows = (n[recipeId] || [{ score: '', diner: '' }]).slice(); rows[idx] = Object.assign({ score: '', diner: '' }, rows[idx] || {}, patch); n[recipeId] = rows; return n; });
+        }
+        // Save the meal: a cook-log entry per dish (date + people + notes) under one cookEventId,
+        // plus every diner rating entered for each dish — all in one go.
         function submitMealLog() {
           if (!activeMenu || !activeMenu.recipes || !activeMenu.recipes.length) return;
           setMenuBusy(true); setCookedMsg('');
@@ -4662,20 +4701,79 @@
           var diners = (people > 0) ? people : undefined;
           var baseNote = 'Cooked for menu: ' + activeMenu.name;
           var note = mealNotes.trim() ? (baseNote + ' — ' + mealNotes.trim()) : baseNote;
+          var eventId = String(Date.now()) + '-' + Math.random().toString(36).slice(2, 8);
           var ops = [], rated = 0;
           activeMenu.recipes.forEach(function(r){
-            ops.push(convexMutation('recipes:addCookLog', { recipeId: r._id, ownerId: user.userId, cookedOn: when, dinerCount: diners, notes: note }));
-            var rt = mealRatings[r._id];
-            var sc = rt && parseInt(rt.score, 10);
-            if (sc >= 1 && sc <= 10) {
-              rated++;
-              ops.push(convexMutation('recipes:addScore', { recipeId: r._id, ownerId: user.userId, score: sc, dinerName: (rt.diner || '').trim() || undefined, cookedOn: when }));
-            }
+            ops.push(convexMutation('recipes:addCookLog', { recipeId: r._id, ownerId: user.userId, cookedOn: when, dinerCount: diners, notes: note, menuId: activeMenu._id, cookEventId: eventId }));
+            (mealRatings[r._id] || []).forEach(function(rt){
+              var sc = parseInt(rt.score, 10);
+              if (sc >= 1 && sc <= 10) {
+                rated++;
+                ops.push(convexMutation('recipes:addScore', { recipeId: r._id, ownerId: user.userId, score: sc, dinerName: (rt.diner || '').trim() || undefined, cookedOn: when, cookEventId: eventId }));
+              }
+            });
           });
           Promise.all(ops).then(function(){
             setMenuBusy(false); setShowMealForm(false);
-            setCookedMsg('Logged ' + activeMenu.recipes.length + ' dish' + (activeMenu.recipes.length === 1 ? '' : 'es') + (rated ? ' and ' + rated + ' rating' + (rated === 1 ? '' : 's') : '') + '. 🍴  Tap a dish above to see or edit its history.');
+            setCookedMsg('Logged ' + activeMenu.recipes.length + ' dish' + (activeMenu.recipes.length === 1 ? '' : 'es') + (rated ? ' and ' + rated + ' rating' + (rated === 1 ? '' : 's') : '') + '. 🍴  Tap the date below to view or edit it.');
+            loadMenuMeals(activeMenu._id);
           }).catch(function(err){ setMenuBusy(false); setErrorMsg('Could not log meal: ' + err.message); });
+        }
+        // ---- Editable meal event (view/edit a logged meal) ----
+        function openMeal(cookEventId) {
+          if (!activeMenu) return;
+          setCookedMsg(''); setErrorMsg('');
+          loadSuggestions();
+          convexQuery('recipes:getMealEvent', { ownerId: user.userId, menuId: activeMenu._id, cookEventId: cookEventId })
+            .then(function(m){
+              if (!m) { setErrorMsg('That meal could not be found.'); return; }
+              setActiveMeal(m);
+              setEmDate(todayFromMillis(m.cookedOn));
+              setEmPeople(m.dinerCount ? String(m.dinerCount) : '');
+              setEmNotes(m.notes || '');
+              setView('meal');
+            })
+            .catch(function(err){ setErrorMsg('Could not open meal: ' + err.message); });
+        }
+        function reloadActiveMeal() {
+          if (!activeMeal || !activeMenu) return Promise.resolve();
+          return convexQuery('recipes:getMealEvent', { ownerId: user.userId, menuId: activeMenu._id, cookEventId: activeMeal.cookEventId })
+            .then(function(m){ setActiveMeal(m); });
+        }
+        // Save the meal-level header (date / people / notes) across all the meal's dishes.
+        function saveMealHeader() {
+          if (!activeMeal) return;
+          setMenuBusy(true);
+          var when = dateInputToMillis(emDate || todayInputValue());
+          var people = parseInt(emPeople, 10);
+          var diners = (people > 0) ? people : 0;
+          var baseNote = 'Cooked for menu: ' + (activeMenu ? activeMenu.name : '');
+          var note = emNotes.trim() ? (baseNote + ' — ' + emNotes.trim()) : baseNote;
+          Promise.all((activeMeal.dishes || []).map(function(d){
+            return convexMutation('recipes:updateCookLog', { logId: d.logId, ownerId: user.userId, cookedOn: when, dinerCount: diners, notes: note });
+          })).then(function(){ setMenuBusy(false); setCookedMsg('Meal updated.'); reloadActiveMeal(); loadMenuMeals(activeMenu._id); })
+            .catch(function(err){ setMenuBusy(false); setErrorMsg('Could not save: ' + err.message); });
+        }
+        function addMealDishRating(recipeId) {
+          if (!activeMeal) return;
+          var when = dateInputToMillis(emDate || todayInputValue());
+          convexMutation('recipes:addScore', { recipeId: recipeId, ownerId: user.userId, score: 8, cookedOn: when, cookEventId: activeMeal.cookEventId })
+            .then(reloadActiveMeal).catch(function(err){ setErrorMsg('Could not add rating: ' + err.message); });
+        }
+        function saveMealRating(scoreId, patch) {
+          convexMutation('recipes:updateScore', Object.assign({ scoreId: scoreId, ownerId: user.userId }, patch))
+            .then(reloadActiveMeal).catch(function(err){ setErrorMsg('Could not save rating: ' + err.message); });
+        }
+        function deleteMealRating(scoreId) {
+          convexMutation('recipes:deleteScore', { scoreId: scoreId, ownerId: user.userId })
+            .then(reloadActiveMeal).catch(function(err){ setErrorMsg('Could not delete rating: ' + err.message); });
+        }
+        function deleteWholeMeal() {
+          if (!activeMeal || !activeMenu) return;
+          if (!window.confirm('Delete this entire cooked-meal record (' + formatCookDate(activeMeal.cookedOn) + ')? This removes its cook-log entries and the ratings logged with it.')) return;
+          convexMutation('recipes:deleteMealEvent', { ownerId: user.userId, menuId: activeMenu._id, cookEventId: activeMeal.cookEventId })
+            .then(function(){ setActiveMeal(null); setView('menu'); loadMenuMeals(activeMenu._id); setCookedMsg('Meal deleted.'); })
+            .catch(function(err){ setErrorMsg('Could not delete meal: ' + err.message); });
         }
         // ---- Grocery list ----
         // A grocery list belongs to either one menu ("menu:<id>") or a shopping trip ("trip:<id>").
@@ -5290,13 +5388,14 @@
                   if (view === 'list') { onBack(); }
                   else if (view === 'grocery') { setView('menu'); }
                   else if (view === 'menu') { openMenus(); }
+                  else if (view === 'meal') { setView('menu'); }
                   else if (view === 'trip') { openTrips(); }
                   else if (view === 'trips') { openMenus(); }
                   else if (view === 'detail') { setView(detailFrom); }
                   else { setView('list'); }
                 },
                 className: 'text-white/90 hover:text-white text-sm font-medium'
-              }, '← ' + (view === 'list' ? 'Back to courses' : view === 'grocery' ? 'Back to menu' : view === 'menu' ? 'Back to menus' : view === 'trip' ? 'Back to trips' : view === 'trips' ? 'Back to menus' : view === 'detail' ? (detailFrom === 'menu' ? 'Back to menu' : detailFrom === 'grocery' ? 'Back to grocery list' : 'Back to recipes') : 'Back to recipes')),
+              }, '← ' + (view === 'list' ? 'Back to courses' : view === 'grocery' ? 'Back to menu' : view === 'menu' ? 'Back to menus' : view === 'meal' ? 'Back to menu' : view === 'trip' ? 'Back to trips' : view === 'trips' ? 'Back to menus' : view === 'detail' ? (detailFrom === 'menu' ? 'Back to menu' : detailFrom === 'grocery' ? 'Back to grocery list' : 'Back to recipes') : 'Back to recipes')),
               createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION)
             ),
             createElement('div', { className: 'text-center' },
@@ -5559,13 +5658,19 @@
                 createElement('div', { className: 'text-xs font-bold uppercase text-muted mb-2', style: { letterSpacing: '0.05em' } }, 'Rate the dishes (optional)'),
                 createElement('div', { className: 'flex flex-col gap-2 mb-3' },
                   (m.recipes || []).map(function(r){
-                    var rt = mealRatings[r._id] || {};
+                    var rows = mealRatings[r._id] || [{ score: '', diner: '' }];
                     return createElement('div', { key: r._id, className: 'border border-themed rounded-lg p-2' },
                       createElement('div', { className: 'font-semibold text-primary text-sm mb-1 truncate' }, r.title),
-                      createElement('div', { className: 'flex items-center gap-2' },
-                        createElement('input', { type: 'number', min: 1, max: 10, inputMode: 'numeric', className: 'w-16 p-1 rounded border text-center', style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }, value: rt.score || '', onChange: function(e){ setMealRating(r._id, { score: e.target.value }); }, placeholder: '/10', title: 'Score 1–10' }),
-                        createElement('span', { className: 'text-xs text-muted' }, '/10'),
-                        createElement('input', { className: 'flex-1 min-w-0 p-1 rounded border text-sm', style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }, list: 'meal-diner-options', value: rt.diner || '', onChange: function(e){ setMealRating(r._id, { diner: e.target.value }); }, placeholder: 'who rated it (optional)' })
+                      createElement('div', { className: 'flex flex-col gap-1' },
+                        rows.map(function(rt, ri){
+                          return createElement('div', { key: ri, className: 'flex items-center gap-2' },
+                            createElement('input', { type: 'number', min: 1, max: 10, inputMode: 'numeric', className: 'w-14 p-1 rounded border text-center', style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }, value: rt.score || '', onChange: function(e){ setMealRatingRow(r._id, ri, { score: e.target.value }); }, placeholder: '/10', title: 'Score 1–10' }),
+                            createElement('span', { className: 'text-xs text-muted' }, '/10'),
+                            createElement('input', { className: 'flex-1 min-w-0 p-1 rounded border text-sm', style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }, list: 'meal-diner-options', value: rt.diner || '', onChange: function(e){ setMealRatingRow(r._id, ri, { diner: e.target.value }); }, placeholder: 'who rated it (optional)' }),
+                            (rows.length > 1) ? createElement('button', { onClick: function(){ removeMealRatingRow(r._id, ri); }, className: 'text-red-500 px-1', title: 'Remove this rating' }, '×') : null
+                          );
+                        }),
+                        createElement('button', { onClick: function(){ addMealRatingRow(r._id); }, className: 'text-xs font-bold text-orange-600 self-start mt-0.5' }, '+ add another rating')
                       )
                     );
                   })
@@ -5575,12 +5680,82 @@
                   createElement('button', { onClick: function(){ setShowMealForm(false); }, className: 'px-4 py-2 rounded-lg border-2 border-themed text-primary font-bold' }, 'Cancel')
                 )
               ),
+              // Cooked-meal history for this menu — tap a date to view/edit that meal.
+              (menuMeals && menuMeals.length > 0) && createElement('div', { className: 'mb-3' },
+                createElement('div', { className: 'text-xs font-bold uppercase text-muted mb-1', style: { letterSpacing: '0.05em' } }, 'Cooked ' + menuMeals.length + ' time' + (menuMeals.length === 1 ? '' : 's')),
+                createElement('div', { className: 'flex flex-col gap-1' },
+                  menuMeals.map(function(ml){
+                    return createElement('button', { key: ml.cookEventId, onClick: function(){ openMeal(ml.cookEventId); }, className: 'card-bg rounded-lg p-2 border border-themed text-left flex items-center gap-2 hover:border-orange-300' },
+                      createElement('span', null, '🍴'),
+                      createElement('div', { className: 'flex-1 min-w-0' },
+                        createElement('div', { className: 'text-sm font-semibold text-primary' }, formatCookDate(ml.cookedOn)),
+                        createElement('div', { className: 'text-xs text-muted' }, (ml.dinerCount ? ml.dinerCount + (ml.dinerCount === 1 ? ' person' : ' people') + ' • ' : '') + ml.dishCount + ' dish' + (ml.dishCount === 1 ? '' : 'es') + (ml.notes ? ' • ' + ml.notes : ''))
+                      ),
+                      createElement('span', { className: 'text-muted' }, '›')
+                    );
+                  })
+                )
+              ),
               // actions
               createElement('div', { className: 'grid grid-cols-1 gap-2 mb-3' },
                 createElement('button', { onClick: openGrocery, disabled: !m.recipes || !m.recipes.length, className: 'bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl disabled:opacity-50' }, '🛒 Grocery list'),
-                createElement('button', { onClick: function(){ showMealForm ? setShowMealForm(false) : openMealForm(); }, disabled: !m.recipes || !m.recipes.length, className: 'py-3 rounded-xl border-2 border-themed text-primary font-bold disabled:opacity-50' }, showMealForm ? 'Cancel' : '🍴 I cooked this'),
+                createElement('button', { onClick: startCookFlow, disabled: !m.recipes || !m.recipes.length, className: 'py-3 rounded-xl border-2 border-themed text-primary font-bold disabled:opacity-50' }, showMealForm ? 'Cancel' : (menuMeals && menuMeals.length ? '🍴 I cooked this again' : '🍴 I cooked this')),
                 createElement('button', { onClick: deleteMenu, className: 'py-2 rounded-xl border-2 border-red-300 text-red-600 text-sm' }, 'Delete menu')
               )
+            )
+          );
+        }
+
+        // ---- COOKED MEAL (view + edit a logged meal event) ----
+        if (view === 'meal' && activeMeal) {
+          var mv = activeMeal;
+          var mvInputStyle = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' };
+          return createElement('div', { className: 'min-h-screen' }, headerEl,
+            createElement('main', { className: 'max-w-2xl mx-auto p-6' },
+              errorEl,
+              createElement('h2', { className: 'text-xl font-bold text-primary mb-1' }, '🍴 Cooked meal'),
+              createElement('p', { className: 'text-sm text-muted mb-3' }, (activeMenu ? activeMenu.name + ' • ' : '') + formatCookDate(mv.cookedOn)),
+              cookedMsg ? createElement('div', { className: 'mb-3 p-2 rounded-lg text-sm', style: { backgroundColor: 'rgba(22,163,74,0.12)', color: '#16a34a' } }, cookedMsg) : null,
+              // Editable meal header: date / people / notes
+              createElement('div', { className: 'card-bg rounded-xl p-4 mb-4 border-2 border-themed' },
+                createElement('div', { className: 'grid grid-cols-2 gap-3 mb-2' },
+                  createElement('div', null,
+                    createElement('label', { style: { display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px', color: 'var(--text-secondary)' } }, 'Date cooked'),
+                    createElement('input', { type: 'date', className: 'w-full p-2 rounded-lg border', style: mvInputStyle, value: emDate, onChange: function(e){ setEmDate(e.target.value); } })
+                  ),
+                  createElement('div', null,
+                    createElement('label', { style: { display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px', color: 'var(--text-secondary)' } }, 'People'),
+                    createElement('input', { type: 'number', min: 1, inputMode: 'numeric', className: 'w-full p-2 rounded-lg border', style: mvInputStyle, value: emPeople, onChange: function(e){ setEmPeople(e.target.value); }, placeholder: 'e.g. 4' })
+                  )
+                ),
+                createElement('textarea', { className: 'w-full p-2 rounded-lg border mb-2', rows: 2, style: mvInputStyle, value: emNotes, onChange: function(e){ setEmNotes(e.target.value); }, placeholder: 'Notes about this meal' }),
+                createElement('button', { onClick: saveMealHeader, disabled: menuBusy, className: 'w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg disabled:opacity-50' }, menuBusy ? 'Saving…' : 'Save changes')
+              ),
+              createElement('datalist', { id: 'meal-diner-options' }, dinerNames.map(function(n){ return createElement('option', { key: n, value: n }); })),
+              // Dishes with editable ratings (multiple per dish)
+              createElement('h3', { className: 'text-lg font-bold text-primary mb-2' }, 'Dishes & ratings'),
+              createElement('div', { className: 'flex flex-col gap-3 mb-4' },
+                (mv.dishes || []).map(function(d){
+                  return createElement('div', { key: d.logId, className: 'card-bg rounded-lg p-3 border border-themed' },
+                    createElement('div', { className: 'flex items-center gap-2 mb-2' },
+                      d.cover ? createElement('img', { src: d.cover, style: { width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px' } }) : createElement('span', null, '🍴'),
+                      createElement('button', { onClick: function(){ openRecipeById(d.recipeId); }, className: 'font-semibold text-primary text-sm text-left flex-1 min-w-0 truncate', title: 'Open recipe' }, d.title)
+                    ),
+                    (d.scores && d.scores.length > 0) && createElement('div', { className: 'flex flex-col gap-1 mb-1' },
+                      d.scores.map(function(s){
+                        return createElement('div', { key: s._id, className: 'flex items-center gap-2' },
+                          createElement('input', { type: 'number', min: 1, max: 10, inputMode: 'numeric', defaultValue: s.score, className: 'w-14 p-1 rounded border text-center', style: mvInputStyle, title: 'Score 1–10', onBlur: function(e){ var n = parseInt(e.target.value, 10); if (n >= 1 && n <= 10 && n !== s.score) saveMealRating(s._id, { score: n }); } }),
+                          createElement('span', { className: 'text-xs text-muted' }, '/10'),
+                          createElement('input', { defaultValue: s.dinerName, list: 'meal-diner-options', className: 'flex-1 min-w-0 p-1 rounded border text-sm', style: mvInputStyle, placeholder: 'who', onBlur: function(e){ if (e.target.value.trim() !== (s.dinerName || '')) saveMealRating(s._id, { dinerName: e.target.value }); } }),
+                          createElement('button', { onClick: function(){ deleteMealRating(s._id); }, className: 'text-red-500 px-1', title: 'Delete rating' }, '×')
+                        );
+                      })
+                    ),
+                    createElement('button', { onClick: function(){ addMealDishRating(d.recipeId); }, className: 'text-xs font-bold text-orange-600' }, '+ add rating')
+                  );
+                })
+              ),
+              createElement('button', { onClick: deleteWholeMeal, className: 'w-full py-2 rounded-xl border-2 border-red-300 text-red-600 text-sm' }, 'Delete this cooked-meal record')
             )
           );
         }

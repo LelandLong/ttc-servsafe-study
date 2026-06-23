@@ -6,6 +6,19 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-23-2026-3] - June 23, 2026
+
+### Added
+- **Recipes — cooked menus now keep an editable meal history, guard against duplicate logging, and take multiple ratings per dish.** Building on the meal-log form:
+  - **Cooked-meal events.** Each "I cooked this" press now groups its dishes into one **meal event** (a shared `cookEventId` + `menuId` on the cook-log rows and ratings). New schema fields (additive, no migration) + `by_menu` index; new backend `getMenuMeals` / `getMealEvent` / `updateCookLog` / `updateScore` / `deleteMealEvent`.
+  - **Re-cook guard.** If a menu was already cooked, the button reads "🍴 I cooked this again" and tapping it first shows a confirm with the most recent meal (date · people · # dishes) before starting a new log — no accidental duplicates.
+  - **Cooked-meal dates list.** The menu shows "Cooked N times" with each meal (date · people · dishes · notes) as a tappable row.
+  - **Editable meal view.** Tap a meal to open it: edit the date, people, and notes (applied across all its dishes), and per dish **view/add/edit/delete ratings** — then "Delete this cooked-meal record" removes the whole event (entries + its ratings).
+  - **Multiple ratings per dish.** The cook form's per-dish rating is now a list with "+ add another rating" (score + who), so each diner gets their own score instead of cramming several names into one. Same multi-rating editing in the meal view.
+  - Verified end-to-end in-app (2 ratings on one dish, re-cook confirm, editable meal view) and via backend (create → edit → delete round-trip); test data cleaned up; zero console errors.
+
+---
+
 ## [06-23-2026-2] - June 23, 2026
 
 ### Changed

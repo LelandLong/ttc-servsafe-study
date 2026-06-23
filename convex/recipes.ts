@@ -511,6 +511,7 @@ export const addScore = mutation({
     dinerName: v.optional(v.string()),
     notes: v.optional(v.string()),
     cookedOn: v.optional(v.number()),
+    cookEventId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const recipe = await ctx.db.get(args.recipeId);
@@ -530,9 +531,36 @@ export const addScore = mutation({
       dinerName: args.dinerName && args.dinerName.trim() ? args.dinerName.trim() : undefined,
       notes: args.notes && args.notes.trim() ? args.notes.trim() : undefined,
       cookedOn: args.cookedOn,
+      cookEventId: args.cookEventId || undefined,
       createdAt: Date.now(),
     });
     return { scoreId };
+  },
+});
+
+// Edit an existing score (used by the editable meal view). Only provided fields change.
+export const updateScore = mutation({
+  args: {
+    scoreId: v.id("recipeScores"),
+    ownerId: v.id("users"),
+    score: v.optional(v.number()),
+    dinerName: v.optional(v.string()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.scoreId);
+    if (!row) throw new Error("Score not found");
+    if (row.ownerId !== args.ownerId) throw new Error("Not authorized to edit this rating");
+    const updates: Record<string, any> = {};
+    if (args.score != null) {
+      const s = Math.round(args.score);
+      if (s < 1 || s > 10) throw new Error("Score must be between 1 and 10");
+      updates.score = s;
+    }
+    if (args.dinerName !== undefined) updates.dinerName = args.dinerName.trim() || undefined;
+    if (args.notes !== undefined) updates.notes = args.notes.trim() || undefined;
+    await ctx.db.patch(args.scoreId, updates);
+    return { ok: true };
   },
 });
 
@@ -578,6 +606,8 @@ export const addCookLog = mutation({
     cookedOn: v.number(),
     dinerCount: v.optional(v.number()),
     notes: v.optional(v.string()),
+    menuId: v.optional(v.id("menus")),
+    cookEventId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const recipe = await ctx.db.get(args.recipeId);
@@ -590,9 +620,33 @@ export const addCookLog = mutation({
       cookedOn: args.cookedOn,
       dinerCount: args.dinerCount != null && args.dinerCount > 0 ? Math.round(args.dinerCount) : undefined,
       notes: args.notes && args.notes.trim() ? args.notes.trim() : undefined,
+      menuId: args.menuId || undefined,
+      cookEventId: args.cookEventId || undefined,
       createdAt: Date.now(),
     });
     return { logId };
+  },
+});
+
+// Edit a cook-log entry (date / diners / notes) — used by the editable meal view.
+export const updateCookLog = mutation({
+  args: {
+    logId: v.id("recipeCookLog"),
+    ownerId: v.id("users"),
+    cookedOn: v.optional(v.number()),
+    dinerCount: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.logId);
+    if (!row) throw new Error("Log entry not found");
+    if (row.ownerId !== args.ownerId) throw new Error("Not authorized to edit this entry");
+    const updates: Record<string, any> = {};
+    if (args.cookedOn != null) updates.cookedOn = args.cookedOn;
+    if (args.dinerCount !== undefined) updates.dinerCount = args.dinerCount > 0 ? Math.round(args.dinerCount) : undefined;
+    if (args.notes !== undefined) updates.notes = args.notes.trim() || undefined;
+    await ctx.db.patch(args.logId, updates);
+    return { ok: true };
   },
 });
 
@@ -621,6 +675,104 @@ export const deleteCookLog = mutation({
     if (row.ownerId !== args.ownerId) throw new Error("Not authorized to delete this entry");
     await ctx.db.delete(args.logId);
     return { ok: true };
+  },
+});
+
+// ============ MENU MEAL EVENTS (Phase R11): grouped, editable cooked-meal history ============
+// A "meal event" is one "I cooked this" press on a menu — all that menu's dishes logged together
+// under a shared cookEventId, plus any diner ratings entered at the same time.
+
+// Strip the "Cooked for menu: <name>" prefix back to just the user's note (for display/edit).
+function mealNoteOnly(notes: string | undefined): string {
+  if (!notes) return "";
+  const m = notes.match(/^Cooked for menu:[^—]*—\s*(.*)$/s);
+  return m ? m[1].trim() : (/^Cooked for menu:/.test(notes) ? "" : notes);
+}
+
+// List a menu's cooked-meal events (newest first): date, people, dish count, notes.
+export const getMenuMeals = query({
+  args: { ownerId: v.id("users"), menuId: v.id("menus") },
+  handler: async (ctx, args) => {
+    const rows = (await ctx.db
+      .query("recipeCookLog")
+      .withIndex("by_menu", (q) => q.eq("menuId", args.menuId))
+      .collect()).filter((r) => r.ownerId === args.ownerId);
+    const groups: Record<string, any> = {};
+    for (const r of rows) {
+      const key = r.cookEventId || ("date:" + r.cookedOn); // legacy rows group by date
+      if (!groups[key]) groups[key] = { cookEventId: r.cookEventId || key, cookedOn: r.cookedOn, dinerCount: r.dinerCount || 0, dishCount: 0, notes: mealNoteOnly(r.notes), createdAt: r.createdAt };
+      const g = groups[key];
+      g.dishCount++;
+      if ((r.dinerCount || 0) > g.dinerCount) g.dinerCount = r.dinerCount || 0;
+      if (!g.notes) g.notes = mealNoteOnly(r.notes);
+      g.createdAt = Math.max(g.createdAt, r.createdAt);
+    }
+    return Object.values(groups).sort((a: any, b: any) => b.cookedOn - a.cookedOn || b.createdAt - a.createdAt);
+  },
+});
+
+// Full data for one meal event: each dish (cook-log entry) with its ratings — for the editable view.
+export const getMealEvent = query({
+  args: { ownerId: v.id("users"), menuId: v.id("menus"), cookEventId: v.string() },
+  handler: async (ctx, args) => {
+    const isLegacyDate = args.cookEventId.indexOf("date:") === 0;
+    const dateKey = isLegacyDate ? Number(args.cookEventId.slice(5)) : null;
+    const rows = (await ctx.db
+      .query("recipeCookLog")
+      .withIndex("by_menu", (q) => q.eq("menuId", args.menuId))
+      .collect()).filter((r) => r.ownerId === args.ownerId &&
+        (isLegacyDate ? (!r.cookEventId && r.cookedOn === dateKey) : r.cookEventId === args.cookEventId));
+    if (rows.length === 0) return null;
+    const dishes = await Promise.all(rows.map(async (r) => {
+      const recipe: any = await ctx.db.get(r.recipeId);
+      const cover = recipe && recipe.imageIds && recipe.imageIds.length ? await ctx.storage.getUrl(recipe.imageIds[0]) : null;
+      const allScores = await ctx.db
+        .query("recipeScores")
+        .withIndex("by_recipe", (q) => q.eq("recipeId", r.recipeId))
+        .collect();
+      const scores = allScores
+        .filter((s) => s.ownerId === args.ownerId && (isLegacyDate ? (!s.cookEventId && s.cookedOn === dateKey) : s.cookEventId === args.cookEventId))
+        .map((s) => ({ _id: s._id, score: s.score, dinerName: s.dinerName || "", notes: s.notes || "" }));
+      return { logId: r._id, recipeId: r.recipeId, title: recipe ? recipe.title : "(deleted recipe)", cover, notes: r.notes || "", scores };
+    }));
+    const first = rows[0];
+    return {
+      cookEventId: args.cookEventId,
+      menuId: args.menuId,
+      cookedOn: first.cookedOn,
+      dinerCount: rows.reduce((m, r) => Math.max(m, r.dinerCount || 0), 0),
+      notes: mealNoteOnly(first.notes),
+      dishes,
+    };
+  },
+});
+
+// Delete a whole meal event: every dish's cook-log entry + every rating tagged with this event.
+export const deleteMealEvent = mutation({
+  args: { ownerId: v.id("users"), menuId: v.id("menus"), cookEventId: v.string() },
+  handler: async (ctx, args) => {
+    const isLegacyDate = args.cookEventId.indexOf("date:") === 0;
+    const dateKey = isLegacyDate ? Number(args.cookEventId.slice(5)) : null;
+    const rows = (await ctx.db
+      .query("recipeCookLog")
+      .withIndex("by_menu", (q) => q.eq("menuId", args.menuId))
+      .collect()).filter((r) => r.ownerId === args.ownerId &&
+        (isLegacyDate ? (!r.cookEventId && r.cookedOn === dateKey) : r.cookEventId === args.cookEventId));
+    const recipeIds = new Set(rows.map((r) => String(r.recipeId)));
+    for (const r of rows) await ctx.db.delete(r._id);
+    // Remove ratings logged with this event (only those on the event's dishes).
+    if (!isLegacyDate) {
+      for (const rid of recipeIds) {
+        const scores = await ctx.db
+          .query("recipeScores")
+          .withIndex("by_recipe", (q) => q.eq("recipeId", rid as any))
+          .collect();
+        for (const s of scores) {
+          if (s.ownerId === args.ownerId && s.cookEventId === args.cookEventId) await ctx.db.delete(s._id);
+        }
+      }
+    }
+    return { ok: true, deleted: rows.length };
   },
 });
 
