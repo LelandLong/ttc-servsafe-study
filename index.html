@@ -4428,6 +4428,12 @@
         const [newMenuName, setNewMenuName] = useState('');
         const [menuBusy, setMenuBusy] = useState(false);
         const [cookedMsg, setCookedMsg] = useState('');
+        // "I cooked this" meal-log form (date + people + per-dish ratings) for the active menu
+        const [showMealForm, setShowMealForm] = useState(false);
+        const [mealDate, setMealDate] = useState('');
+        const [mealPeople, setMealPeople] = useState('');
+        const [mealNotes, setMealNotes] = useState('');
+        const [mealRatings, setMealRatings] = useState({}); // recipeId -> { score, diner }
 
         // ---- Shopping trips (Phase 3: combine a user-chosen subset of menus) ----
         const [trips, setTrips] = useState(null);            // null = unloaded
@@ -4497,7 +4503,7 @@
         }
         function openMenus() { setCookedMsg(''); loadMenus(); setView('menus'); }
         function openMenu(menuId) {
-          setCookedMsg(''); setErrorMsg('');
+          setCookedMsg(''); setErrorMsg(''); setShowMealForm(false);
           convexQuery('menus:getMenu', { menuId: menuId, ownerId: user.userId })
             .then(function(m){
               setActiveMenu(m);
@@ -4628,16 +4634,48 @@
             .then(function(){ setActiveMenu(null); openMenus(); })
             .catch(function(err){ setErrorMsg('Could not delete menu: ' + err.message); });
         }
-        // One-tap "I cooked this": log every recipe in the menu to the cook log.
-        function cookedWholeMenu() {
+        // "I cooked this": open the meal-log form, prefilled (today + the menu's headcount).
+        function openMealForm() {
+          if (!activeMenu) return;
+          setMealDate(todayInputValue());
+          setMealPeople(String(menuTarget || activeMenu.servings || ''));
+          setMealNotes('');
+          setMealRatings({});
+          setCookedMsg('');
+          loadSuggestions();        // diner-name type-ahead for the rating rows
+          setShowMealForm(true);
+        }
+        function setMealRating(recipeId, patch) {
+          setMealRatings(function(prev){
+            var next = Object.assign({}, prev);
+            next[recipeId] = Object.assign({ score: '', diner: '' }, prev[recipeId] || {}, patch);
+            return next;
+          });
+        }
+        // Save the meal: a cook-log entry per dish (date + people + notes), plus a diner rating
+        // for any dish the user scored — all in one go.
+        function submitMealLog() {
           if (!activeMenu || !activeMenu.recipes || !activeMenu.recipes.length) return;
           setMenuBusy(true); setCookedMsg('');
-          var when = dateInputToMillis(todayInputValue());
-          var diners = menuTarget || (activeMenu.servings || undefined);
-          Promise.all(activeMenu.recipes.map(function(r){
-            return convexMutation('recipes:addCookLog', { recipeId: r._id, ownerId: user.userId, cookedOn: when, dinerCount: diners ? Number(diners) : undefined, notes: 'Cooked for menu: ' + activeMenu.name });
-          })).then(function(){ setMenuBusy(false); setCookedMsg('Logged ' + activeMenu.recipes.length + ' dishes to your cook log. 🍴'); })
-            .catch(function(err){ setMenuBusy(false); setErrorMsg('Could not log meals: ' + err.message); });
+          var when = dateInputToMillis(mealDate || todayInputValue());
+          var people = parseInt(mealPeople, 10);
+          var diners = (people > 0) ? people : undefined;
+          var baseNote = 'Cooked for menu: ' + activeMenu.name;
+          var note = mealNotes.trim() ? (baseNote + ' — ' + mealNotes.trim()) : baseNote;
+          var ops = [], rated = 0;
+          activeMenu.recipes.forEach(function(r){
+            ops.push(convexMutation('recipes:addCookLog', { recipeId: r._id, ownerId: user.userId, cookedOn: when, dinerCount: diners, notes: note }));
+            var rt = mealRatings[r._id];
+            var sc = rt && parseInt(rt.score, 10);
+            if (sc >= 1 && sc <= 10) {
+              rated++;
+              ops.push(convexMutation('recipes:addScore', { recipeId: r._id, ownerId: user.userId, score: sc, dinerName: (rt.diner || '').trim() || undefined, cookedOn: when }));
+            }
+          });
+          Promise.all(ops).then(function(){
+            setMenuBusy(false); setShowMealForm(false);
+            setCookedMsg('Logged ' + activeMenu.recipes.length + ' dish' + (activeMenu.recipes.length === 1 ? '' : 'es') + (rated ? ' and ' + rated + ' rating' + (rated === 1 ? '' : 's') : '') + '. 🍴  Tap a dish above to see or edit its history.');
+          }).catch(function(err){ setMenuBusy(false); setErrorMsg('Could not log meal: ' + err.message); });
         }
         // ---- Grocery list ----
         // A grocery list belongs to either one menu ("menu:<id>") or a shopping trip ("trip:<id>").
@@ -5503,10 +5541,44 @@
                         createElement('button', { onClick: function(){ removeRecipeFromMenu(r._id); }, className: 'text-red-500 px-2', title: 'Remove from menu' }, '×')
                       );
                     })),
+              // ---- "I cooked this" meal-log form: date + people + optional per-dish ratings ----
+              showMealForm && createElement('div', { className: 'card-bg rounded-xl p-4 mb-3 border-2 border-themed' },
+                createElement('h3', { className: 'text-lg font-bold text-primary mb-3' }, '🍴 Log this meal'),
+                createElement('div', { className: 'grid grid-cols-2 gap-3 mb-2' },
+                  createElement('div', null,
+                    createElement('label', { style: { display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px', color: 'var(--text-secondary)' } }, 'Date cooked'),
+                    createElement('input', { type: 'date', className: 'w-full p-2 rounded-lg border', style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }, value: mealDate, onChange: function(e){ setMealDate(e.target.value); } })
+                  ),
+                  createElement('div', null,
+                    createElement('label', { style: { display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px', color: 'var(--text-secondary)' } }, 'People'),
+                    createElement('input', { type: 'number', min: 1, inputMode: 'numeric', className: 'w-full p-2 rounded-lg border', style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }, value: mealPeople, onChange: function(e){ setMealPeople(e.target.value); }, placeholder: 'e.g. 4' })
+                  )
+                ),
+                createElement('textarea', { className: 'w-full p-2 rounded-lg border mb-3', rows: 2, style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }, value: mealNotes, onChange: function(e){ setMealNotes(e.target.value); }, placeholder: 'Notes about this meal (occasion, tweaks, leftovers…)' }),
+                createElement('datalist', { id: 'meal-diner-options' }, dinerNames.map(function(n){ return createElement('option', { key: n, value: n }); })),
+                createElement('div', { className: 'text-xs font-bold uppercase text-muted mb-2', style: { letterSpacing: '0.05em' } }, 'Rate the dishes (optional)'),
+                createElement('div', { className: 'flex flex-col gap-2 mb-3' },
+                  (m.recipes || []).map(function(r){
+                    var rt = mealRatings[r._id] || {};
+                    return createElement('div', { key: r._id, className: 'border border-themed rounded-lg p-2' },
+                      createElement('div', { className: 'font-semibold text-primary text-sm mb-1 truncate' }, r.title),
+                      createElement('div', { className: 'flex items-center gap-2' },
+                        createElement('input', { type: 'number', min: 1, max: 10, inputMode: 'numeric', className: 'w-16 p-1 rounded border text-center', style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }, value: rt.score || '', onChange: function(e){ setMealRating(r._id, { score: e.target.value }); }, placeholder: '/10', title: 'Score 1–10' }),
+                        createElement('span', { className: 'text-xs text-muted' }, '/10'),
+                        createElement('input', { className: 'flex-1 min-w-0 p-1 rounded border text-sm', style: { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }, list: 'meal-diner-options', value: rt.diner || '', onChange: function(e){ setMealRating(r._id, { diner: e.target.value }); }, placeholder: 'who rated it (optional)' })
+                      )
+                    );
+                  })
+                ),
+                createElement('div', { className: 'flex gap-2' },
+                  createElement('button', { onClick: submitMealLog, disabled: menuBusy, className: 'flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg disabled:opacity-50' }, menuBusy ? 'Saving…' : 'Save meal'),
+                  createElement('button', { onClick: function(){ setShowMealForm(false); }, className: 'px-4 py-2 rounded-lg border-2 border-themed text-primary font-bold' }, 'Cancel')
+                )
+              ),
               // actions
               createElement('div', { className: 'grid grid-cols-1 gap-2 mb-3' },
                 createElement('button', { onClick: openGrocery, disabled: !m.recipes || !m.recipes.length, className: 'bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl disabled:opacity-50' }, '🛒 Grocery list'),
-                createElement('button', { onClick: cookedWholeMenu, disabled: menuBusy || !m.recipes || !m.recipes.length, className: 'py-3 rounded-xl border-2 border-themed text-primary font-bold disabled:opacity-50' }, menuBusy ? 'Logging…' : '🍴 I cooked this'),
+                createElement('button', { onClick: function(){ showMealForm ? setShowMealForm(false) : openMealForm(); }, disabled: !m.recipes || !m.recipes.length, className: 'py-3 rounded-xl border-2 border-themed text-primary font-bold disabled:opacity-50' }, showMealForm ? 'Cancel' : '🍴 I cooked this'),
                 createElement('button', { onClick: deleteMenu, className: 'py-2 rounded-xl border-2 border-red-300 text-red-600 text-sm' }, 'Delete menu')
               )
             )

@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-23-2026-2] - June 23, 2026
+
+### Changed
+- **Recipes — "I cooked this" now opens a meal-log form instead of a dead-end one-tap log.** Tapping it on a menu used to silently log each dish (with the menu headcount) and just show a confirmation — no way to set the date/people or record how it went. It now opens a **Log this meal** form: date (default today), people (default the menu's headcount), notes, and an optional **per-dish rating** (1–10 + who rated it, with diner-name type-ahead). Saving writes a cook-log entry for every dish *and* a diner rating for any dish you scored, in one step. The confirmation points you to tap any dish to view or edit its full history (ratings + meals-cooked already live on each recipe's detail screen, reachable from the now-tappable menu rows). Verified end-to-end in-app (log + rating persisted), zero console errors.
+
+---
+
 ## [06-23-2026-1] - June 23, 2026
 
 ### Fixed
