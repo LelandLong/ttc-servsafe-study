@@ -21,7 +21,9 @@ async function publicMenuRecipe(ctx: any, recipe: any) {
 }
 
 export const createMenu = mutation({
-  args: { ownerId: v.id("users"), name: v.optional(v.string()), recipeId: v.optional(v.id("recipes")) },
+  // recipeId may be a real id, omitted, or null (a bare "New menu" with no recipe yet) — accept
+  // all three so the optional-validator never rejects a null from the client.
+  args: { ownerId: v.id("users"), name: v.optional(v.string()), recipeId: v.optional(v.union(v.id("recipes"), v.null())) },
   handler: async (ctx, args) => {
     const now = Date.now();
     const menuId = await ctx.db.insert("menus", {

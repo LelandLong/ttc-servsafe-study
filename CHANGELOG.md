@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [06-23-2026-1] - June 23, 2026
+
+### Fixed
+- **Recipes — "+ New menu" no longer fails with "Could not create menu: Server Error".** The button creates a menu with no recipe yet, so the client sent `recipeId: null` — but Convex's `v.optional(v.id("recipes"))` validator rejects `null` (it accepts the id or *absent*, not null), which surfaced as a server error. (Creating a menu via "Add to a menu" from a recipe worked because it sends a real id.) Fixed both ends: the client now **omits** `recipeId` when there isn't one, and `createMenu` accepts `null` defensively (`v.union(v.id("recipes"), v.null())`) so no caller can trip it again. Verified the "+ New menu" flow creates and opens a menu with zero console errors.
+
+---
+
 ## [06-17-2026-10] - June 17, 2026
 
 ### Fixed

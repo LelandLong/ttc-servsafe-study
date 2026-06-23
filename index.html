@@ -4514,7 +4514,11 @@
         function createMenuWith(recipeId) {
           var name = (newMenuName || '').trim() || 'New menu';
           setMenuBusy(true);
-          return convexMutation('menus:createMenu', { ownerId: user.userId, name: name, recipeId: recipeId })
+          // Only include recipeId when there is one — Convex's optional validator rejects null
+          // (a bare "New menu" has no recipe yet).
+          var args = { ownerId: user.userId, name: name };
+          if (recipeId) args.recipeId = recipeId;
+          return convexMutation('menus:createMenu', args)
             .then(function(res){ setMenuBusy(false); setNewMenuName(''); return res.menuId; })
             .catch(function(err){ setMenuBusy(false); setErrorMsg('Could not create menu: ' + err.message); });
         }
