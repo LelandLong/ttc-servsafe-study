@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-08-2026-1] - August 8, 2026
+
+### Added
+- **Private pages: `privateAccess` user flag.** The HOS-190 private-page gate (`privatePages:get`/`set`) now accepts `isProf` **or** the new `privateAccess` boolean on the user record — so a regular student account can view/publish private pages without gaining professor/admin rights or being excluded from class stats. Granted via a new **internal** mutation `users:grantPrivateAccess` (Convex CLI only — not callable from the public HTTP API, unlike `toggleProf`). See `PRIVATE-PAGES.md`.
+
+---
+
 ## [06-23-2026-3] - June 23, 2026
 
 ### Added
