@@ -499,6 +499,53 @@
 
       // ============ USER SESSION MANAGEMENT ============
       var USER_KEY = 'chefKitchenUser';
+
+      // ── Professor-gated private pages (HOS-190 Italy) ──────────────────
+      // Server-side isProf check in convex/privatePages.ts decides everything;
+      // this code only renders what the server chooses to return.
+      (function initPrivatePages() {
+        function tryInit() {
+          var saved = null;
+          try { saved = JSON.parse(localStorage.getItem(USER_KEY)); } catch (e) {}
+          if (!saved || !saved.userId || !CONVEX_URL) return;
+          fetch(CONVEX_URL + '/api/query', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'privatePages:get', args: { userId: saved.userId, slug: 'hos190-italy' }, format: 'json' })
+          }).then(function(r) { return r.json(); })
+            .then(function(res) {
+              var html = res && res.status === 'success' ? res.value : null;
+              if (html) addPrivatePageButton(html);
+            }).catch(function() {});
+        }
+        function addPrivatePageButton(html) {
+          if (document.getElementById('pp-hos190')) return;
+          var btn = document.createElement('button');
+          btn.id = 'pp-hos190';
+          btn.textContent = '\uD83C\uDDEE\uD83C\uDDF9 HOS-190';
+          btn.setAttribute('style', 'position:fixed;top:10px;right:10px;z-index:9990;background:#fff7ed;color:#c2410c;border:2px solid #fb923c;border-radius:999px;padding:6px 14px;font-weight:800;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer;');
+          btn.onclick = function() { openPrivatePage(html); };
+          document.body.appendChild(btn);
+        }
+        function openPrivatePage(html) {
+          var ov = document.createElement('div');
+          ov.id = 'pp-overlay';
+          ov.setAttribute('style', 'position:fixed;inset:0;z-index:9991;background:rgba(0,0,0,.55);');
+          var frame = document.createElement('iframe');
+          frame.setAttribute('style', 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#faf6f0;');
+          frame.srcdoc = html;
+          var close = document.createElement('button');
+          close.textContent = '\u2715';
+          close.setAttribute('style', 'position:absolute;top:12px;right:12px;z-index:9992;width:40px;height:40px;border-radius:999px;border:0;background:#2b2320;color:#fff;font-size:18px;font-weight:900;box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;');
+          close.onclick = function() { document.body.removeChild(ov); };
+          ov.appendChild(frame); ov.appendChild(close);
+          document.body.appendChild(ov);
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function() { setTimeout(tryInit, 800); });
+        } else { setTimeout(tryInit, 800); }
+        window.addEventListener('storage', tryInit);
+      })();
+
       var USER_LAST_ACTIVE = 'chefKitchenLastActive';
       var PERSONAL_DEVICE = 'chefKitchenPersonalDevice';
       var IDLE_TIMEOUT = 30 * 60 * 1000; // 30 minutes

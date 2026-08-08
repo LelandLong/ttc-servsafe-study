@@ -2,6 +2,12 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  privatePages: defineTable({
+    slug: v.string(),
+    html: v.string(),
+    updatedAt: v.number(),
+  }).index("by_slug", ["slug"]),
+
   questions: defineTable({
     questionId: v.number(), // Original ID from the question (1-342 CUL-104, 1001+ CUL-105)
     question: v.string(),
