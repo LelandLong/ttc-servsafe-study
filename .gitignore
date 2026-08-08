@@ -2,6 +2,7 @@
 .env.local
 .claude/settings.local.json
 node_modules/
+.DS_Store
 
 # Private page content — NEVER commit (public repo)
 private/
