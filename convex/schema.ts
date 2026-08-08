@@ -2,6 +2,12 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  privatePages: defineTable({
+    slug: v.string(),
+    html: v.string(),
+    updatedAt: v.number(),
+  }).index("by_slug", ["slug"]),
+
   questions: defineTable({
     questionId: v.number(), // Original ID from the question (1-342 CUL-104, 1001+ CUL-105)
     question: v.string(),
@@ -37,6 +43,7 @@ export default defineSchema({
     firstName: v.string(),      // Stored LOWERCASE for matching
     displayName: v.string(),    // Original casing of gamerName for display
     isProf: v.optional(v.boolean()), // Professor account — excluded from class stats/leaderboards
+    privateAccess: v.optional(v.boolean()), // Can view/publish private pages (HOS-190 etc.) WITHOUT prof/admin rights
     createdAt: v.number(),      // Epoch millis
     lastActiveAt: v.number(),   // Updated on each sync/login
   }).index("by_gamerName", ["gamerName"]),

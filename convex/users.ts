@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 // ============ QUERIES ============
@@ -423,6 +423,22 @@ export const checkGamerName = query({
       .first();
 
     return { available: !existing };
+  },
+});
+
+// Grant/revoke private-page access (HOS-190 etc.) without prof rights.
+// Internal on purpose: only runnable via the authenticated Convex CLI, e.g.
+//   npx convex run users:grantPrivateAccess '{"gamerName":"rerun","grant":true}' --prod
+export const grantPrivateAccess = internalMutation({
+  args: { gamerName: v.string(), grant: v.boolean() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_gamerName", (q) => q.eq("gamerName", args.gamerName.trim().toLowerCase()))
+      .first();
+    if (!user) throw new Error("User not found: " + args.gamerName);
+    await ctx.db.patch(user._id, { privateAccess: args.grant });
+    return { gamerName: user.gamerName, privateAccess: args.grant };
   },
 });
 

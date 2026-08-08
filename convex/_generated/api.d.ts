@@ -9,6 +9,7 @@
  */
 
 import type * as menus from "../menus.js";
+import type * as privatePages from "../privatePages.js";
 import type * as questions from "../questions.js";
 import type * as recipes from "../recipes.js";
 import type * as seed from "../seed.js";
@@ -23,6 +24,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   menus: typeof menus;
+  privatePages: typeof privatePages;
   questions: typeof questions;
   recipes: typeof recipes;
   seed: typeof seed;
