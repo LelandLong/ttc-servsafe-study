@@ -6,6 +6,13 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-08-2026-4] - August 8, 2026
+
+### Changed
+- **Class Pages moved up the home screen.** The 🔓 Class Pages section (Italy Itinerary, Trip Essentials) now sits directly below the course selector and above the mascot/overall-score card, instead of down past the study-mode grid — trip material is front-and-center on launch.
+
+---
+
 ## [08-08-2026-3] - August 8, 2026
 
 ### Added
