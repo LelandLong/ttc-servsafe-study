@@ -1687,7 +1687,15 @@
                         s.isProf && e('span', {
                           className: 'ml-1 px-1.5 py-0.5 text-xs font-normal rounded',
                           style: { backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#a855f7' }
-                        }, 'Prof')
+                        }, 'Prof'),
+                        s.privateAccess && e('span', {
+                          className: 'ml-1 px-1.5 py-0.5 text-xs font-normal rounded',
+                          style: { backgroundColor: 'rgba(34, 197, 94, 0.15)', color: '#16a34a' }
+                        }, 'Pages'),
+                        s.adminAccess && e('span', {
+                          className: 'ml-1 px-1.5 py-0.5 text-xs font-normal rounded',
+                          style: { backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#2563eb' }
+                        }, 'Admin')
                       ),
                       e('td', { className: 'px-4 py-3 text-gray-600' }, s.firstName),
                       e('td', { className: 'px-4 py-3' }, s.totalAnswered),
@@ -1732,8 +1740,8 @@
                 }, '\u00D7')
               ),
 
-              // Professor toggle
-              e('div', { className: 'mb-4' },
+              // Professor toggle + private-pages access checkbox
+              e('div', { className: 'mb-4 flex flex-wrap items-center gap-3' },
                 e('button', {
                   onClick: function() {
                     convexMutation("users:toggleProf", { userId: selectedStudent })
@@ -1750,7 +1758,51 @@
                     color: studentDetail.user.isProf ? '#a855f7' : 'var(--text-secondary, #6B7280)',
                     border: '1px solid ' + (studentDetail.user.isProf ? '#a855f7' : 'var(--border-color, #D1D5DB)')
                   }
-                }, studentDetail.user.isProf ? 'Professor Account (excluded from stats)' : 'Mark as Professor')
+                }, studentDetail.user.isProf ? 'Professor Account (excluded from stats)' : 'Mark as Professor'),
+                e('label', {
+                  className: 'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer',
+                  style: {
+                    backgroundColor: studentDetail.user.privateAccess ? 'rgba(34, 197, 94, 0.15)' : 'var(--bg-secondary, #F3F4F6)',
+                    color: studentDetail.user.privateAccess ? '#16a34a' : 'var(--text-secondary, #6B7280)',
+                    border: '1px solid ' + (studentDetail.user.privateAccess ? '#16a34a' : 'var(--border-color, #D1D5DB)')
+                  }
+                },
+                  e('input', {
+                    type: 'checkbox',
+                    checked: !!studentDetail.user.privateAccess,
+                    onChange: function(ev) {
+                      convexMutation("users:setPrivateAccess", { userId: selectedStudent, value: ev.target.checked })
+                        .then(function() {
+                          convexQuery("users:getAllStudents").then(function(s) { setStudents(s || []); }).catch(function() {});
+                          convexQuery("users:getStudentDetail", { userId: selectedStudent }).then(function(d) { setStudentDetail(d); }).catch(function() {});
+                        })
+                        .catch(function(err) { alert('Failed: ' + err.message); });
+                    }
+                  }),
+                  '🇮🇹 Class Pages access (HOS-190 itinerary & trip info)'
+                ),
+                e('label', {
+                  className: 'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer',
+                  style: {
+                    backgroundColor: studentDetail.user.adminAccess ? 'rgba(59, 130, 246, 0.15)' : 'var(--bg-secondary, #F3F4F6)',
+                    color: studentDetail.user.adminAccess ? '#2563eb' : 'var(--text-secondary, #6B7280)',
+                    border: '1px solid ' + (studentDetail.user.adminAccess ? '#2563eb' : 'var(--border-color, #D1D5DB)')
+                  }
+                },
+                  e('input', {
+                    type: 'checkbox',
+                    checked: !!studentDetail.user.adminAccess,
+                    onChange: function(ev) {
+                      convexMutation("users:setAdminAccess", { userId: selectedStudent, value: ev.target.checked })
+                        .then(function() {
+                          convexQuery("users:getAllStudents").then(function(s) { setStudents(s || []); }).catch(function() {});
+                          convexQuery("users:getStudentDetail", { userId: selectedStudent }).then(function(d) { setStudentDetail(d); }).catch(function() {});
+                        })
+                        .catch(function(err) { alert('Failed: ' + err.message); });
+                    }
+                  }),
+                  '🛠️ Admin link (shows Admin button in the app)'
+                )
               ),
 
               // Overall stats

@@ -5,6 +5,9 @@ export default defineSchema({
   privatePages: defineTable({
     slug: v.string(),
     html: v.string(),
+    title: v.optional(v.string()),  // Button label on the home screen
+    icon: v.optional(v.string()),   // Emoji shown on the button
+    blurb: v.optional(v.string()),  // One-line subtitle on the button
     updatedAt: v.number(),
   }).index("by_slug", ["slug"]),
 
@@ -44,6 +47,7 @@ export default defineSchema({
     displayName: v.string(),    // Original casing of gamerName for display
     isProf: v.optional(v.boolean()), // Professor account — excluded from class stats/leaderboards
     privateAccess: v.optional(v.boolean()), // Can view/publish private pages (HOS-190 etc.) WITHOUT prof/admin rights
+    adminAccess: v.optional(v.boolean()),   // Shows the Admin-page link in the student app (isProf also shows it)
     createdAt: v.number(),      // Epoch millis
     lastActiveAt: v.number(),   // Updated on each sync/login
   }).index("by_gamerName", ["gamerName"]),

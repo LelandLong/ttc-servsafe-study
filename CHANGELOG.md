@@ -6,6 +6,18 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-08-2026-2] - August 8, 2026
+
+### Added
+- **Class Pages on the home screen.** The floating HOS-190 pill is gone; private pages now render as native mode-cards in a "🔓 Class Pages" section (icon, title, blurb per page), fed by a new `privatePages:list` query that returns metadata only for authorized users (`isProf` or `privateAccess`) and `[]` for everyone else. Tapping a card fetches the page and opens the full-screen viewer.
+- **Second private page: 🧳 Trip Essentials** (`hos190-trip-info`) — emergency/insurance numbers (iNext via CIEE), hotels with tap-to-dial, airport/baggage rules, instructor contacts, key dates and grading. Content lives only in Convex, like the itinerary.
+- **Admin checkboxes for access control.** The student detail modal now has "🇮🇹 Class Pages access" (`users:setPrivateAccess`) and "🛠️ Admin link" (`users:setAdminAccess`) checkboxes, with "Pages"/"Admin" badges in the student list. Neither grants professor status nor affects class stats.
+- **Gated Admin button.** A "🛠️ Admin" pill in the top-left of the launch screen links to `admin.html`, shown only when the new `users:getAccess` query reports `isProf` or `adminAccess`.
+- `privatePages` rows now carry `title`/`icon`/`blurb` for the home-screen buttons; `push-private-page.mjs` accepts them as extra args.
+- Verified end-to-end headless (Playwright): buttons render for an authorized account, overlay opens, in-page nav works, regular students get nothing.
+
+---
+
 ## [08-08-2026-1] - August 8, 2026
 
 ### Added

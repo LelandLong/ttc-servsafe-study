@@ -53,6 +53,8 @@ export const getAllStudents = query({
         displayName: user.displayName,
         firstName: user.firstName,
         isProf: user.isProf || false,
+        privateAccess: user.privateAccess || false,
+        adminAccess: user.adminAccess || false,
         totalAnswered: prog?.totalAnswered || 0,
         totalCorrect: prog?.totalCorrect || 0,
         badgeCount: progressDoc?.badges?.length || 0,
@@ -439,6 +441,44 @@ export const grantPrivateAccess = internalMutation({
     if (!user) throw new Error("User not found: " + args.gamerName);
     await ctx.db.patch(user._id, { privateAccess: args.grant });
     return { gamerName: user.gamerName, privateAccess: args.grant };
+  },
+});
+
+// Lightweight access-flag lookup for the student app (admin button, etc.)
+export const getAccess = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!user) return null;
+    return {
+      isProf: user.isProf === true,
+      privateAccess: user.privateAccess === true,
+      adminAccess: user.adminAccess === true,
+    };
+  },
+});
+
+// Set admin-link access on a user account (admin dashboard checkbox).
+// Shows the Admin-page button in the student app without marking them a professor.
+export const setAdminAccess = mutation({
+  args: { userId: v.id("users"), value: v.boolean() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(user._id, { adminAccess: args.value });
+    return { adminAccess: args.value };
+  },
+});
+
+// Set private-page access on a user account (admin dashboard checkbox).
+// Grants viewing of private pages (HOS-190 etc.) only — no admin rights, still in class stats.
+export const setPrivateAccess = mutation({
+  args: { userId: v.id("users"), value: v.boolean() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(user._id, { privateAccess: args.value });
+    return { privateAccess: args.value };
   },
 });
 
