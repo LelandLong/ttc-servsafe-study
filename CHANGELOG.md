@@ -6,6 +6,14 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-08-2026-3] - August 8, 2026
+
+### Added
+- **Tap the header to share the app — QR code + copy link.** The orange launch-screen banner is now a tap target: tapping anywhere on it (except the Admin pill and account avatar, which keep their own taps) opens a **QR-code popup** ("Scan with any camera to open the app", close via ✕ or tapping outside) and simultaneously copies the public app URL to the clipboard with a temporary "📋 App link copied" toast. A subtle "tap to share" hint sits under the course name. The shared link is the canonical GitHub Pages address (hardcoded, not `window.location`), so it works from an installed home-screen PWA where there's no URL bar — scan in person, or paste into a text. QR generated fully offline via an inlined `qrcode-generator` v1.4.4 (MIT, ~20KB); clipboard uses the async API with a `textarea`/`execCommand` fallback for older WebViews. Verified headless: the rendered QR machine-decodes to exactly the public URL.
+- **`feature-flow` skill** (`.claude/skills/feature-flow/`) — the end-to-end branch → verify → commit → PR → merge → Convex/Pages deploy workflow, adapted from the FlooringXP/Scheduler skills.
+
+---
+
 ## [08-08-2026-2] - August 8, 2026
 
 ### Added

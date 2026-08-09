@@ -1,1 +1,1 @@
-var APP_VERSION = "08-08-2026-2";
+var APP_VERSION = "08-08-2026-3";
