@@ -500,33 +500,13 @@
       // ============ USER SESSION MANAGEMENT ============
       var USER_KEY = 'chefKitchenUser';
 
-      // ── Professor-gated private pages (HOS-190 Italy) ──────────────────
-      // Server-side isProf check in convex/privatePages.ts decides everything;
-      // this code only renders what the server chooses to return.
-      (function initPrivatePages() {
-        function tryInit() {
-          var saved = null;
-          try { saved = JSON.parse(localStorage.getItem(USER_KEY)); } catch (e) {}
-          if (!saved || !saved.userId || !CONVEX_URL) return;
-          fetch(CONVEX_URL + '/api/query', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: 'privatePages:get', args: { userId: saved.userId, slug: 'hos190-italy' }, format: 'json' })
-          }).then(function(r) { return r.json(); })
-            .then(function(res) {
-              var html = res && res.status === 'success' ? res.value : null;
-              if (html) addPrivatePageButton(html);
-            }).catch(function() {});
-        }
-        function addPrivatePageButton(html) {
-          if (document.getElementById('pp-hos190')) return;
-          var btn = document.createElement('button');
-          btn.id = 'pp-hos190';
-          btn.textContent = '\uD83C\uDDEE\uD83C\uDDF9 HOS-190';
-          btn.setAttribute('style', 'position:fixed;top:10px;right:10px;z-index:9990;background:#fff7ed;color:#c2410c;border:2px solid #fb923c;border-radius:999px;padding:6px 14px;font-weight:800;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer;');
-          btn.onclick = function() { openPrivatePage(html); };
-          document.body.appendChild(btn);
-        }
-        function openPrivatePage(html) {
+      // ── Private pages (HOS-190 Italy etc.) ──────────────────
+      // Server-side isProf/privateAccess check in convex/privatePages.ts decides
+      // everything; the app only renders what the server returns. Page buttons
+      // render on the home screen (HomeScreen); this helper shows a fetched
+      // page's html in a full-screen overlay.
+      function openPrivatePageOverlay(html) {
+          if (document.getElementById('pp-overlay')) return;
           var ov = document.createElement('div');
           ov.id = 'pp-overlay';
           ov.setAttribute('style', 'position:fixed;inset:0;z-index:9991;background:rgba(0,0,0,.55);');
@@ -540,11 +520,6 @@
           ov.appendChild(frame); ov.appendChild(close);
           document.body.appendChild(ov);
         }
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', function() { setTimeout(tryInit, 800); });
-        } else { setTimeout(tryInit, 800); }
-        window.addEventListener('storage', tryInit);
-      })();
 
       var USER_LAST_ACTIVE = 'chefKitchenLastActive';
       var PERSONAL_DEVICE = 'chefKitchenPersonalDevice';
@@ -3150,6 +3125,8 @@
         const onCycleTheme = props.onCycleTheme;
         const activeCourse = props.activeCourse;
         const onSwitchCourse = props.onSwitchCourse;
+        const privatePages = props.privatePages || [];
+        const onOpenPrivatePage = props.onOpenPrivatePage;
         const courseConfig = COURSES[activeCourse];
         const [showAllBadges, setShowAllBadges] = useState(false);
         const totalPercentage = progress.totalAnswered > 0
@@ -3450,6 +3427,27 @@
                     ? 'Focus on ' + weakCategories.length + ' categories below 70%.'
                     : 'No weak areas yet! Keep practicing.'
                 )
+              )
+            ),
+
+            // Private pages — server-gated (isProf/privateAccess); rendered only
+            // when privatePages:list returned something for this user
+            privatePages.length > 0 && createElement('div', null,
+              createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '🔓 Class Pages'),
+              createElement('div', { className: 'grid md:grid-cols-2 gap-4 mb-6' },
+                privatePages.map(function(page) {
+                  return createElement('button', {
+                    key: page.slug,
+                    onClick: function() { onOpenPrivatePage && onOpenPrivatePage(page.slug); },
+                    className: 'mode-card bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border-2 border-green-300 text-left hover:border-green-500 hover:shadow-lg'
+                  },
+                    createElement('div', { className: 'flex items-center gap-3 mb-2' },
+                      createElement('span', { className: 'text-3xl' }, page.icon || '🔒'),
+                      createElement('span', { className: 'font-bold text-lg text-gray-800' }, page.title)
+                    ),
+                    page.blurb ? createElement('p', { className: 'text-gray-600 text-sm' }, page.blurb) : null
+                  );
+                })
               )
             ),
 
@@ -6630,6 +6628,32 @@
         const [showIdentityCheck, setShowIdentityCheck] = useState(false);
         const [personalDevice, setPersonalDeviceState] = useState(isPersonalDevice);
         const [classStats, setClassStats] = useState(null);
+        const [privatePages, setPrivatePages] = useState([]);
+        const [userAccess, setUserAccess] = useState(null);
+
+        // Private pages + access flags: ask the server what this user may see.
+        // privatePages:list returns [] and getAccess returns all-false for
+        // everyone without the corresponding flags.
+        useEffect(function() {
+          if (user && user.userId) {
+            convexQuery('privatePages:list', { userId: user.userId })
+              .then(function(pages) { setPrivatePages(pages || []); })
+              .catch(function() { setPrivatePages([]); });
+            convexQuery('users:getAccess', { userId: user.userId })
+              .then(function(a) { setUserAccess(a); })
+              .catch(function() { setUserAccess(null); });
+          } else {
+            setPrivatePages([]);
+            setUserAccess(null);
+          }
+        }, [user]);
+
+        function handleOpenPrivatePage(slug) {
+          if (!user || !user.userId) return;
+          convexQuery('privatePages:get', { userId: user.userId, slug: slug })
+            .then(function(html) { if (html) openPrivatePageOverlay(html); })
+            .catch(function() {});
+        }
 
         // Version check state
         const [updateAvailable, setUpdateAvailable] = useState(null);
@@ -7403,6 +7427,20 @@
           })
         );
 
+        // Admin-page link (top-left of the launch screen) — server-gated:
+        // shown only when users:getAccess reports isProf or adminAccess.
+        var adminBtnEl = userAccess && (userAccess.isProf || userAccess.adminAccess) &&
+          createElement('a', {
+            href: 'admin.html',
+            className: 'flex items-center gap-1.5 rounded-full font-bold transition-all hover:scale-105',
+            style: {
+              position: 'fixed', top: '38px', left: '16px', zIndex: 100,
+              padding: '8px 16px', fontSize: '14px', textDecoration: 'none',
+              color: '#fff', background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+              border: '2px solid rgba(255,255,255,0.3)', boxShadow: '0 2px 8px rgba(0,0,0,0.25)'
+            }
+          }, '🛠️ Admin');
+
         if (screen === 'recipes') {
           return createElement('div', null,
             accountMenuEl,
@@ -7440,6 +7478,7 @@
 
         return createElement('div', null,
           accountMenuEl,
+          adminBtnEl,
           newBadgeToShow && createElement(BadgeNotification, {
             badge: newBadgeToShow,
             onClose: dismissBadgeNotification
@@ -7457,7 +7496,9 @@
               classStats: classStats,
               activeCourse: activeCourse,
               onSwitchCourse: switchCourse,
-              onOpenRecipes: function() { setScreen('recipes'); }
+              onOpenRecipes: function() { setScreen('recipes'); },
+              privatePages: privatePages,
+              onOpenPrivatePage: handleOpenPrivatePage
             })
           )
         );
