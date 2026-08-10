@@ -5,6 +5,9 @@ description: The end-to-end workflow for working a feature / bug fix in the Chef
 
 # Feature / Bug Workflow (Chef's Kitchen)
 
+> Crossfeed flow adaptation: `feature-flow` template v1.0 (`~/crossfeed/flows/`). This copy
+> predates the template and comes from the same FXP/Scheduler family it was distilled from.
+
 Standing process for any feature or fix in this repo. **Drive it end-to-end so Leland doesn't have to prompt each step.** Announce actions as you take them (so he can interrupt), but don't block on a question he already answered. Numbered steps are the flow; the **🔑 rules** are Chef's Kitchen conventions (sourced from `CLAUDE.md` + session history).
 
 > **Golden overrides (these beat the happy path every time):**
@@ -17,6 +20,8 @@ Standing process for any feature or fix in this repo. **Drive it end-to-end so L
 > - 📝 **Version bump + CHANGELOG before every commit** — no exceptions (see step 8).
 > - ❓ **Question-bank JS changes do NOT auto-sync to Convex.** After editing `questions*.js`, the admin must click "Reset to Original" (course-scoped) to push to the cloud — say so in the summary.
 > - 🗣️ **Never invent user-facing copy/UX beyond the ask without checking** — this app has a strong voice (Ratatouille theme, gamification); match it, don't freelance it.
+> - 🧾 **Unrelated discoveries get their own tracked item** (a plan.md/CHANGELOG note or a question to Leland), never a ride-along fix on the current branch.
+> - 🤝 **Cross-repo division of labor (crossfeed):** the TTC Coursework session (`TTC`) owns HOS-190 class-content truth and DRAFTS private-page HTML into `private/`; this session (`CHEF`) reviews every draft in a real browser, fixes convention violations, and owns ALL pushes and deploys (Convex, Pages, private-page content). Handoffs and reports travel via `~/crossfeed/crossfeed-personal.md` — write them self-sufficient, so the receiving session has zero questions.
 
 ---
 

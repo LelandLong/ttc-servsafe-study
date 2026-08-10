@@ -348,3 +348,13 @@ The developer works from multiple devices using VSCode with Claude Code extensio
 **Primary Developer:** Leland Long
 **AI Assistant:** Claude (Anthropic) — VS Code Claude Code extension
 **Last Updated:** June 9, 2026
+
+---
+
+## Crossfeed — Leland's cross-project channel
+
+This project is wired into the global crossfeed at `~/crossfeed/` (protocol 3.0). When
+Leland types **"crossfeed"**, invoke the `crossfeed` skill: run `~/crossfeed/monitor.sh`,
+read/act on unread messages in `crossfeed-personal.md`, keep your `Last-read:` markers and
+status file current. Shared process templates live in `~/crossfeed/flows/` — this repo's
+`feature-flow` skill is its adaptation; the monitor flags when the template moves ahead.
