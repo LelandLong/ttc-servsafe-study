@@ -6,6 +6,16 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-11-2026-2] - August 11, 2026
+
+### Fixed
+- **Badge flood.** Crossing several badge thresholds at once (streak + count + category + time-of-day can legitimately stack, and cloud merges can re-cross many) fired 5–10 back-to-back full-screen confetti popups, each demanding a tap. Now **at most 2 badge presentations per answered question**; the rest stay in the persisted queue and drain 2 per subsequent answer (flashcard flips drain too). Verified with a seeded 6-badge queue: 2 show → suppressed → next answer releases exactly 2 more.
+
+### Added
+- **Channel front door.** The Snarky AI News: Test Kitchen premiere thumbnail (`assets/snarky/channel-thumbnail-premiere.jpg`, supplied by STK) is now a tap target on the home screen, directly below the welcome card — links to the episode on YouTube in a new tab, with a "▶ WATCH THE PREMIERE" caption bar. Refresh per episode = swap the image + href. Thumbnail added to the SW image precache so the panel renders offline.
+
+---
+
 ## [08-11-2026-1] - August 11, 2026
 
 ### Added

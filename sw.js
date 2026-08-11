@@ -36,7 +36,7 @@ var IMAGES = [
   'assets/chef-reading.jpg', 'assets/chef-sanitize.jpg', 'assets/chef-sick.jpg',
   'assets/chef-spoiled.jpg', 'assets/chef-thermometer.jpg', 'assets/chef-thinking.jpg',
   'assets/chef-timer.jpg', 'assets/chef-trophy.jpg', 'assets/headshot_20260210.png',
-  'assets/kitchen-bg.jpg'
+  'assets/kitchen-bg.jpg', 'assets/snarky/channel-thumbnail-premiere.jpg'
 ];
 
 function putInCache(cache, url) {
