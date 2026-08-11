@@ -392,6 +392,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.addEventListener('DOMContentLoaded', function() {
       const useState = React.useState;
       const useEffect = React.useEffect;
+      const useRef = React.useRef;
       const createElement = React.createElement;
 
       // ============ CONVEX CLOUD DATABASE CONFIGURATION ============
@@ -3411,6 +3412,31 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                     )
                   )
                 )
+              )
+            ),
+
+            // Channel front door — the premiere thumbnail IS the tap target
+            // (Leland's directive via STK-010). Refresh the image + link per
+            // new episode: swap assets/snarky/channel-thumbnail-premiere.jpg
+            // and the href below.
+            createElement('a', {
+              href: 'https://youtu.be/B-ZmLV1Wn9g',
+              target: '_blank',
+              rel: 'noopener',
+              className: 'block rounded-2xl overflow-hidden shadow-xl mb-6 border-4 border-gray-800 hover:shadow-2xl hover:scale-[1.01] transition-all'
+            },
+              createElement('img', {
+                src: 'assets/snarky/channel-thumbnail-premiere.jpg',
+                alt: 'Snarky AI News: Test Kitchen — watch the premiere episode',
+                className: 'w-full block',
+                loading: 'lazy'
+              }),
+              createElement('div', {
+                className: 'flex items-center justify-between px-4 py-2.5',
+                style: { background: '#1a1a1a', color: '#fff' }
+              },
+                createElement('span', { className: 'font-bold text-sm' }, '📺 Snarky AI News: Test Kitchen'),
+                createElement('span', { className: 'text-xs font-bold', style: { color: '#f97316' } }, '▶ WATCH THE PREMIERE')
               )
             ),
 
@@ -7000,13 +7026,31 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           return unsubscribe;
         }, []);
 
-        // Show badge notifications from queue (per-course)
+        // Show badge notifications from queue (per-course).
+        // FLOOD GUARD (08-11): crossing several thresholds at once used to fire
+        // 5-10 back-to-back full-screen popups. Now at most 2 present per
+        // answered question; the rest stay queued (newlyEarned persists) and
+        // drain 2 per subsequent answer. Budget starts at 2 so a leftover
+        // queue also catches up gently after a reload.
+        const badgeBudgetRef = useRef(2);
+        const [badgeDrainTick, setBadgeDrainTick] = useState(0);
         useEffect(function() {
-          if (!newBadgeToShow && courseBadges.newlyEarned && courseBadges.newlyEarned.length > 0) {
+          if (!newBadgeToShow && badgeBudgetRef.current > 0 &&
+              courseBadges.newlyEarned && courseBadges.newlyEarned.length > 0) {
             var nextBadge = getBadgeById(courseBadges.newlyEarned[0]);
-            if (nextBadge) setNewBadgeToShow(nextBadge);
+            if (nextBadge) {
+              badgeBudgetRef.current -= 1;
+              setNewBadgeToShow(nextBadge);
+            }
           }
-        }, [courseBadges.newlyEarned, newBadgeToShow]);
+        }, [courseBadges.newlyEarned, newBadgeToShow, badgeDrainTick]);
+
+        // Called once per answered/reviewed question: refill the presentation
+        // budget (reset, not accumulate) and nudge the queue effect.
+        function refillBadgeBudget() {
+          badgeBudgetRef.current = 2;
+          setBadgeDrainTick(function(t) { return t + 1; });
+        }
 
         function dismissBadgeNotification() {
           setBadges(function(prev) {
@@ -7209,6 +7253,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }
 
         function handleAnswer(question, isCorrect, usedHint) {
+          refillBadgeBudget(); // max 2 badge popups per question; rest drain later
           var now = new Date();
           var hour = now.getHours();
           var day = now.getDay();
@@ -7299,6 +7344,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
         // Handle flashcard review
         function handleFlashcardReview(question) {
+          refillBadgeBudget(); // flashcard flips also drain any queued badges gently
           setProgress(function(prev) {
             var allProgress = migrateProgress(JSON.parse(JSON.stringify(prev)));
             var cp = allProgress[activeCourse] || emptyProgress();
