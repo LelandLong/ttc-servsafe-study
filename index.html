@@ -426,6 +426,37 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         } catch (e) { return false; }
       }
 
+      // ── Offline support ──────────────────────────────────────────────
+      // sw.js caches the shell (html, question banks, CDN React/Tailwind,
+      // images) so the app boots with no signal. Private-page bodies are
+      // cached below in localStorage (Convex calls are POSTs — not SW-cacheable)
+      // and cleared on logout. Access control stays server-side: the cache is
+      // only ever filled from responses the server already authorized.
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('sw.js').catch(function () {});
+        });
+      }
+
+      var PRIVATE_PAGES_CACHE_KEY = 'chefKitchenPrivatePages';
+      function readPrivatePagesCache(userId) {
+        try {
+          var c = JSON.parse(localStorage.getItem(PRIVATE_PAGES_CACHE_KEY));
+          if (c && c.userId === userId) return c;
+        } catch (e) {}
+        return null;
+      }
+      function writePrivatePagesCache(userId, list, pages) {
+        try {
+          localStorage.setItem(PRIVATE_PAGES_CACHE_KEY, JSON.stringify({
+            userId: userId, list: list, pages: pages || {}, cachedAt: Date.now()
+          }));
+        } catch (e) {}
+      }
+      function clearPrivatePagesCache() {
+        try { localStorage.removeItem(PRIVATE_PAGES_CACHE_KEY); } catch (e) {}
+      }
+
       // Build a scalable SVG QR of the public app link (inlined qrcode-generator lib)
       function appLinkQrSvg() {
         try {
@@ -595,6 +626,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           localStorage.removeItem(USER_KEY);
           localStorage.removeItem(USER_LAST_ACTIVE);
         } catch (e) {}
+        clearPrivatePagesCache(); // private content must not outlive the sign-in
       }
 
       function updateLastActive() {
@@ -6752,11 +6784,37 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // Private pages + access flags: ask the server what this user may see.
         // privatePages:list returns [] and getAccess returns all-false for
         // everyone without the corresponding flags.
+        // OFFLINE: on a successful list we PREFETCH every page body into a
+        // localStorage cache (so emergency info is on-device before the trip,
+        // without requiring a tap); when the network is gone we serve list and
+        // bodies from that cache. An authoritative empty list (access revoked)
+        // clears it.
         useEffect(function() {
           if (user && user.userId) {
             convexQuery('privatePages:list', { userId: user.userId })
-              .then(function(pages) { setPrivatePages(pages || []); })
-              .catch(function() { setPrivatePages([]); });
+              .then(function(pages) {
+                pages = pages || [];
+                setPrivatePages(pages);
+                if (pages.length === 0) { clearPrivatePagesCache(); return; }
+                var cached = readPrivatePagesCache(user.userId);
+                var bodies = (cached && cached.pages) || {};
+                writePrivatePagesCache(user.userId, pages, bodies);
+                pages.forEach(function(p) {
+                  convexQuery('privatePages:get', { userId: user.userId, slug: p.slug })
+                    .then(function(html) {
+                      if (!html) return;
+                      var c = readPrivatePagesCache(user.userId);
+                      if (!c) return;
+                      c.pages[p.slug] = html;
+                      writePrivatePagesCache(user.userId, c.list, c.pages);
+                    }).catch(function() {});
+                });
+              })
+              .catch(function() {
+                // Network gone — fall back to this user's cached list
+                var cached = readPrivatePagesCache(user.userId);
+                setPrivatePages((cached && cached.list) || []);
+              });
             convexQuery('users:getAccess', { userId: user.userId })
               .then(function(a) { setUserAccess(a); })
               .catch(function() { setUserAccess(null); });
@@ -6769,8 +6827,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         function handleOpenPrivatePage(slug) {
           if (!user || !user.userId) return;
           convexQuery('privatePages:get', { userId: user.userId, slug: slug })
-            .then(function(html) { if (html) openPrivatePageOverlay(html); })
-            .catch(function() {});
+            .then(function(html) {
+              if (html) { openPrivatePageOverlay(html); return; }
+              throw new Error('no page');
+            })
+            .catch(function() {
+              // Offline (or fetch failed): serve the prefetched copy
+              var cached = readPrivatePagesCache(user.userId);
+              if (cached && cached.pages && cached.pages[slug]) {
+                openPrivatePageOverlay(cached.pages[slug]);
+              }
+            });
         }
 
         // Version check state

@@ -54,7 +54,7 @@ A Progressive Web App (PWA) for culinary course study at Trident Technical Colle
 - **Dark/Light/System Themes** with instant switching
 - **PWA Features:**
   - Install to home screen
-  - Offline support
+  - Full offline support (service worker caches the shell, question banks & CDN libraries; private pages prefetched on-device — one online visit per release required)
   - Responsive design
 
 ### Professor Features (admin.html)

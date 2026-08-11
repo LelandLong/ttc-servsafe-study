@@ -244,7 +244,7 @@ npx convex deploy --yes
 - Class-wide statistics (polled every 5s) with performance comparison
 - Live timed tests with countdown and leaderboard
 - Dark/light/system themes
-- Offline resilience (pending sync flag, auto-retry on reconnect)
+- **Full offline support** — `sw.js` service worker (cache name stamped with `APP_VERSION`; network-first shell/version.js so updates win; caches CDN React/Tailwind, question banks, images) + private pages prefetched into localStorage on load and served when fetches fail (cleared on sign-out). One online visit required after each release. Progress sync: pending-sync flag, auto-retry on reconnect
 - PWA version checking & auto-update banner
 
 ### Admin App (`admin.html`)

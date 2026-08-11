@@ -5,7 +5,7 @@ description: The end-to-end workflow for working a feature / bug fix in the Chef
 
 # Feature / Bug Workflow (Chef's Kitchen)
 
-> Crossfeed flow adaptation: `feature-flow` template v1.0 (`~/crossfeed/flows/`). This copy
+> Crossfeed flow adaptation: `feature-flow` template v1.1 (`~/crossfeed/flows/`). This copy
 > predates the template and comes from the same FXP/Scheduler family it was distilled from.
 
 Standing process for any feature or fix in this repo. **Drive it end-to-end so Leland doesn't have to prompt each step.** Announce actions as you take them (so he can interrupt), but don't block on a question he already answered. Numbered steps are the flow; the **🔑 rules** are Chef's Kitchen conventions (sourced from `CLAUDE.md` + session history).
@@ -58,6 +58,7 @@ Standing process for any feature or fix in this repo. **Drive it end-to-end so L
 - After deploying backend changes, verify against **prod** with real calls, not assumptions.
 
 ## 6. Browser verification (MANDATORY for any user-facing change)
+- **You cannot see your own rendered output** (template v1.1): a generated preview is not verification — a real browser, a device, or another session is. This applies to OUR drafts too, not just incoming ones; when handing an unrendered artifact to anyone, say it hasn't been verified.
 - Green syntax checks do NOT substitute for a real browser. Playwright is a devDependency (`npm install`, `npx playwright install chromium` once per machine).
 - Pattern: serve the repo (`python3 -m http.server 8123`), `addInitScript` to inject `chefKitchenUser` / `chefKitchenPersonalDevice` into localStorage, load, assert the **actual outcome** (element present, overlay opens, data rendered) — not just "no red screen". Screenshot and LOOK at it. Kill the server when done.
 - Verify the negative path too (signed out / unauthorized account sees nothing).

@@ -6,6 +6,17 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-11-2026-1] - August 11, 2026
+
+### Added
+- **Full offline support** (built for the Sept 1 Italy trip — Trip Essentials is the emergency-contacts page, and "no signal" and "needs the emergency number" are the same moment):
+  - **`sw.js` service worker.** Precaches the app shell, `version.js`, all question banks, CDN React/Tailwind (opaque no-cors caching), and UI images (best-effort). Cache name is stamped with `APP_VERSION` — every release starts a fresh cache and deletes old ones, so a stale SW can never pin users to an old version. Navigations and `version.js` stay **network-first** (the update banner keeps winning online); everything else is cache-first with runtime fill. Convex POSTs pass through untouched.
+  - **Private pages prefetched to the device.** After a successful `privatePages:list`, every page body is fetched and stored in localStorage (`chefKitchenPrivatePages`, ~33KB for the current three) — no tap required. When offline, the card list and page bodies serve from that cache; an authoritative empty list (access revoked) clears it, and **sign-out clears it** (private content doesn't outlive the session).
+  - **Requirement:** one online visit after each release to (re)fill the caches — trip guidance stays "open the app on wifi before you wander."
+  - Verified end-to-end headless: online visit → airplane-mode reload → shell boots, Class Pages render, Trip Essentials opens with the IMG emergency number and policy reference visible, itinerary opens too; back online, no regression; sign-out clears the page cache. Previously offline was a total failure both paths (no SW, CDN-dependent shell, uncached bodies).
+
+---
+
 ## [08-08-2026-4] - August 8, 2026
 
 ### Changed

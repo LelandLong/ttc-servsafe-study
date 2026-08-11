@@ -27,7 +27,14 @@ npx convex run users:grantPrivateAccess '{"gamerName":"rerun","grant":true}' --p
 3. `CK_USER_ID=<your-userId> node scripts/push-private-page.mjs <slug> private/<file>.html "<Title>" "<emoji>" "<blurb>"`
 4. Deploy Convex if schema changed: `npx convex deploy --yes`
 
-Current pages: `hos190-italy` (Italy Itinerary) · `hos190-trip-info` (Trip Essentials).
+Current pages: `hos190-italy` (Italy Itinerary) · `hos190-map` (Route Map) · `hos190-trip-info` (Trip Essentials).
+
+## Offline behaviour (added 08-11)
+The app shell works offline via `sw.js` (see CHANGELOG 08-11-2026-1). Private pages are additionally
+**prefetched into localStorage on every successful load** — no tap needed — and served from that cache
+when the network is gone, so Trip Essentials' emergency numbers work in airplane mode. The cache is
+per-user, refreshed on every online visit, cleared on sign-out and on access revocation. Requirement:
+one online visit after each content push for devices to pick up new page bodies.
 
 **Gotcha:** pages render inside a `srcdoc` iframe, where `#anchor` hrefs resolve against the PARENT app URL
 and navigate away. Any page using in-page anchors needs the small click-intercept script (see the existing
