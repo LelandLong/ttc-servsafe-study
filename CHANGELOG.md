@@ -6,6 +6,17 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-13-2026-2] - August 13, 2026
+
+### Fixed
+- **Divider characters were peering through a mail slot.** The divider was a 54px box with `overflow: hidden` holding an 86px cutout, so every character got letterboxed into a horizontal slit — Leland's read was "looking through slitted portals," which was exactly right. Characters are now shown **whole at full height**, standing on the rule, which passes behind them and breaks around the silhouette. Nothing is clipped.
+
+### Changed
+- **Characters now break out of the frame** (the 4Rivers menu-card pattern Leland referenced): the welcome card is a thin accent-bordered `pop-frame` whose cast member rises up and out over the **top border** rather than sitting boxed inside it. Classic-rat theme keeps its original in-card layout.
+- **Channel strip sized up ~70%** — thumbnail 96×54 → 168×94, three lines of text, and a real orange WATCH pill; the row went from 70px to 118px tall. Big enough to read as a proper link, still nowhere near the original billboard.
+
+---
+
 ## [08-13-2026-1] - August 13, 2026
 
 ### Changed
