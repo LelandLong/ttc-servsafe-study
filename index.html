@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#B91C1C">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Chef's Kitchen | Study Aid</title>
+  <link rel="icon" href="assets/snarky/identity-favicon-64.png" sizes="64x64">
+  <link rel="apple-touch-icon" href="assets/snarky/identity-logo-192.png">
   <link rel="manifest" href="manifest.json">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -2468,6 +2470,150 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         return badgeDefinitions.find(function(b) { return b.id === id; });
       }
 
+      // ============ CHARACTER THEMES ============
+      // Two casts share one app. `classic` is the original Ratatouille-style rat
+      // (unchanged); `snarky` is the Snarky AI News: Test Kitchen crew. Characters
+      // are DATA, not code — adding a cast member is a row here, not a component.
+      // Assets live in assets/snarky/ (delivered by the STK session, capped at 6MB).
+      var SKIN_KEY = 'chefKitchenSkin';
+
+      var THEMES = {
+        classic: {
+          id: 'classic', label: 'Classic Chef', icon: '🐀',
+          mascotName: 'Chef Whiskers',
+          // states resolve to assets/chef-*.jpg via the legacy map in ChefCharacter
+          legacy: true
+        },
+        snarky: {
+          id: 'snarky', label: 'Snarky Test Kitchen', icon: '📺',
+          mascotName: 'The Test Kitchen',
+          // Per-state art. `stills` rotate (variety is the prime directive —
+          // Leland re-runs the whole bank, so one image goes stale in minutes);
+          // `loop` plays muted+inline when motion is allowed, poster otherwise.
+          states: {
+            wrong: {
+              who: 'Wrongston',
+              stills: ['qa-wrongston-01', 'qa-wrongston-02', 'qa-wrongston-03', 'qa-wrongston-04', 'qa-wrongston-05'],
+              loop: 'qa-wrongston-loop-01',
+              lines: [
+                "I have written about this extensively.",
+                "A common misconception. Mine, apparently.",
+                "Confidently, catastrophically close.",
+                "I stand by it. The textbook does not.",
+                "Let the record show I was very sure."
+              ]
+            },
+            right: {
+              who: 'Sasha',
+              stills: ['correct-sasha-mark'],
+              lines: [
+                "Correct. Obviously.",
+                "Noted. Filed. Correct.",
+                "That's the one.",
+                "Accurate. Moving on.",
+                "Correct — don't let it go to your head."
+              ]
+            },
+            hint: {
+              who: 'Diane',
+              stills: ['hints-diane-01', 'qa-diane-01'],
+              loop: 'hints-diane-loop-01',
+              lines: [
+                "Asking for everybody at home...",
+                "Now, for the folks just joining us:",
+                "Let's put it plainly, shall we?"
+              ]
+            },
+            idle: {
+              who: 'The desk',
+              stills: ['qa-wrongston-01', 'qa-alex-01', 'qa-diane-01', 'qa-wrongston-03'],
+              lines: [
+                "We're live. No pressure.",
+                "The desk is ready when you are.",
+                "Rolling in 3... 2...",
+                "Take your time. The segment's yours."
+              ]
+            },
+            celebrate: {
+              who: 'Holly',
+              stills: ['leaderboard-holly-01'],
+              loop: 'celebrate-holly-loop-01',
+              lines: [
+                "Now THAT is engagement.",
+                "Trending. Internally.",
+                "Clip that one."
+              ]
+            }
+          },
+          audio: {
+            right: ['correct-sasha-01', 'correct-sasha-02', 'correct-sasha-03', 'correct-sasha-04'],
+            wrong: ['qa-wrongston-sting-01', 'qa-wrongston-sting-02'],
+            celebrate: ['celebrate-holly-01', 'celebrate-holly-02', 'celebrate-holly-03']
+          }
+        }
+      };
+
+      function loadSkin() {
+        try {
+          var s = localStorage.getItem(SKIN_KEY);
+          if (s && THEMES[s]) return s;
+        } catch (e) {}
+        return 'snarky'; // Leland's ruling: Snarky is the default; classic is one tap away
+      }
+      function saveSkin(s) {
+        try { localStorage.setItem(SKIN_KEY, s); } catch (e) {}
+      }
+
+      // Deterministic-but-varied pick: rotates through a list using a counter so
+      // consecutive events don't repeat (pure Math.random() clumps).
+      var rotationCounters = {};
+      function rotate(list, key) {
+        if (!list || !list.length) return null;
+        rotationCounters[key] = (rotationCounters[key] || Math.floor(Math.random() * list.length)) + 1;
+        return list[rotationCounters[key] % list.length];
+      }
+
+      function prefersReducedMotion() {
+        try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+        catch (e) { return false; }
+      }
+
+      // ── Sound (Snarky theme only) ──────────────────────────────────
+      // Leland's ruling: ON by default, easy off, AUTO-MUTED during
+      // professor-run live tests. iOS needs one user gesture before audio
+      // plays — answering a question provides it, so this is invisible.
+      var SOUND_KEY = 'chefKitchenSound';
+      function loadSoundOn() {
+        try {
+          var v = localStorage.getItem(SOUND_KEY);
+          if (v === null) return true; // default ON
+          return v === 'true';
+        } catch (e) { return true; }
+      }
+      function saveSoundOn(v) {
+        try { localStorage.setItem(SOUND_KEY, v ? 'true' : 'false'); } catch (e) {}
+      }
+      var audioCache = {};
+      var audioSuspended = false; // set true while a live test is running
+      function playStinger(kind) {
+        if (audioSuspended || !loadSoundOn()) return;
+        var theme = THEMES[loadSkin()];
+        if (!theme || !theme.audio || !theme.audio[kind]) return;
+        var name = rotate(theme.audio[kind], 'audio-' + kind);
+        if (!name) return;
+        try {
+          var a = audioCache[name];
+          if (!a) {
+            a = new Audio('assets/snarky/' + name + '.m4a');
+            a.preload = 'auto';
+            audioCache[name] = a;
+          }
+          a.currentTime = 0;
+          var p = a.play();
+          if (p && p.catch) p.catch(function () {}); // autoplay policy — silent no-op
+        } catch (e) {}
+      }
+
       // ============ COMPONENTS ============
 
       // Chef Character - Now with 17 images!
@@ -2534,6 +2680,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           }
         }
 
+        // Snarky cast: map the legacy chef states onto the news-desk states and
+        // render the rotating still (or its loop when motion is welcome).
+        var skin = props.skin || loadSkin();
+        if (skin === 'snarky') {
+          var castState = state === 'celebrate' || state === 'trophy' ? 'celebrate'
+            : state === 'sick' || state === 'encourage' ? 'wrong'
+            : state === 'reading' ? 'hint'
+            : 'idle';
+          var slot = THEMES.snarky.states[castState] || THEMES.snarky.states.idle;
+          var still = props.pinnedStill || rotate(slot.stills, 'still-' + castState);
+          var useLoop = slot.loop && !prefersReducedMotion() && (castState === 'celebrate' || castState === 'wrong');
+          return createElement('div', { className: 'relative' },
+            useLoop
+              ? createElement('video', {
+                  src: 'assets/snarky/' + slot.loop + '.mp4',
+                  poster: 'assets/snarky/' + slot.loop + '-poster.jpg',
+                  autoPlay: true, loop: true, muted: true, playsInline: true,
+                  className: sizeClass + ' mx-auto rounded-2xl'
+                })
+              : createElement('img', {
+                  src: 'assets/snarky/' + still + '.jpg',
+                  alt: slot.who,
+                  className: sizeClass + ' mx-auto rounded-2xl'
+                }),
+            state === 'celebrate' && createElement('div', { className: 'absolute inset-0 pointer-events-none' }, sparkles)
+          );
+        }
+
         return createElement('div', { className: 'relative' },
           createElement('img', {
             src: images[state],
@@ -2584,11 +2758,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           }),
           // Shadow underneath chef
           createElement('div', { className: 'chef-hero-shadow' }),
-          // Main chef image with glow effect
+          // Main hero image with glow effect — cast-aware
           createElement('div', { className: 'chef-hero-glow' },
             createElement('img', {
-              src: 'assets/chef-greeting.jpg',
-              alt: 'Chef Whiskers',
+              src: (props && props.skin === 'snarky') ? 'assets/snarky/identity-login-hero.jpg' : 'assets/chef-greeting.jpg',
+              alt: (props && props.skin === 'snarky') ? 'Snarky AI News: Test Kitchen' : 'Chef Whiskers',
               className: 'w-36 md:w-44 chef-hero rounded-2xl'
             })
           )
@@ -3028,8 +3202,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             title: user.displayName
           },
             createElement('img', {
-              src: 'assets/headshot_20260210.png',
-              alt: 'Chef Rat Avatar',
+              src: props.skin === 'snarky' ? 'assets/snarky/identity-logo-192.png' : 'assets/headshot_20260210.png',
+              alt: props.skin === 'snarky' ? 'Snarky Test Kitchen' : 'Chef Rat Avatar',
               style: { width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }
             })
           ),
@@ -3066,6 +3240,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             },
               createElement('span', null, themeIcon),
               createElement('span', null, 'Theme: ' + themeLabel)
+            ),
+
+            // Character cast toggle (Snarky ⇄ classic rat) — Leland's placement ruling
+            createElement('button', {
+              onClick: function(e) { e.stopPropagation(); props.onCycleSkin(); },
+              className: 'w-full text-left px-4 py-3 text-sm flex items-center gap-3 transition-colors',
+              style: { color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)' }
+            },
+              createElement('span', null, THEMES[props.skin] ? THEMES[props.skin].icon : '📺'),
+              createElement('span', null, 'Cast: ' + (THEMES[props.skin] ? THEMES[props.skin].label : 'Snarky Test Kitchen'))
+            ),
+
+            // Sound toggle (Snarky cast only — the classic rat has no audio)
+            props.skin === 'snarky' && createElement('button', {
+              onClick: function(e) { e.stopPropagation(); props.onToggleSound(); },
+              className: 'w-full text-left px-4 py-3 text-sm flex items-center gap-3 transition-colors',
+              style: { color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)' }
+            },
+              createElement('span', null, props.soundOn ? '🔊' : '🔇'),
+              createElement('span', null, 'Sound: ' + (props.soundOn ? 'On' : 'Off'))
             ),
 
             // Personal device toggle
@@ -3390,7 +3584,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             createElement('div', { className: 'card-bg rounded-2xl shadow-xl p-6 mb-6 border-4 border-amber-200' },
               createElement('div', { className: 'flex flex-col md:flex-row items-center gap-6' },
                 createElement('div', { className: 'flex-shrink-0' },
-                  createElement(HeroChef, null)
+                  createElement(HeroChef, { skin: props.skin })
                 ),
                 createElement('div', { className: 'flex-1 text-center md:text-left' },
                   createElement('h2', { className: 'text-2xl font-bold text-primary' },
@@ -3825,6 +4019,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const [chefState, setChefState] = useState('thinking');
         const [sessionScore, setSessionScore] = useState(0);
         const [sessionAnswered, setSessionAnswered] = useState(0);
+        // Snarky line held for the life of one reaction so it doesn't reshuffle on re-render
+        const [snarkyLine, setSnarkyLine] = useState(null);
+        const [snarkyLineFor, setSnarkyLineFor] = useState(null);
+        function pickSnarkyLine(slot) {
+          var pool = (THEMES.snarky.states[slot] || THEMES.snarky.states.idle).lines;
+          setSnarkyLine(rotate(pool, 'line-' + slot));
+          setSnarkyLineFor(slot);
+        }
 
         const currentQuestion = questions[currentIndex];
 
@@ -3836,6 +4038,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }, [currentIndex, currentQuestion]);
 
         function getSpeechText() {
+          // Snarky cast speaks its own lines (rotating — the same quip twice in a
+          // row kills it). Study CONTENT is never touched: only the chrome talks.
+          if (props.skin === 'snarky') {
+            var s = chefState === 'celebrate' || chefState === 'trophy' ? 'celebrate'
+              : chefState === 'sick' || chefState === 'encourage' ? 'wrong'
+              : chefState === 'reading' ? 'hint'
+              : 'idle';
+            if (snarkyLine && snarkyLineFor === s) return snarkyLine;
+            var pool = (THEMES.snarky.states[s] || THEMES.snarky.states.idle).lines;
+            return pool[0];
+          }
           if (chefState === 'celebrate') return "Magnifique! You're cooking now! 🎉";
           if (chefState === 'sick') return "Oops! Let's learn from that one! 🥄";
           if (chefState === 'encourage') return "You've got this! Every chef makes mistakes. 💪";
@@ -3864,10 +4077,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           if (isCorrect) {
             setSessionScore(function(p) { return p + 1; });
             setChefState('celebrate');
+            if (props.skin === 'snarky') { pickSnarkyLine('celebrate'); playStinger('right'); }
           } else {
             // Show sick/spoiled image longer, then transition to encourage
             setChefState(currentQuestion.category === 'Foodborne Illness' ? 'spoiled' : 'sick');
             setTimeout(function() { setChefState('encourage'); }, 3500);
+            // Wrongston stings on wrong answers — but only sometimes. Every single
+            // miss would be nagging during a long study run (STK-012 call ③).
+            if (props.skin === 'snarky') {
+              pickSnarkyLine('wrong');
+              if (Math.random() < 0.34) playStinger('wrong');
+            }
           }
 
           onAnswer(currentQuestion, isCorrect, usedHint);
@@ -4032,8 +4252,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               // Left - Chef
               createElement('div', { className: 'md:col-span-1' },
                 createElement('div', { className: 'card-bg rounded-2xl shadow-xl p-4 border-4 border-amber-200' },
-                  createElement(ChefCharacter, { state: chefState }),
-                  createElement('h3', { className: 'text-center font-bold text-lg text-primary mt-3' }, 'Chef Whiskers'),
+                  createElement(ChefCharacter, { state: chefState, skin: props.skin }),
+                  createElement('h3', { className: 'text-center font-bold text-lg text-primary mt-3' },
+                    props.skin === 'snarky'
+                      ? ((THEMES.snarky.states[
+                          chefState === 'celebrate' || chefState === 'trophy' ? 'celebrate'
+                            : chefState === 'sick' || chefState === 'encourage' ? 'wrong'
+                            : chefState === 'reading' ? 'hint' : 'idle'
+                        ] || THEMES.snarky.states.idle).who)
+                      : 'Chef Whiskers'),
                   createElement('div', { className: 'hint-section border-2 rounded-xl p-3 mt-3' },
                     createElement('p', { className: 'text-secondary text-center text-sm italic' }, getSpeechText())
                   ),
@@ -6806,6 +7033,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const [classStats, setClassStats] = useState(null);
         const [privatePages, setPrivatePages] = useState([]);
         const [userAccess, setUserAccess] = useState(null);
+        const [skin, setSkinState] = useState(loadSkin);
+        const [soundOn, setSoundOnState] = useState(loadSoundOn);
+
+        function cycleSkin() {
+          var next = skin === 'snarky' ? 'classic' : 'snarky';
+          setSkinState(next);
+          saveSkin(next);
+        }
+        function toggleSound() {
+          var next = !soundOn;
+          setSoundOnState(next);
+          saveSoundOn(next);
+        }
 
         // Private pages + access flags: ask the server what this user may see.
         // privatePages:list returns [] and getAccess returns all-false for
@@ -6879,6 +7119,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const [testTimeLeft, setTestTimeLeft] = useState(0);
         const [testLeaderboard, setTestLeaderboard] = useState([]);
         const [testAnsweredIds, setTestAnsweredIds] = useState({});
+
+        // Professor-run live tests are silent, always (Leland's ruling) — a room
+        // full of phones chirping during a timed test is not a feature.
+        useEffect(function() {
+          audioSuspended = !!testScreen;
+          return function() { audioSuspended = false; };
+        }, [testScreen]);
 
         // Check if identity check is needed on mount
         useEffect(function() {
@@ -7654,7 +7901,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             onResetProgress: handleResetProgress,
             onLogout: handleLogout,
             personalDevice: personalDevice,
-            onTogglePersonalDevice: handleTogglePersonalDevice
+            onTogglePersonalDevice: handleTogglePersonalDevice,
+            skin: skin,
+            onCycleSkin: cycleSkin,
+            soundOn: soundOn,
+            onToggleSound: toggleSound
           })
         );
 
@@ -7701,7 +7952,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                 onAnswer: handleAnswer,
                 onFlashcardReview: handleFlashcardReview,
                 onBack: handleBack,
-                isFlashcardMode: quizQuestions.length > 0 && quizQuestions[0].type === 'flashcard'
+                isFlashcardMode: quizQuestions.length > 0 && quizQuestions[0].type === 'flashcard',
+                skin: skin
               })
             )
           );
@@ -7729,7 +7981,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               onSwitchCourse: switchCourse,
               onOpenRecipes: function() { setScreen('recipes'); },
               privatePages: privatePages,
-              onOpenPrivatePage: handleOpenPrivatePage
+              onOpenPrivatePage: handleOpenPrivatePage,
+              skin: skin
             })
           )
         );

@@ -36,7 +36,20 @@ var IMAGES = [
   'assets/chef-reading.jpg', 'assets/chef-sanitize.jpg', 'assets/chef-sick.jpg',
   'assets/chef-spoiled.jpg', 'assets/chef-thermometer.jpg', 'assets/chef-thinking.jpg',
   'assets/chef-timer.jpg', 'assets/chef-trophy.jpg', 'assets/headshot_20260210.png',
-  'assets/kitchen-bg.jpg', 'assets/snarky/channel-thumbnail-premiere.jpg'
+  'assets/kitchen-bg.jpg', 'assets/snarky/channel-thumbnail-premiere.jpg',
+  // Snarky cast — stills + identity only. Loops and audio are deliberately NOT
+  // precached: they fill at runtime on first play so first load stays lean and
+  // offline emergency info keeps priority (theme assets never outrank it).
+  'assets/snarky/qa-wrongston-01.jpg', 'assets/snarky/qa-wrongston-02.jpg',
+  'assets/snarky/qa-wrongston-03.jpg', 'assets/snarky/qa-wrongston-04.jpg',
+  'assets/snarky/qa-wrongston-05.jpg', 'assets/snarky/qa-alex-01.jpg',
+  'assets/snarky/qa-diane-01.jpg', 'assets/snarky/hints-diane-01.jpg',
+  'assets/snarky/leaderboard-holly-01.jpg', 'assets/snarky/livetest-chad-01.jpg',
+  'assets/snarky/recipes-gaspard-01.jpg', 'assets/snarky/correct-sasha-mark.jpg',
+  'assets/snarky/identity-login-hero.jpg', 'assets/snarky/identity-logo-512.png',
+  'assets/snarky/identity-logo-192.png', 'assets/snarky/identity-favicon-64.png',
+  'assets/snarky/qa-wrongston-loop-01-poster.jpg',
+  'assets/snarky/celebrate-holly-loop-01-poster.jpg'
 ];
 
 function putInCache(cache, url) {
