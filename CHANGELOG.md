@@ -6,6 +6,14 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-13-2026-5] - August 13, 2026
+
+### Changed
+- **The header cast no longer disappears on phones.** It used to be hidden outright below 768px, leaving a bare title bar. Now **one character per side stays visible at every width**, scaling down smoothly (`clamp(76px, 15.5vw, 176px)`) rather than switching off — the inner pair joins once there's room for four at 860px. Verified from 320px to 1180px.
+- Horizontal placement moved from percentage offsets into `calc()` driven by the **measured** transparent gutter (`--lf`/`--ar` per character), so the figure hugs the screen edge at any size instead of the empty margin doing it. Mirroring a character moves its gutter to the opposite edge, so the same measurement serves both sides.
+
+---
+
 ## [08-13-2026-4] - August 13, 2026
 
 ### Fixed
