@@ -352,6 +352,30 @@
     /* Cast anchored to the hero itself (full width), not the centred text
        column — inside the column they crowd the title. Sits under the type
        (z-index 0) and above the gradient. */
+    /* "Subject escapes the frame" (the 4Rivers menu-card pattern): a thin
+       bordered card whose character breaks up and out over the top edge.
+       Requires overflow:visible and top padding to make room. */
+    .pop-frame {
+      position: relative;
+      overflow: visible;
+      border: 2px solid var(--accent);
+      border-radius: var(--r-lg);
+      background: var(--bg-card);
+      padding-top: 62px;
+      margin-top: 74px;
+    }
+    .pop-frame .popper {
+      position: absolute;
+      top: -74px; left: 50%;
+      transform: translateX(-50%);
+      height: 190px; width: auto;
+      filter: drop-shadow(0 10px 18px rgba(60,40,20,.30));
+      pointer-events: none;
+    }
+    @media (min-width: 768px) {
+      .pop-frame { padding-top: 26px; margin-top: 40px; }
+      .pop-frame .popper { left: 40px; transform: none; top: -78px; height: 200px; }
+    }
     .hero-cast {
       position: absolute; left: 0; right: 0; bottom: 0; top: 0;
       pointer-events: none; z-index: 0;
@@ -2752,25 +2776,43 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         var flip = props.index % 2 === 1;
         var tilt = (props.index % 2 === 1 ? 1 : -1) * (5 + (props.index * 3) % 7);
         var offset = 8 + (props.index * 13) % 44; // never centred
+        // NEVER clip the character. A short box with overflow:hidden turns a
+        // cutout into a face peering through a mail slot. The figure is shown
+        // WHOLE and stands ON the rule, which passes behind them and breaks
+        // around their silhouette — the "subject escapes the frame" pattern.
+        var H = 132;
         return createElement('div', {
           'aria-hidden': 'true',
-          style: { position: 'relative', height: '54px', margin: '4px 0 10px', pointerEvents: 'none', overflow: 'hidden' }
+          style: {
+            position: 'relative', height: (H + 12) + 'px',
+            margin: '10px 0 6px', pointerEvents: 'none'
+          }
         },
           createElement('div', {
             style: {
-              position: 'absolute', top: '50%', left: 0, right: 0, height: '2px',
-              background: 'linear-gradient(90deg, transparent, var(--border-color, #e8ded2) 20%, var(--border-color, #e8ded2) 80%, transparent)'
+              position: 'absolute', bottom: '10px', left: 0, right: 0, height: '2px',
+              background: 'linear-gradient(90deg, transparent, var(--border-color, #e8ded2) 18%, var(--border-color, #e8ded2) 82%, transparent)'
+            }
+          }),
+          // Soft organic field so the figure sits on design, not on nothing
+          createElement('div', {
+            style: {
+              position: 'absolute', bottom: '-6px', height: (H * 0.62) + 'px', width: (H * 0.95) + 'px',
+              [flip ? 'right' : 'left']: 'calc(' + offset + '% - ' + (H * 0.22) + 'px)',
+              background: 'radial-gradient(ellipse at 50% 68%, rgba(249,160,70,.30), rgba(249,160,70,0) 70%)',
+              borderRadius: '48% 52% 41% 59% / 55% 43% 57% 45%'
             }
           }),
           createElement('img', {
             src: 'assets/snarky/' + pick + '.webp',
             alt: '',
             style: {
-              position: 'absolute', bottom: '-6px',
+              position: 'absolute', bottom: '4px',
               [flip ? 'right' : 'left']: offset + '%',
-              height: '86px', width: 'auto',
+              height: H + 'px', width: 'auto',
+              transformOrigin: 'bottom center',
               transform: 'rotate(' + tilt + 'deg)' + (flip ? ' scaleX(-1)' : ''),
-              filter: 'drop-shadow(0 3px 6px rgba(60,40,20,.18))'
+              filter: 'drop-shadow(0 6px 12px rgba(60,40,20,.26))'
             }
           })
         );
@@ -3864,12 +3906,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             createElement('div', { className: 'band band-b' },
             createElement('div', { className: 'band-inner' },
 
-            // Chef and overall stats
-            createElement('div', { className: 'card-bg p-6 mb-6', style: { borderRadius: 'var(--r-lg)', boxShadow: 'var(--e-2)' } },
+            // Chef and overall stats. Snarky cast BREAKS OUT of the card's top
+            // border (the 4Rivers menu-card pattern) instead of sitting boxed
+            // inside it; the classic rat keeps its original in-card layout.
+            createElement('div', {
+              className: props.skin === 'snarky' ? 'card-bg p-6 mb-6 pop-frame' : 'card-bg p-6 mb-6',
+              style: props.skin === 'snarky' ? { boxShadow: 'var(--e-2)' } : { borderRadius: 'var(--r-lg)', boxShadow: 'var(--e-2)' }
+            },
+              props.skin === 'snarky' && createElement('img', {
+                className: 'popper',
+                src: 'assets/snarky/' + heroCutout + '.webp',
+                alt: '', 'aria-hidden': 'true'
+              }),
               createElement('div', { className: 'flex flex-col md:flex-row items-center gap-6' },
-                createElement('div', { className: 'flex-shrink-0' },
+                props.skin !== 'snarky' && createElement('div', { className: 'flex-shrink-0' },
                   createElement(HeroChef, { skin: props.skin, heroCutout: heroCutout })
                 ),
+                // Leave room for the popper on desktop where it sits left
+                props.skin === 'snarky' && createElement('div', { className: 'hidden md:block', style: { width: '150px', flexShrink: 0 } }),
                 createElement('div', { className: 'flex-1 text-center md:text-left' },
                   createElement('h2', { className: 'text-2xl font-bold text-primary' },
                     props.user ? 'Welcome back, ' + props.user.displayName + '!' : 'Welcome back, Chef!'
@@ -3903,20 +3957,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               href: 'https://youtu.be/B-ZmLV1Wn9g',
               target: '_blank',
               rel: 'noopener',
-              className: 'flex items-center gap-3 rounded-xl overflow-hidden shadow-md mb-6 border-2 hover:shadow-lg transition-all',
-              style: { background: '#1a1a1a', borderColor: '#3a3a3a', padding: '6px 10px 6px 6px' }
+              className: 'flex items-center gap-4 overflow-hidden mb-6 border-2 hover:shadow-lg transition-all',
+              style: {
+                background: '#1a1a1a', borderColor: '#3a3a3a', padding: '10px 16px 10px 10px',
+                borderRadius: 'var(--r-lg)', boxShadow: 'var(--e-2)'
+              }
             },
               createElement('img', {
                 src: 'assets/snarky/channel-thumbnail-premiere.jpg',
                 alt: '',
-                style: { width: '96px', height: '54px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 },
+                style: { width: '168px', height: '94px', objectFit: 'cover', borderRadius: '10px', flexShrink: 0 },
                 loading: 'lazy'
               }),
               createElement('div', { className: 'flex-1 min-w-0' },
-                createElement('div', { className: 'font-bold text-xs', style: { color: '#fff' } }, '📺 Snarky AI News: Test Kitchen'),
-                createElement('div', { className: 'text-xs truncate', style: { color: '#9ca3af' } }, 'The Blue Box vs. a Mother Sauce')
+                createElement('div', { className: 'font-bold', style: { color: '#fff', fontSize: '15px' } }, '📺 Snarky AI News: Test Kitchen'),
+                createElement('div', { className: 'truncate mt-0.5', style: { color: '#9ca3af', fontSize: '13px' } }, 'The Blue Box vs. a Mother Sauce'),
+                createElement('div', { className: 'mt-1', style: { color: '#6b7280', fontSize: '12px' } }, 'Watch the premiere episode')
               ),
-              createElement('span', { className: 'text-xs font-bold flex-shrink-0', style: { color: '#f97316' } }, '▶ WATCH')
+              createElement('span', {
+                className: 'font-bold flex-shrink-0',
+                style: { color: '#fff', background: '#f97316', borderRadius: 'var(--r-pill)', padding: '8px 16px', fontSize: '13px' }
+              }, '▶ WATCH')
             ),
 
             // Hint Statistics (only show if they've answered questions)
