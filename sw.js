@@ -49,7 +49,10 @@ var IMAGES = [
   'assets/snarky/identity-login-hero.jpg', 'assets/snarky/identity-logo-512.png',
   'assets/snarky/identity-logo-192.png', 'assets/snarky/identity-favicon-64.png',
   'assets/snarky/qa-wrongston-loop-01-poster.jpg',
-  'assets/snarky/celebrate-holly-loop-01-poster.jpg'
+  'assets/snarky/celebrate-holly-loop-01-poster.jpg',
+  // Transparent cutouts — header flankers, dividers, the bouncing greeter
+  'assets/snarky/avatar-wrongston.webp', 'assets/snarky/avatar-holly.webp',
+  'assets/snarky/avatar-gaspard.webp', 'assets/snarky/avatar-alex.webp'
 ];
 
 function putInCache(cache, url) {
