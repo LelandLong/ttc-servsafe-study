@@ -31,6 +31,26 @@
       --text-muted: #6B7280;
       --border-color: #E5E7EB;
       --shadow-color: rgba(0,0,0,0.1);
+
+      /* ── 2026 refresh: one design system, used everywhere ──
+         Elevation is DIFFUSE and layered (a tight dark shadow is what read as
+         "1990s"); radii are generous; section tints do the separating work that
+         hairlines used to do. */
+      /* Radii measured off the reference sites: 4-16px dominates (Airbnb 4/8/12,
+         FreshBooks 8/4/16). "Modern" is NOT bigger corners — it's softer
+         shadows and bigger type. Kept slightly warm-generous for a study game. */
+      --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-pill: 999px;
+      /* Airbnb's exact elevation recipe: two layers, very low opacity. */
+      --e-1: 0 1px 2px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.05);
+      --e-2: 0 2px 4px rgba(0,0,0,.06), 0 10px 28px rgba(0,0,0,.08);
+      --e-3: 0 6px 12px rgba(0,0,0,.08), 0 22px 48px rgba(0,0,0,.13);
+      --band-a: #FFFFFF;
+      --band-b: #FDF4EC;
+      --band-c: #F6F1FF;
+      --ink-display: #17110D;
+      --accent: #F97316;
+      --accent-deep: #C2410C;
+      --ease: cubic-bezier(.22,.61,.36,1);
     }
     [data-theme="dark"] {
       --bg-primary: #1a1a2e;
@@ -41,6 +61,13 @@
       --text-muted: #9CA3AF;
       --border-color: #374151;
       --shadow-color: rgba(0,0,0,0.4);
+      --band-a: #171a2e;
+      --band-b: #1e2036;
+      --band-c: #221d33;
+      --ink-display: #F8FAFC;
+      --e-1: 0 1px 2px rgba(0,0,0,.3), 0 2px 8px rgba(0,0,0,.35);
+      --e-2: 0 2px 4px rgba(0,0,0,.35), 0 8px 24px rgba(0,0,0,.45);
+      --e-3: 0 8px 16px rgba(0,0,0,.4), 0 24px 48px rgba(0,0,0,.55);
     }
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
@@ -52,6 +79,13 @@
         --text-muted: #9CA3AF;
         --border-color: #374151;
         --shadow-color: rgba(0,0,0,0.4);
+        --band-a: #171a2e;
+        --band-b: #1e2036;
+        --band-c: #221d33;
+        --ink-display: #F8FAFC;
+        --e-1: 0 1px 2px rgba(0,0,0,.3), 0 2px 8px rgba(0,0,0,.35);
+        --e-2: 0 2px 4px rgba(0,0,0,.35), 0 8px 24px rgba(0,0,0,.45);
+        --e-3: 0 8px 16px rgba(0,0,0,.4), 0 24px 48px rgba(0,0,0,.55);
       }
     }
     body {
@@ -175,6 +209,24 @@
     .chef-hero-glow img {
       animation: heroFloat 4s ease-in-out infinite, glowPulse 3s ease-in-out infinite;
     }
+    /* A transparent cutout must NOT take box-shadow — it renders as a glowing
+       rectangle around the empty space. Glow the silhouette instead, and sit it
+       on a soft organic field so it doesn't float on flat ground. */
+    @keyframes glowPulseSoft {
+      0%, 100% { filter: drop-shadow(0 6px 12px rgba(120,60,10,.28)) drop-shadow(0 0 14px rgba(249,115,22,.30)); }
+      50%      { filter: drop-shadow(0 10px 18px rgba(120,60,10,.32)) drop-shadow(0 0 26px rgba(249,115,22,.50)); }
+    }
+    .chef-hero-glow.cutout img {
+      animation: heroFloat 4s ease-in-out infinite, glowPulseSoft 3s ease-in-out infinite;
+      box-shadow: none;
+      border-radius: 0;
+    }
+    .chef-hero-glow.cutout::before {
+      content: ''; position: absolute; inset: -12% -8% -6% -8%;
+      background: radial-gradient(ellipse at 50% 62%, rgba(249,178,90,.55), rgba(249,178,90,0) 68%);
+      border-radius: 48% 52% 41% 59% / 55% 43% 57% 45%;
+      z-index: -1;
+    }
     .chef-hero-shadow {
       position: absolute;
       bottom: 20px;
@@ -215,10 +267,100 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
-    .mode-card { transition: all 0.2s ease; }
+    .mode-card { transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
     .mode-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+      box-shadow: var(--e-3);
+    }
+
+    /* ── 2026 refresh ─────────────────────────────────────────────
+       Sections separate by COLOR FIELD, not hairlines. Each band is
+       full-bleed; its content stays in the same max-width column. */
+    .band { position: relative; padding: 56px 0; }
+    .band > .band-inner { max-width: 64rem; margin: 0 auto; padding: 0 1.5rem; position: relative; z-index: 1; }
+    .band-a { background: var(--band-a); }
+    .band-b { background: var(--band-b); }
+    .band-c { background: var(--band-c); }
+    @media (max-width: 640px) { .band { padding: 40px 0; } }
+
+    /* Display-scale section titles: the single biggest "modern" lever.
+       Body copy is untouched — study text stays at its readable size. */
+    .display-title {
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 700;
+      /* Measured: FreshBooks h2 48px, Mint h1 60px. The old 20px section
+         headings were the single biggest "dated" signal. */
+      font-size: clamp(2rem, 5.2vw, 3.25rem);
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+      color: var(--ink-display);
+      margin-bottom: .35rem;
+    }
+    .display-sub {
+      font-size: .95rem; color: var(--text-muted);
+      margin-bottom: 1.75rem; max-width: 46ch;
+    }
+
+    /* Soft organic shapes so cast cutouts sit ON design instead of
+       floating on a flat field. Purely decorative. */
+    .blob {
+      position: absolute; border-radius: 48% 52% 41% 59% / 55% 43% 57% 45%;
+      filter: blur(2px); opacity: .5; pointer-events: none; z-index: 0;
+    }
+
+    .pill-cta {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      color: #fff; font-weight: 800; border: 0;
+      border-radius: var(--r-pill); padding: .8rem 1.6rem; cursor: pointer;
+      box-shadow: var(--e-2);
+      transition: transform .2s var(--ease), box-shadow .2s var(--ease), filter .2s var(--ease);
+    }
+    .pill-cta:hover { transform: translateY(-2px); box-shadow: var(--e-3); filter: brightness(1.05); }
+    .pill-cta:active { transform: translateY(0); }
+
+    /* Gentle entrance reveal — sections fade up as the page settles. */
+    @keyframes riseIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    .reveal { animation: riseIn .5s var(--ease) both; }
+
+    /* The refresh's motion is decorative; the existing reduced-motion
+       ruling covers it. */
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { animation: none; }
+      .mode-card, .pill-cta { transition: none; }
+    }
+
+    /* Full-bleed layered hero replacing the flat title bar. */
+    /* Mesh-style multi-stop gradient (the melyssagriffin pattern) rather than a
+       flat two-stop bar — depth comes from overlapping radial fields. */
+    .hero-wrap {
+      position: relative; overflow: hidden;
+      background:
+        radial-gradient(closest-side at 18% 22%, rgba(249,115,22,.85), rgba(249,115,22,0) 70%),
+        radial-gradient(closest-side at 82% 18%, rgba(245,158,11,.65), rgba(245,158,11,0) 72%),
+        radial-gradient(closest-side at 68% 92%, rgba(190,24,93,.42), rgba(190,24,93,0) 70%),
+        linear-gradient(135deg, #B91C1C 0%, #DC2626 45%, #EA580C 100%);
+      color: #fff;
+      padding: 52px 20px 64px;
+      cursor: pointer;
+    }
+    .hero-wrap::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 42px;
+      background: var(--band-a);
+      clip-path: ellipse(75% 100% at 50% 100%);
+    }
+    /* Cast anchored to the hero itself (full width), not the centred text
+       column — inside the column they crowd the title. Sits under the type
+       (z-index 0) and above the gradient. */
+    .hero-cast {
+      position: absolute; left: 0; right: 0; bottom: 0; top: 0;
+      pointer-events: none; z-index: 0;
+    }
+    .hero-title {
+      font-family: 'Fredoka', sans-serif; font-weight: 700;
+      font-size: clamp(2.25rem, 7vw, 4rem); line-height: 1;
+      letter-spacing: -0.03em;
+      text-shadow: 0 3px 18px rgba(0,0,0,.28);
     }
 
     .kitchen-bg {
@@ -2840,7 +2982,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           // Main hero image with glow effect — cast-aware.
           // Snarky uses a CHARACTER cutout, not the studio plate: the hero
           // bounces, and a bouncing building looks like an earthquake.
-          createElement('div', { className: 'chef-hero-glow' },
+          createElement('div', { className: 'chef-hero-glow' + ((props && props.skin === 'snarky') ? ' cutout' : '') },
             createElement('img', {
               src: (props && props.skin === 'snarky') ? 'assets/snarky/' + (props.heroCutout || 'avatar-wrongston') + '.webp' : 'assets/chef-greeting.jpg',
               alt: (props && props.skin === 'snarky') ? 'The Test Kitchen desk' : 'Chef Whiskers',
@@ -3537,42 +3679,56 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           createElement('header', {
             onClick: handleShareTap,
             title: 'Tap to copy the app link for sharing',
-            style: { cursor: 'pointer' },
-            className: 'bg-gradient-to-r from-red-700 via-red-600 to-orange-600 text-white p-6 shadow-lg'
+            className: 'hero-wrap'
           },
-            createElement('div', { className: 'max-w-4xl mx-auto' },
+            // Layered depth: soft light blooms behind the cast, under the type
+            createElement('div', {
+              'aria-hidden': 'true',
+              className: 'blob',
+              style: { width: '340px', height: '300px', left: '-70px', top: '-60px', background: 'radial-gradient(circle at 35% 35%, rgba(255,255,255,.30), rgba(255,255,255,0) 68%)' }
+            }),
+            createElement('div', {
+              'aria-hidden': 'true',
+              className: 'blob',
+              style: { width: '420px', height: '360px', right: '-110px', bottom: '-120px', background: 'radial-gradient(circle at 60% 40%, rgba(255,214,150,.34), rgba(255,214,150,0) 70%)' }
+            }),
+                // Cast flanking the title — two per side, tilted at odd angles so
+            // the header reads as a crowded news desk rather than a blank bar.
+            props.skin === 'snarky' && createElement('div', {
+              'aria-hidden': 'true',
+              className: 'hero-cast hidden md:block'
+            },
+              [
+                { src: 'avatar-wrongston', side: 'left', pos: '1.5%', h: 176, rot: -11, flip: false, z: 2 },
+                { src: 'avatar-alex', side: 'left', pos: '14%', h: 128, rot: 7, flip: false, z: 1 },
+                { src: 'avatar-holly', side: 'right', pos: '2%', h: 172, rot: 10, flip: true, z: 2 },
+                { src: 'avatar-gaspard', side: 'right', pos: '14%', h: 126, rot: -8, flip: true, z: 1 }
+              ].map(function (a, i) {
+                var st = {
+                  // Feet just above the curve so they stand ON it instead of
+                  // being sliced off by the clip-path.
+                  position: 'absolute', bottom: '30px', height: a.h + 'px', width: 'auto',
+                  zIndex: a.z, opacity: 0.98,
+                  transform: 'rotate(' + a.rot + 'deg)' + (a.flip ? ' scaleX(-1)' : ''),
+                  filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.32))'
+                };
+                st[a.side] = a.pos;
+                return createElement('img', { key: i, src: 'assets/snarky/' + a.src + '.webp', alt: '', style: st });
+              })
+            ),
+            createElement('div', { className: 'max-w-4xl mx-auto relative' },
               // Version in top right (right padding keeps it clear of the fixed account avatar)
               createElement('div', { className: 'flex justify-end items-center gap-3 mb-2', style: { paddingRight: '3.5rem' } },
                 createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION)
               ),
               createElement('div', { className: 'text-center relative' },
-                // Cast flanking the title — two per side, tilted at odd angles so
-                // the header reads as a crowded news desk rather than a blank bar.
-                props.skin === 'snarky' && createElement('div', {
-                  'aria-hidden': 'true',
-                  className: 'hidden sm:block',
-                  style: { position: 'absolute', inset: 0, pointerEvents: 'none' }
-                },
-                  [
-                    { src: 'avatar-wrongston', side: 'left', pos: '2%', h: 88, rot: -13, flip: false },
-                    { src: 'avatar-alex', side: 'left', pos: '15%', h: 66, rot: 8, flip: false },
-                    { src: 'avatar-holly', side: 'right', pos: '3%', h: 86, rot: 11, flip: true },
-                    { src: 'avatar-gaspard', side: 'right', pos: '16%', h: 64, rot: -9, flip: true }
-                  ].map(function (a, i) {
-                    var st = {
-                      position: 'absolute', bottom: '-26px', height: a.h + 'px', width: 'auto',
-                      opacity: 0.97,
-                      transform: 'rotate(' + a.rot + 'deg)' + (a.flip ? ' scaleX(-1)' : ''),
-                      filter: 'drop-shadow(0 4px 10px rgba(0,0,0,.28))'
-                    };
-                    st[a.side] = a.pos;
-                    return createElement('img', { key: i, src: 'assets/snarky/' + a.src + '.webp', alt: '', style: st });
-                  })
-                ),
-                createElement('div', { className: 'text-5xl mb-2' }, '🍳'),
-                createElement('h1', { className: 'brand text-3xl font-bold' }, "Chef's Kitchen"),
-                createElement('p', { className: 'text-orange-200' }, courseConfig.name),
-                createElement('p', { className: 'text-xs text-white/50 mt-1' }, '📱 tap to share — QR + copy link')
+                createElement('div', { className: 'text-5xl mb-1' }, '🍳'),
+                createElement('h1', { className: 'brand hero-title' }, "Chef's Kitchen"),
+                createElement('p', {
+                  className: 'font-bold mt-2',
+                  style: { color: 'rgba(255,255,255,.92)', fontSize: 'clamp(1rem,2.4vw,1.2rem)' }
+                }, courseConfig.name),
+                createElement('p', { className: 'text-xs mt-3', style: { color: 'rgba(255,255,255,.62)' } }, '📱 tap to share — QR + copy link')
               )
             )
           ),
@@ -3623,14 +3779,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           ),
 
           // Main Content
-          createElement('main', { className: 'max-w-4xl mx-auto p-6' },
+          createElement('main', null,
+
+            // BAND 1 \u2014 course picker + who you are
+            createElement('div', { className: 'band band-a reveal' },
+            createElement('div', { className: 'band-inner' },
 
             // Course Selector - PROMINENT at top
-            createElement('div', { className: 'mb-6' },
-              createElement('h3', {
-                className: 'text-sm font-semibold uppercase tracking-wide mb-3',
-                style: { color: 'var(--text-muted)' }
-              }, '\uD83C\uDF93 Select Your Course'),
+            createElement('div', { className: 'mb-8' },
+              createElement('h2', { className: 'display-title' }, 'Pick your kitchen'),
+              createElement('p', { className: 'display-sub' }, 'Three courses, one study bench. Your progress is kept separately for each.'),
               createElement('div', { className: 'grid grid-cols-2 gap-3' },
                 Object.keys(COURSES).map(function(courseId) {
                   var c = COURSES[courseId];
@@ -3673,13 +3831,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                   )
                 ])
               )
-            ),
+            )
 
-            // Private pages — server-gated (isProf/privateAccess); rendered only
-            // when privatePages:list returned something for this user
-            privatePages.length > 0 && createElement('div', null,
-              createElement(CastDivider, { skin: props.skin, pick: dividerPicks[1], index: 1 }),
-              createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '🔓 Class Pages'),
+            )), // end BAND 1
+
+            // BAND 2 — private class pages, on their own colour field
+            privatePages.length > 0 && createElement('div', { className: 'band band-c' },
+            createElement('div', { className: 'band-inner' },
+            createElement('div', null,
+              createElement('h2', { className: 'display-title' }, 'Class pages'),
+              createElement('p', { className: 'display-sub' }, 'Trip material for HOS-190 — kept off the public web, readable offline once loaded.'),
               createElement('div', { className: 'grid md:grid-cols-2 gap-4 mb-6' },
                 privatePages.map(function(page) {
                   return createElement('button', {
@@ -3695,10 +3856,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                   );
                 })
               )
-            ),
+            )
+
+            )), // end BAND 2
+
+            // BAND 3 — your progress: greeter, score, channel, hints, class
+            createElement('div', { className: 'band band-b' },
+            createElement('div', { className: 'band-inner' },
 
             // Chef and overall stats
-            createElement('div', { className: 'card-bg rounded-2xl shadow-xl p-6 mb-6 border-4 border-amber-200' },
+            createElement('div', { className: 'card-bg p-6 mb-6', style: { borderRadius: 'var(--r-lg)', boxShadow: 'var(--e-2)' } },
               createElement('div', { className: 'flex flex-col md:flex-row items-center gap-6' },
                 createElement('div', { className: 'flex-shrink-0' },
                   createElement(HeroChef, { skin: props.skin, heroCutout: heroCutout })
@@ -3891,12 +4058,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                     )
                   )
               );
-            })(),
+            })()
+
+            )), // end BAND 3
+
+            // BAND 4 \u2014 the actual work: study modes and everything below
+            createElement('div', { className: 'band band-a' },
+            createElement('div', { className: 'band-inner' },
 
             createElement(CastDivider, { skin: props.skin, pick: dividerPicks[0], index: 0 }),
 
             // Study Mode Selection
-            createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '\uD83D\uDCDA Choose Study Mode'),
+            createElement('h2', { className: 'display-title' }, 'How do you want to study?'),
+            createElement('p', { className: 'display-sub' }, 'Pick a lane. Everything you answer counts toward this course.'),
             createElement('div', { className: 'grid md:grid-cols-2 gap-4 mb-6' },
               // Exam Focus - if course supports it
               courseConfig.hasExamFocus && createElement('button', {
@@ -4118,8 +4292,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               )
             ),
 
+            )), // end BAND 4
+
             // Footer
-            createElement('footer', { className: 'mt-8 text-center' },
+            createElement('footer', {
+              className: 'text-center',
+              style: { background: 'var(--band-c)', padding: '40px 20px 48px' }
+            },
               createElement('p', { className: 'text-muted text-sm' }, '🏫 CUL 104 • Trident Technical College • Charleston, SC'),
               createElement('p', { className: 'text-muted text-xs mt-1 opacity-60' }, 'v' + APP_VERSION)
             )

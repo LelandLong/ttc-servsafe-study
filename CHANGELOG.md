@@ -6,6 +6,24 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-13-2026-1] - August 13, 2026
+
+### Changed
+- **Design refresh — the shell now looks 2026, not 2003.** Verdict was "plain, dry, 90s-2000s vibe." Rather than guess, I drove Playwright to the five reference sites (4rsmokehouse, melyssagriffin, airbnb, FreshBooks, Mint), screenshotted them, and **read their computed CSS off the live DOM** — which corrected two assumptions worth recording:
+  - Modern is **not** bigger corners. Measured radii cluster at **4–16px** (Airbnb 4/8/12, FreshBooks 8/4/16), so the radius scale went to 10/14/18px rather than the 24px that was proposed.
+  - Modern **is** much bigger type. Measured display headings run **48–60px** (FreshBooks h2 48, Mint h1 60) against our 20px section headings — that gap was the single biggest dated signal.
+  - Elevation is soft and layered: adopted Airbnb's exact two-layer recipe (`0 1px 2px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.05)`).
+- **Full-bleed layered hero** replaces the flat title bar: multi-stop mesh gradient (the melyssagriffin pattern), light blooms, a curved bottom edge, display type at up to 52px, and the cast standing on the curve at full size.
+- **Sections separate by colour field, not hairlines** — four alternating bands (white / cream / lavender), each full-bleed with the content column inside, plus doubled vertical rhythm. Bands are defined for light AND dark mode.
+- **Display-scale section titles with real subheads** ("Pick your kitchen", "Class pages", "How do you want to study?"). Body and question text are untouched — study readability was never the problem.
+- The greeter cutout no longer sits in a glowing white rectangle: transparent art now uses a `drop-shadow` silhouette glow over a soft organic field (a `box-shadow` on a cutout lights up the empty box around it).
+- Design tokens (`--r-*`, `--e-*`, `--band-*`, `--ease`) are now a real system rather than per-component values.
+
+### Fixed
+- Re-ingested the cast cutouts after STK rebuilt them: the previous PNGs carried an un-keyed green screen under an opaque alpha channel. Now premultiplied and correctly keyed.
+
+---
+
 ## [08-12-2026-2] - August 12, 2026
 
 ### Fixed
