@@ -58,6 +58,11 @@ Standing process for any feature or fix in this repo. **Drive it end-to-end so L
 - No unit-test framework here. Verification = **curl the Convex HTTP API** for backend behavior (positive AND negative cases — e.g. authorized user gets data, unauthorized gets `null`/`[]`) + browser verification (step 6).
 - After deploying backend changes, verify against **prod** with real calls, not assumptions.
 
+## 5a. 🚨 OFFLINE GATE — run whenever the change can touch the offline guarantee
+- **`node scripts/verify-offline.mjs` must PASS before shipping any change that touches `sw.js`, `assets/**`, the private-page cache, or the app shell.** It is a RISK gate, not a calendar item: theme/asset work shares the service worker with the emergency-contacts page, and design intent ("theme assets are runtime-cached, never precached") is not shipped behaviour. Adopted from TTC-012, 2026-08-13.
+- Non-zero exit = do not ship. Also run it on the calendar dates (before fall term, before Sept 1) — the gate and the schedule are both, not either.
+- The verifier carries its own negative-control procedure in its header. If you substantially rewrite it, re-prove it can fail before trusting a green run.
+
 ## 6. Browser verification (MANDATORY for any user-facing change)
 - **You cannot see your own rendered output** (template v1.1): a generated preview is not verification — a real browser, a device, or another session is. This applies to OUR drafts too, not just incoming ones; when handing an unrendered artifact to anyone, say it hasn't been verified.
 - Green syntax checks do NOT substitute for a real browser. Playwright is a devDependency (`npm install`, `npx playwright install chromium` once per machine).
