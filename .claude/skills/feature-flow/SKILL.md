@@ -5,7 +5,7 @@ description: The end-to-end workflow for working a feature / bug fix in the Chef
 
 # Feature / Bug Workflow (Chef's Kitchen)
 
-> Crossfeed flow adaptation: `feature-flow` template v1.1 (`~/crossfeed/flows/`). This copy
+> Crossfeed flow adaptation: `feature-flow` template v1.2 (`~/crossfeed/flows/`). This copy
 > predates the template and comes from the same FXP/Scheduler family it was distilled from.
 
 Standing process for any feature or fix in this repo. **Drive it end-to-end so Leland doesn't have to prompt each step.** Announce actions as you take them (so he can interrupt), but don't block on a question he already answered. Numbered steps are the flow; the **🔑 rules** are Chef's Kitchen conventions (sourced from `CLAUDE.md` + session history).
@@ -65,6 +65,12 @@ Standing process for any feature or fix in this repo. **Drive it end-to-end so L
 
 ## 6. Browser verification (MANDATORY for any user-facing change)
 - **You cannot see your own rendered output** (template v1.1): a generated preview is not verification — a real browser, a device, or another session is. This applies to OUR drafts too, not just incoming ones; when handing an unrendered artifact to anyone, say it hasn't been verified.
+- **Ask what your tool can actually perceive** (template v1.2). Concretely here:
+  - **WebFetch cannot see a design.** For visual research or review, drive Playwright: screenshot it AND read computed values off the live DOM. That's how the design refresh got real radii/type/shadow numbers — and how they contradicted two directives we'd been handed.
+  - **Measure the artwork, not the file.** Cutouts carry big transparent margins (see `CUTOUT_BOX`); laying out against the image box overlaps text with empty pixels.
+  - **But the instrument must fit:** `getBoundingClientRect()` on a ROTATED element returns the axis-aligned box, which produced confidently wrong gap numbers here. When measurement gets weird, screenshot it.
+  - **Prove the check can fail.** Before trusting a green run, make the property actually absent and confirm it goes red — passes-when-absent, hangs-instead-of-failing, and points-at-the-wrong-state are three different ways a running check tells you nothing. `scripts/verify-offline.mjs` carries its negative-control procedure in its header; re-prove it if rewritten.
+  - **Assert presence, don't echo the secret** — the offline verifier confirms the emergency number is there without printing it.
 - Green syntax checks do NOT substitute for a real browser. Playwright is a devDependency (`npm install`, `npx playwright install chromium` once per machine).
 - Pattern: serve the repo (`python3 -m http.server 8123`), `addInitScript` to inject `chefKitchenUser` / `chefKitchenPersonalDevice` into localStorage, load, assert the **actual outcome** (element present, overlay opens, data rendered) — not just "no red screen". Screenshot and LOOK at it. Kill the server when done.
 - Verify the negative path too (signed out / unauthorized account sees nothing).
