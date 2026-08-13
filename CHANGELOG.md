@@ -6,6 +6,15 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-13-2026-3] - August 13, 2026
+
+### Added
+- **`scripts/verify-offline.mjs` — the Italy trip's offline guarantee, as a runnable check.** Drives a real browser against production: one online visit, then airplane mode, then reopen, and asserts the IMG emergency number **and** the insurance policy reference are actually readable. Exits non-zero on failure, so it can gate a pre-departure check. Run before fall term and again before Sept 1.
+- **The check is proven capable of failing.** Per the cross-project proposal that a check never shown to fail is not evidence, it was run as a matched pair: against a copy of the site with the service-worker registration deleted it returns **RESULT: FAIL** (`net::ERR_INTERNET_DISCONNECTED`, shell never boots); against the real build it returns **RESULT: PASS**. The negative-control procedure is documented in the file header so the next session can repeat it rather than trust it.
+  - Worth recording: the earlier ad-hoc offline script **hung** instead of reporting failure when offline support was absent — an uncaught navigation error. A check that hangs on failure is nearly as bad as one that passes; the committed version catches it and reports FAIL cleanly.
+
+---
+
 ## [08-13-2026-2] - August 13, 2026
 
 ### Fixed
