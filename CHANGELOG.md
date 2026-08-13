@@ -6,6 +6,24 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-12-2026-2] - August 12, 2026
+
+### Fixed
+- **Sasha was unreachable; Holly answered every correct question.** A correct answer set the chef state to `celebrate`, which mapped to the Snarky cast's celebration slot — so Holly (engagement) fronted routine scoring and Sasha (scoring) never appeared. Correct answers are now **Sasha**, shown at her native mark size rather than blown up to fill the character panel; **Holly is reserved for celebration EVENTS** (every 5th correct in a row), which is what "engagement is her engine" actually means. The override clears on the next question.
+
+### Added
+- **The rest of the cast is wired.** Holly fronts Class Overview and presents badges; Gaspard flanks the Recipes header; Chad works the live-test timer bar (visual only — live tests stay silent).
+- **Badge snark pass.** Badge headlines rotate through Holly's presentation voice ("This just in.", "Breaking: you did a thing.", "Trending. Internally.") while badge names and descriptions stay straight — the achievement still reads as an achievement.
+- **The header is a crowded news desk.** Four cast cutouts flank the title, two per side, at odd angles and different sizes (hidden on narrow phones where there's no room).
+- **Random section dividers.** Cutouts peek in at section breaks — tilted, deliberately off-centre, alternating sides, and **shuffled once per app load** so the page never looks the same twice while staying stable as you scroll.
+- Transparent cutout assets (`avatar-{wrongston,holly,gaspard,alex}`), precached by the service worker.
+
+### Changed
+- **The bouncing greeter is a character, not a building.** The home hero used the studio plate, which looked like an earthquake when it bounced; it now uses a cast cutout, picked fresh each load.
+- **The channel front door is a strip, not a billboard** — 70px tall inline row (thumbnail + episode title + WATCH) instead of the full-width 380px panel, which read as an advertisement.
+
+---
+
 ## [08-12-2026-1] - August 12, 2026
 
 ### Added

@@ -2573,6 +2573,67 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         return list[rotationCounters[key] % list.length];
       }
 
+      // Transparent cutouts used as page furniture (header flankers, section
+      // dividers). WebP-only on purpose: the delivered PNGs still carry their
+      // green screen, the WebPs are correctly keyed, and every browser we
+      // support handles alpha WebP.
+      var CUTOUTS = ['avatar-wrongston', 'avatar-holly', 'avatar-gaspard', 'avatar-alex'];
+
+      // Holly's award-presentation headlines (rotate — a badge run shows several
+      // in a row). Badge NAMES and descriptions stay as-is; only the headline
+      // gets the voice, so the achievement itself still reads straight.
+      var BADGE_SNARK = [
+        'Badge Unlocked!',
+        'This just in.',
+        'Breaking: you did a thing.',
+        'Achievement, confirmed on air.',
+        'We are told this is impressive.',
+        'Trending. Internally.'
+      ];
+
+      // A shuffled cutout order chosen ONCE PER LOAD, so dividers differ every
+      // time the app opens but stay stable while you scroll (re-randomising on
+      // each render would make them twitch).
+      var cutoutOrder = CUTOUTS.slice().sort(function () { return Math.random() - 0.5; });
+      var cutoutSeq = 0;
+      function nextCutout() {
+        var c = cutoutOrder[cutoutSeq % cutoutOrder.length];
+        cutoutSeq += 1;
+        return c;
+      }
+
+      // Section divider: a cutout peeking in, deliberately off-centre and tilted,
+      // alternating sides. Purely decorative — hidden from screen readers.
+      function CastDivider(props) {
+        if (props.skin !== 'snarky') return null;
+        var pick = props.pick || CUTOUTS[0];
+        var flip = props.index % 2 === 1;
+        var tilt = (props.index % 2 === 1 ? 1 : -1) * (5 + (props.index * 3) % 7);
+        var offset = 8 + (props.index * 13) % 44; // never centred
+        return createElement('div', {
+          'aria-hidden': 'true',
+          style: { position: 'relative', height: '54px', margin: '4px 0 10px', pointerEvents: 'none', overflow: 'hidden' }
+        },
+          createElement('div', {
+            style: {
+              position: 'absolute', top: '50%', left: 0, right: 0, height: '2px',
+              background: 'linear-gradient(90deg, transparent, var(--border-color, #e8ded2) 20%, var(--border-color, #e8ded2) 80%, transparent)'
+            }
+          }),
+          createElement('img', {
+            src: 'assets/snarky/' + pick + '.webp',
+            alt: '',
+            style: {
+              position: 'absolute', bottom: '-6px',
+              [flip ? 'right' : 'left']: offset + '%',
+              height: '86px', width: 'auto',
+              transform: 'rotate(' + tilt + 'deg)' + (flip ? ' scaleX(-1)' : ''),
+              filter: 'drop-shadow(0 3px 6px rgba(60,40,20,.18))'
+            }
+          })
+        );
+      }
+
       function prefersReducedMotion() {
         try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
         catch (e) { return false; }
@@ -2684,13 +2745,31 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // render the rotating still (or its loop when motion is welcome).
         var skin = props.skin || loadSkin();
         if (skin === 'snarky') {
-          var castState = state === 'celebrate' || state === 'trophy' ? 'celebrate'
+          // A plain correct answer is SASHA (scoring). Holly is engagement — she
+          // only turns up for celebration EVENTS (streak milestones, badges,
+          // rank-ups), which arrive as an explicit castState override.
+          var castState = props.castState ? props.castState
+            : state === 'celebrate' ? 'right'
+            : state === 'trophy' ? 'celebrate'
             : state === 'sick' || state === 'encourage' ? 'wrong'
             : state === 'reading' ? 'hint'
             : 'idle';
           var slot = THEMES.snarky.states[castState] || THEMES.snarky.states.idle;
           var still = props.pinnedStill || rotate(slot.stills, 'still-' + castState);
+          // Sasha is a waveform mark, not a portrait — never blow it up to fill
+          // the character panel; it reads as a logo at its native scale.
+          var isMark = castState === 'right';
           var useLoop = slot.loop && !prefersReducedMotion() && (castState === 'celebrate' || castState === 'wrong');
+          if (isMark) {
+            return createElement('div', { className: 'relative flex flex-col items-center justify-center py-6' },
+              createElement('img', {
+                src: 'assets/snarky/correct-sasha-mark.jpg',
+                alt: 'Sasha',
+                className: 'w-24 h-24 rounded-2xl shadow-md'
+              }),
+              createElement('div', { className: 'absolute inset-0 pointer-events-none' }, sparkles)
+            );
+          }
           return createElement('div', { className: 'relative' },
             useLoop
               ? createElement('video', {
@@ -2758,12 +2837,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           }),
           // Shadow underneath chef
           createElement('div', { className: 'chef-hero-shadow' }),
-          // Main hero image with glow effect — cast-aware
+          // Main hero image with glow effect — cast-aware.
+          // Snarky uses a CHARACTER cutout, not the studio plate: the hero
+          // bounces, and a bouncing building looks like an earthquake.
           createElement('div', { className: 'chef-hero-glow' },
             createElement('img', {
-              src: (props && props.skin === 'snarky') ? 'assets/snarky/identity-login-hero.jpg' : 'assets/chef-greeting.jpg',
-              alt: (props && props.skin === 'snarky') ? 'Snarky AI News: Test Kitchen' : 'Chef Whiskers',
-              className: 'w-36 md:w-44 chef-hero rounded-2xl'
+              src: (props && props.skin === 'snarky') ? 'assets/snarky/' + (props.heroCutout || 'avatar-wrongston') + '.webp' : 'assets/chef-greeting.jpg',
+              alt: (props && props.skin === 'snarky') ? 'The Test Kitchen desk' : 'Chef Whiskers',
+              className: 'w-36 md:w-44 chef-hero' + ((props && props.skin === 'snarky') ? '' : ' rounded-2xl')
             })
           )
         );
@@ -3325,9 +3406,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             onClick: function() { setExpanded(!expanded); }
           },
             createElement('h3', {
-              className: 'font-bold text-sm',
+              className: 'font-bold text-sm flex items-center gap-2',
               style: { fontFamily: 'Fredoka, sans-serif', color: 'var(--text-primary)' }
-            }, '\uD83C\uDFEB Class Overview'),
+            },
+              // Holly fronts the standings \u2014 engagement is her whole thing
+              props.skin === 'snarky' && createElement('img', {
+                src: 'assets/snarky/leaderboard-holly-01.jpg',
+                alt: '', 'aria-hidden': 'true',
+                style: { width: '26px', height: '26px', borderRadius: '50%', objectFit: 'cover' }
+              }),
+              createElement('span', null, '\uD83C\uDFEB Class Overview')
+            ),
             createElement('span', {
               className: 'text-xs',
               style: { color: 'var(--text-muted)' }
@@ -3407,6 +3496,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const courseConfig = COURSES[activeCourse];
         const [showAllBadges, setShowAllBadges] = useState(false);
         const [linkCopied, setLinkCopied] = useState(false);
+        // Cutouts chosen once per mount: the greeter and each divider differ
+        // between app opens but hold still while you scroll.
+        const heroCutout = useRef(nextCutout()).current;
+        const dividerPicks = useRef([nextCutout(), nextCutout(), nextCutout()]).current;
         const [showShareQR, setShowShareQR] = useState(false);
 
         // Tap the header → copy the public app link AND pop the QR code
@@ -3452,7 +3545,30 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               createElement('div', { className: 'flex justify-end items-center gap-3 mb-2', style: { paddingRight: '3.5rem' } },
                 createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION)
               ),
-              createElement('div', { className: 'text-center' },
+              createElement('div', { className: 'text-center relative' },
+                // Cast flanking the title — two per side, tilted at odd angles so
+                // the header reads as a crowded news desk rather than a blank bar.
+                props.skin === 'snarky' && createElement('div', {
+                  'aria-hidden': 'true',
+                  className: 'hidden sm:block',
+                  style: { position: 'absolute', inset: 0, pointerEvents: 'none' }
+                },
+                  [
+                    { src: 'avatar-wrongston', side: 'left', pos: '2%', h: 88, rot: -13, flip: false },
+                    { src: 'avatar-alex', side: 'left', pos: '15%', h: 66, rot: 8, flip: false },
+                    { src: 'avatar-holly', side: 'right', pos: '3%', h: 86, rot: 11, flip: true },
+                    { src: 'avatar-gaspard', side: 'right', pos: '16%', h: 64, rot: -9, flip: true }
+                  ].map(function (a, i) {
+                    var st = {
+                      position: 'absolute', bottom: '-26px', height: a.h + 'px', width: 'auto',
+                      opacity: 0.97,
+                      transform: 'rotate(' + a.rot + 'deg)' + (a.flip ? ' scaleX(-1)' : ''),
+                      filter: 'drop-shadow(0 4px 10px rgba(0,0,0,.28))'
+                    };
+                    st[a.side] = a.pos;
+                    return createElement('img', { key: i, src: 'assets/snarky/' + a.src + '.webp', alt: '', style: st });
+                  })
+                ),
                 createElement('div', { className: 'text-5xl mb-2' }, '🍳'),
                 createElement('h1', { className: 'brand text-3xl font-bold' }, "Chef's Kitchen"),
                 createElement('p', { className: 'text-orange-200' }, courseConfig.name),
@@ -3562,6 +3678,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             // Private pages — server-gated (isProf/privateAccess); rendered only
             // when privatePages:list returned something for this user
             privatePages.length > 0 && createElement('div', null,
+              createElement(CastDivider, { skin: props.skin, pick: dividerPicks[1], index: 1 }),
               createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '🔓 Class Pages'),
               createElement('div', { className: 'grid md:grid-cols-2 gap-4 mb-6' },
                 privatePages.map(function(page) {
@@ -3584,7 +3701,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             createElement('div', { className: 'card-bg rounded-2xl shadow-xl p-6 mb-6 border-4 border-amber-200' },
               createElement('div', { className: 'flex flex-col md:flex-row items-center gap-6' },
                 createElement('div', { className: 'flex-shrink-0' },
-                  createElement(HeroChef, { skin: props.skin })
+                  createElement(HeroChef, { skin: props.skin, heroCutout: heroCutout })
                 ),
                 createElement('div', { className: 'flex-1 text-center md:text-left' },
                   createElement('h2', { className: 'text-2xl font-bold text-primary' },
@@ -3613,25 +3730,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             // (Leland's directive via STK-010). Refresh the image + link per
             // new episode: swap assets/snarky/channel-thumbnail-premiere.jpg
             // and the href below.
+            // Compact strip, not a billboard — thumbnail sits inline at ~96px
+            // wide so it reads as a link to the channel, not an advertisement.
             createElement('a', {
               href: 'https://youtu.be/B-ZmLV1Wn9g',
               target: '_blank',
               rel: 'noopener',
-              className: 'block rounded-2xl overflow-hidden shadow-xl mb-6 border-4 border-gray-800 hover:shadow-2xl hover:scale-[1.01] transition-all'
+              className: 'flex items-center gap-3 rounded-xl overflow-hidden shadow-md mb-6 border-2 hover:shadow-lg transition-all',
+              style: { background: '#1a1a1a', borderColor: '#3a3a3a', padding: '6px 10px 6px 6px' }
             },
               createElement('img', {
                 src: 'assets/snarky/channel-thumbnail-premiere.jpg',
-                alt: 'Snarky AI News: Test Kitchen — watch the premiere episode',
-                className: 'w-full block',
+                alt: '',
+                style: { width: '96px', height: '54px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 },
                 loading: 'lazy'
               }),
-              createElement('div', {
-                className: 'flex items-center justify-between px-4 py-2.5',
-                style: { background: '#1a1a1a', color: '#fff' }
-              },
-                createElement('span', { className: 'font-bold text-sm' }, '📺 Snarky AI News: Test Kitchen'),
-                createElement('span', { className: 'text-xs font-bold', style: { color: '#f97316' } }, '▶ WATCH THE PREMIERE')
-              )
+              createElement('div', { className: 'flex-1 min-w-0' },
+                createElement('div', { className: 'font-bold text-xs', style: { color: '#fff' } }, '📺 Snarky AI News: Test Kitchen'),
+                createElement('div', { className: 'text-xs truncate', style: { color: '#9ca3af' } }, 'The Blue Box vs. a Mother Sauce')
+              ),
+              createElement('span', { className: 'text-xs font-bold flex-shrink-0', style: { color: '#f97316' } }, '▶ WATCH')
             ),
 
             // Hint Statistics (only show if they've answered questions)
@@ -3679,8 +3797,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             // Class Stats Card
             props.classStats && createElement(ClassStatsCard, {
               classStats: props.classStats,
-              userProgress: progress
+              userProgress: progress,
+              skin: props.skin
             }),
+
+            createElement(CastDivider, { skin: props.skin, pick: dividerPicks[2], index: 2 }),
 
             // Badges Section (filtered to active course)
             (function() {
@@ -3771,6 +3892,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                   )
               );
             })(),
+
+            createElement(CastDivider, { skin: props.skin, pick: dividerPicks[0], index: 0 }),
 
             // Study Mode Selection
             createElement('h3', { className: 'text-xl font-bold text-primary mb-4' }, '\uD83D\uDCDA Choose Study Mode'),
@@ -4022,6 +4145,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // Snarky line held for the life of one reaction so it doesn't reshuffle on re-render
         const [snarkyLine, setSnarkyLine] = useState(null);
         const [snarkyLineFor, setSnarkyLineFor] = useState(null);
+        const [castOverride, setCastOverride] = useState(null);
         function pickSnarkyLine(slot) {
           var pool = (THEMES.snarky.states[slot] || THEMES.snarky.states.idle).lines;
           setSnarkyLine(rotate(pool, 'line-' + slot));
@@ -4041,7 +4165,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           // Snarky cast speaks its own lines (rotating — the same quip twice in a
           // row kills it). Study CONTENT is never touched: only the chrome talks.
           if (props.skin === 'snarky') {
-            var s = chefState === 'celebrate' || chefState === 'trophy' ? 'celebrate'
+            var s = castOverride ? castOverride
+              : chefState === 'celebrate' ? 'right'
+              : chefState === 'trophy' ? 'celebrate'
               : chefState === 'sick' || chefState === 'encourage' ? 'wrong'
               : chefState === 'reading' ? 'hint'
               : 'idle';
@@ -4077,7 +4203,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           if (isCorrect) {
             setSessionScore(function(p) { return p + 1; });
             setChefState('celebrate');
-            if (props.skin === 'snarky') { pickSnarkyLine('celebrate'); playStinger('right'); }
+            if (props.skin === 'snarky') {
+              // Every 5th correct in a row is an EVENT — Holly's territory.
+              // Everything else is routine scoring, which is Sasha's.
+              var runStreak = sessionScore + 1;
+              var isEvent = runStreak > 0 && runStreak % 5 === 0;
+              setCastOverride(isEvent ? 'celebrate' : null);
+              pickSnarkyLine(isEvent ? 'celebrate' : 'right');
+              playStinger(isEvent ? 'celebrate' : 'right');
+            }
           } else {
             // Show sick/spoiled image longer, then transition to encourage
             setChefState(currentQuestion.category === 'Foodborne Illness' ? 'spoiled' : 'sick');
@@ -4094,6 +4228,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }
 
         function nextQuestion() {
+          setCastOverride(null); // celebration events don't linger into the next question
           if (currentIndex < questions.length - 1) {
             setSelectedAnswer(null);
             setShowResult(false);
@@ -4252,11 +4387,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               // Left - Chef
               createElement('div', { className: 'md:col-span-1' },
                 createElement('div', { className: 'card-bg rounded-2xl shadow-xl p-4 border-4 border-amber-200' },
-                  createElement(ChefCharacter, { state: chefState, skin: props.skin }),
+                  createElement(ChefCharacter, { state: chefState, skin: props.skin, castState: castOverride }),
                   createElement('h3', { className: 'text-center font-bold text-lg text-primary mt-3' },
                     props.skin === 'snarky'
                       ? ((THEMES.snarky.states[
-                          chefState === 'celebrate' || chefState === 'trophy' ? 'celebrate'
+                          castOverride ? castOverride
+                            : chefState === 'celebrate' ? 'right'
+                            : chefState === 'trophy' ? 'celebrate'
                             : chefState === 'sick' || chefState === 'encourage' ? 'wrong'
                             : chefState === 'reading' ? 'hint' : 'idle'
                         ] || THEMES.snarky.states.idle).who)
@@ -4455,12 +4592,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               className: 'relative bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 rounded-2xl p-1.5'
             },
               createElement('div', { className: 'bg-white rounded-xl p-8 text-center min-w-[280px]' },
+                // Holly presents the awards in the Snarky cast — she peeks in
+                // beside the badge rather than replacing it (the badge is the
+                // reward; she's the presenter).
+                props.skin === 'snarky' && createElement('img', {
+                  src: 'assets/snarky/avatar-holly.webp',
+                  alt: '', 'aria-hidden': 'true',
+                  style: {
+                    position: 'absolute', left: '-38px', bottom: '-10px', height: '116px', width: 'auto',
+                    transform: 'rotate(-9deg)', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,.3))', pointerEvents: 'none'
+                  }
+                }),
                 createElement('div', {
                   className: 'text-7xl mb-4',
                   style: { animation: 'celebrate 0.5s ease-in-out infinite' }
                 }, badge.icon),
                 createElement('div', { className: 'text-3xl mb-2' }, '🎉🎊🎉'),
-                createElement('h3', { className: 'text-2xl font-bold text-gray-800 mb-2' }, 'Badge Unlocked!'),
+                createElement('h3', { className: 'text-2xl font-bold text-gray-800 mb-2' },
+                  props.skin === 'snarky' ? rotate(BADGE_SNARK, 'badge-headline') : 'Badge Unlocked!'),
                 createElement('p', { className: 'text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-3' }, badge.name),
                 createElement('p', { className: 'text-gray-600' }, badge.description),
                 createElement('p', { className: 'text-xs text-gray-400 mt-4' }, 'Tap anywhere to continue')
@@ -5846,7 +5995,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               }, '← ' + (view === 'list' ? 'Back to courses' : view === 'grocery' ? 'Back to menu' : view === 'menu' ? 'Back to menus' : view === 'meal' ? 'Back to menu' : view === 'trip' ? 'Back to trips' : view === 'trips' ? 'Back to menus' : view === 'detail' ? (detailFrom === 'menu' ? 'Back to menu' : detailFrom === 'grocery' ? 'Back to grocery list' : 'Back to recipes') : 'Back to recipes')),
               createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION)
             ),
-            createElement('div', { className: 'text-center' },
+            createElement('div', { className: 'text-center relative' },
+              // Gaspard owns the kitchen — flame accent, of course
+              props.skin === 'snarky' && createElement('img', {
+                src: 'assets/snarky/avatar-gaspard.webp',
+                alt: '', 'aria-hidden': 'true',
+                className: 'hidden sm:block',
+                style: {
+                  position: 'absolute', right: '4%', bottom: '-26px', height: '92px', width: 'auto',
+                  transform: 'rotate(9deg) scaleX(-1)', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,.28))',
+                  pointerEvents: 'none'
+                }
+              }),
               createElement('div', { className: 'text-5xl mb-2' }, '🍳'),
               createElement('h1', { className: 'brand text-3xl font-bold' }, "My Recipes"),
               createElement('p', { className: 'text-orange-200' }, user ? user.displayName + "'s kitchen" : '')
@@ -7770,6 +7930,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                 color: 'white'
               }
             },
+              // Chad works the clock \u2014 visual only; live tests are always silent.
+              skin === 'snarky' && createElement('img', {
+                src: 'assets/snarky/livetest-chad-01.jpg',
+                alt: '', 'aria-hidden': 'true',
+                style: { width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,.7)' }
+              }),
               createElement('span', { className: 'font-bold text-lg' },
                 '\u23F0 ' + timeMin + ':' + (timeSec < 10 ? '0' : '') + timeSec
               ),
@@ -7930,7 +8096,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             createElement('div', { style: { paddingTop: '24px' } },
               createElement(RecipesScreen, {
                 user: user,
-                onBack: function() { setScreen('home'); }
+                onBack: function() { setScreen('home'); },
+                skin: skin
               })
             )
           );
@@ -7941,7 +8108,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             accountMenuEl,
             newBadgeToShow && createElement(BadgeNotification, {
               badge: newBadgeToShow,
-              onClose: dismissBadgeNotification
+              onClose: dismissBadgeNotification,
+              skin: skin
             }),
             createElement(NetworkStatus, { status: networkStatus }),
             createElement('div', { style: { paddingTop: '24px' } },
@@ -7964,7 +8132,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           adminBtnEl,
           newBadgeToShow && createElement(BadgeNotification, {
             badge: newBadgeToShow,
-            onClose: dismissBadgeNotification
+            onClose: dismissBadgeNotification,
+            skin: skin
           }),
           createElement(NetworkStatus, { status: networkStatus }),
           createElement('div', { style: { paddingTop: '24px' } },
