@@ -6,6 +6,17 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-13-2026-4] - August 13, 2026
+
+### Fixed
+- **The welcome card's character was sitting on top of the heading.** Three separate causes, each found by measuring rather than eyeballing:
+  1. **Layout was against the image box, not the character.** A canvas alpha scan of the cutouts shows the figure occupies only **35–47% of the image width** in three of four assets (Alex is the exception at 97%), centred with large transparent margins. So a 200px-tall element is ~359px wide while the visible body is ~126–170px — the reserved text gutter was measuring the wrong thing and the "overlap" was mostly empty pixels. Measured bounds are now recorded in `CUTOUT_BOX` with a `cutoutMetrics()` helper, and every placement (card, spacer width, vertical anchor) is computed from the **visible body**. Re-measure if art is replaced; the procedure is in the code comment.
+  2. **Tailwind's `p-6` was silently overriding the card's `padding-top`.** The CDN injects its utilities after the inline `<style>` block, so the shorthand won and collapsed the character's clearance. The `pop-frame` variant no longer carries `p-6`; all padding is declared in the rule, with a comment saying why.
+  3. **The vertical anchor added the top transparent margin**, pushing the body exactly that far below the padding edge and into the heading — a consistent 12px overlap. The visible bottom is simply the element height; the offset is now `padding − elementHeight`.
+- **Channel strip broke at phone width** — the enlarged desktop layout forced the title to wrap one character per line. Below 520px the thumbnail drops to 108px, the third line is hidden, and the CTA tightens; the row is 101px on phone versus 118px on desktop.
+
+---
+
 ## [08-13-2026-3] - August 13, 2026
 
 ### Added

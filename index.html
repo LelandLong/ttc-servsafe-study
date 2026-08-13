@@ -355,26 +355,38 @@
     /* "Subject escapes the frame" (the 4Rivers menu-card pattern): a thin
        bordered card whose character breaks up and out over the top edge.
        Requires overflow:visible and top padding to make room. */
+    /* NOTE: this element must NOT also carry Tailwind's `p-6`. That shorthand
+       is injected by the CDN after this block and silently overrode
+       `padding-top`, collapsing the character's clearance and burying the
+       heading. All padding is declared here on purpose. */
     .pop-frame {
       position: relative;
       overflow: visible;
       border: 2px solid var(--accent);
       border-radius: var(--r-lg);
       background: var(--bg-card);
-      padding-top: 62px;
-      margin-top: 74px;
+      padding: 78px 24px 24px;
+      /* Room for the part of the body that rises above the border: the visible
+         figure is 176px and only the bottom slice sits inside the card. */
+      margin-top: 112px;
     }
-    .pop-frame .popper {
-      position: absolute;
-      top: -74px; left: 50%;
-      transform: translateX(-50%);
-      height: 190px; width: auto;
-      filter: drop-shadow(0 10px 18px rgba(60,40,20,.30));
-      pointer-events: none;
-    }
+    /* Geometry comes from measured opaque bounds (see CUTOUT_BOX) and is applied
+       inline per character — the transparent gutter differs by asset, so a single
+       CSS offset would overlap the text for some and not others. */
+    .pop-frame .popper { position: absolute; pointer-events: none;
+      filter: drop-shadow(0 10px 18px rgba(60,40,20,.30)); }
     @media (min-width: 768px) {
-      .pop-frame { padding-top: 26px; margin-top: 40px; }
-      .pop-frame .popper { left: 40px; transform: none; top: -78px; height: 200px; }
+      .pop-frame { padding: 26px 24px 24px; margin-top: 46px; }
+    }
+    /* Channel strip: the enlarged desktop layout does not fit a 390px phone —
+       the title was wrapping one character per line. Shrink the thumb and drop
+       the third line rather than letting the row collapse. */
+    @media (max-width: 520px) {
+      .channel-strip img { width: 108px !important; height: 61px !important; }
+      .channel-strip .cs-title { font-size: 13px !important; }
+      .channel-strip .cs-sub { font-size: 11px !important; }
+      .channel-strip .cs-extra { display: none; }
+      .channel-strip .cs-cta { padding: 6px 10px !important; font-size: 11px !important; }
     }
     .hero-cast {
       position: absolute; left: 0; right: 0; bottom: 0; top: 0;
@@ -2745,6 +2757,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // support handles alpha WebP.
       var CUTOUTS = ['avatar-wrongston', 'avatar-holly', 'avatar-gaspard', 'avatar-alex'];
 
+      // MEASURED opaque bounds of each cutout (canvas alpha scan, 2026-08-13).
+      // These files carry large transparent margins — the character occupies only
+      // 35-47% of the image width in three of four — so laying out against the
+      // IMAGE box overlaps neighbouring text with empty pixels. Everything below
+      // positions against the VISIBLE body instead. Re-measure if art is replaced:
+      // draw to canvas, scan alpha > 24, record the bounding box as fractions.
+      var CUTOUT_BOX = {
+        'avatar-wrongston': { ar: 1076 / 600, left: 0.312, right: 0.664, top: 0.063, bottom: 1.0 },
+        'avatar-holly':     { ar: 1076 / 600, left: 0.280, right: 0.754, top: 0.035, bottom: 1.0 },
+        'avatar-gaspard':   { ar: 1076 / 600, left: 0.329, right: 0.678, top: 0.000, bottom: 1.0 },
+        'avatar-alex':      { ar: 444 / 600,  left: 0.011, right: 0.986, top: 0.000, bottom: 1.0 }
+      };
+
+      // Given a target height for the VISIBLE character, return the element box
+      // and how far its transparent margin extends, so callers can align to the
+      // body rather than the file.
+      function cutoutMetrics(name, visibleH) {
+        var b = CUTOUT_BOX[name] || CUTOUT_BOX['avatar-wrongston'];
+        var elH = visibleH / (b.bottom - b.top);
+        var elW = elH * b.ar;
+        return {
+          elH: elH, elW: elW,
+          padLeft: b.left * elW,          // transparent gutter left of the body
+          visibleW: (b.right - b.left) * elW,
+          padTop: b.top * elH
+        };
+      }
+
       // Holly's award-presentation headlines (rotate — a badge run shows several
       // in a row). Badge NAMES and descriptions stay as-is; only the headline
       // gets the voice, so the achievement itself still reads straight.
@@ -3910,20 +3950,35 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             // border (the 4Rivers menu-card pattern) instead of sitting boxed
             // inside it; the classic rat keeps its original in-card layout.
             createElement('div', {
-              className: props.skin === 'snarky' ? 'card-bg p-6 mb-6 pop-frame' : 'card-bg p-6 mb-6',
+              className: props.skin === 'snarky' ? 'card-bg mb-6 pop-frame' : 'card-bg p-6 mb-6',
               style: props.skin === 'snarky' ? { boxShadow: 'var(--e-2)' } : { borderRadius: 'var(--r-lg)', boxShadow: 'var(--e-2)' }
             },
-              props.skin === 'snarky' && createElement('img', {
-                className: 'popper',
-                src: 'assets/snarky/' + heroCutout + '.webp',
-                alt: '', 'aria-hidden': 'true'
-              }),
+              props.skin === 'snarky' && (function () {
+                // Body 176px tall, its LEFT EDGE 20px inside the card; the
+                // element is pulled left by its own transparent gutter so the
+                // character — not the empty margin — is what's positioned.
+                var m = cutoutMetrics(heroCutout, 176);
+                return createElement('img', {
+                  className: 'popper',
+                  src: 'assets/snarky/' + heroCutout + '.webp',
+                  alt: '', 'aria-hidden': 'true',
+                  style: {
+                    height: m.elH + 'px', width: m.elW + 'px',
+                    left: (20 - m.padLeft) + 'px',
+                    top: ((window.innerWidth >= 768 ? 26 : 78) - m.elH) + 'px'
+                  }
+                });
+              })(),
               createElement('div', { className: 'flex flex-col md:flex-row items-center gap-6' },
                 props.skin !== 'snarky' && createElement('div', { className: 'flex-shrink-0' },
                   createElement(HeroChef, { skin: props.skin, heroCutout: heroCutout })
                 ),
-                // Leave room for the popper on desktop where it sits left
-                props.skin === 'snarky' && createElement('div', { className: 'hidden md:block', style: { width: '150px', flexShrink: 0 } }),
+                // Reserve exactly the VISIBLE body width (+ gutter), not the
+                // image width — that mismatch is what buried the text.
+                props.skin === 'snarky' && createElement('div', {
+                  className: 'hidden md:block',
+                  style: { width: (cutoutMetrics(heroCutout, 176).visibleW + 16) + 'px', flexShrink: 0 }
+                }),
                 createElement('div', { className: 'flex-1 text-center md:text-left' },
                   createElement('h2', { className: 'text-2xl font-bold text-primary' },
                     props.user ? 'Welcome back, ' + props.user.displayName + '!' : 'Welcome back, Chef!'
@@ -3957,7 +4012,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               href: 'https://youtu.be/B-ZmLV1Wn9g',
               target: '_blank',
               rel: 'noopener',
-              className: 'flex items-center gap-4 overflow-hidden mb-6 border-2 hover:shadow-lg transition-all',
+              className: 'channel-strip flex items-center gap-4 overflow-hidden mb-6 border-2 hover:shadow-lg transition-all',
               style: {
                 background: '#1a1a1a', borderColor: '#3a3a3a', padding: '10px 16px 10px 10px',
                 borderRadius: 'var(--r-lg)', boxShadow: 'var(--e-2)'
@@ -3970,12 +4025,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                 loading: 'lazy'
               }),
               createElement('div', { className: 'flex-1 min-w-0' },
-                createElement('div', { className: 'font-bold', style: { color: '#fff', fontSize: '15px' } }, '📺 Snarky AI News: Test Kitchen'),
-                createElement('div', { className: 'truncate mt-0.5', style: { color: '#9ca3af', fontSize: '13px' } }, 'The Blue Box vs. a Mother Sauce'),
-                createElement('div', { className: 'mt-1', style: { color: '#6b7280', fontSize: '12px' } }, 'Watch the premiere episode')
+                createElement('div', { className: 'cs-title font-bold', style: { color: '#fff', fontSize: '15px' } }, '📺 Snarky AI News: Test Kitchen'),
+                createElement('div', { className: 'cs-sub truncate mt-0.5', style: { color: '#9ca3af', fontSize: '13px' } }, 'The Blue Box vs. a Mother Sauce'),
+                createElement('div', { className: 'cs-extra mt-1', style: { color: '#6b7280', fontSize: '12px' } }, 'Watch the premiere episode')
               ),
               createElement('span', {
-                className: 'font-bold flex-shrink-0',
+                className: 'cs-cta font-bold flex-shrink-0',
                 style: { color: '#fff', background: '#f97316', borderRadius: 'var(--r-pill)', padding: '8px 16px', fontSize: '13px' }
               }, '▶ WATCH')
             ),
