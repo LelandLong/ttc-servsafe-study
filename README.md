@@ -314,7 +314,12 @@ See [CHANGELOG.md](./CHANGELOG.md) for detailed version history.
 
 ## 🐭 About the Theme
 
-Inspired by Pixar's *Ratatouille*, featuring a chef rat character learning food safety. The mascot appears on the login screen (`headshot_20260210.png`) and serves as the account avatar.
+Two selectable casts (switch under **Cast:** in the account menu):
+
+- **Snarky Test Kitchen** (default) — the cast of Leland's *Snarky AI News: Test Kitchen* channel, with rotating art, lines and optional sound. Wrongston handles wrong answers, Sasha correct ones, Diane hints.
+- **Classic Chef** — the original Ratatouille-inspired rat, unchanged.
+
+Only the chrome is themed; question content is never touched.
 
 ---
 

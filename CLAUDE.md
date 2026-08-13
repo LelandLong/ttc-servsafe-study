@@ -34,7 +34,12 @@ This file provides context and rules for Claude Code when working on the Chef's 
 
 ### Theme
 
-Ratatouille-inspired rat chef character. The mascot appears on the login screen and serves as the account avatar throughout the app.
+**Two selectable casts**, driven by the `THEMES` registry in `index.html` (characters are DATA, not code — a new cast member is a registry row):
+
+- **`snarky` (default)** — the Snarky AI News: Test Kitchen crew from Leland's YouTube channel. Wrongston on wrong answers, Sasha on correct, Diane on hints, Holly/Gaspard/Chad on their surfaces. Art and lines ROTATE (variety is the prime directive — the usage pattern is re-running the whole bank). Sound ON by default, auto-muted during live tests. Assets in `assets/snarky/` (6MB cap; stills precached, loops/audio runtime-cached only).
+- **`classic`** — the original Ratatouille-inspired rat chef, unchanged, one tap away under **Cast:** in the account menu. Preference persists in `chefKitchenSkin`.
+
+Snark lives in the chrome only — question text, options and explanations are never themed.
 
 ---
 

@@ -6,6 +6,21 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-12-2026-1] - August 12, 2026
+
+### Added
+- **Snarky Test Kitchen cast — the app has two casts now.** A `THEMES` registry (`classic` = the original rat, unchanged; `snarky` = the Snarky AI News: Test Kitchen crew) drives per-state art, names, lines and audio. **Characters are data, not code** — adding a cast member is a row in the registry, not a component. Default is Snarky; the classic rat is one tap away under **Cast:** in the account menu (persisted to `chefKitchenSkin`).
+  - **Q&A is the main stage.** Wrong answers bring **Wrongston** (5 stills + a motion loop, rotating) with his own rotating lines ("I have written about this extensively."); correct answers bring **Sasha**; hints bring **Diane**; idle rotates the desk. **Variety is enforced by design** — art and lines rotate via a counter so consecutive events never repeat, because the real usage pattern is re-running the whole question bank.
+  - **Snark stays in the chrome — question text, options and explanations are untouched.** This preps a real credential.
+  - **Sound: ON by default**, toggle in the account menu (`chefKitchenSound`), rotating stingers on correct answers and celebrations, and Wrongston stings on ~1 in 3 wrong answers (every miss would nag during a long study run). **Audio auto-mutes for the whole duration of a professor-run live test.** iOS unlocks audio on the first tap, which answering a question provides.
+  - **Identity:** login hero, account avatar, favicon and PWA icons follow the cast.
+  - Assets (56 files, 2.2MB of the 6MB cap) delivered by the STK session and reviewed here: dimensions, codecs, durations and file sizes all verified against the caps, plus visual review. Stills and identity are precached by the service worker; **loops and audio are deliberately runtime-cached only**, so first load stays lean and offline emergency info keeps priority.
+
+### Fixed
+- **PWA manifest icon was broken** — it pointed at `chef-idle.jpg` at the repo root, where no such file exists (the images live in `assets/`). Installed-app icons now use the real 192px and 512px PNGs.
+
+---
+
 ## [08-11-2026-2] - August 11, 2026
 
 ### Fixed
