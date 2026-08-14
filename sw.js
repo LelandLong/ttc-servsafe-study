@@ -50,6 +50,11 @@ var IMAGES = [
   'assets/snarky/identity-logo-192.png', 'assets/snarky/identity-favicon-64.png',
   'assets/snarky/qa-wrongston-loop-01-poster.jpg',
   'assets/snarky/celebrate-holly-loop-01-poster.jpg',
+  // Newsroom-wall posters — the monitors must at least show a frame offline
+  'assets/snarky/hints-diane-loop-01-poster.jpg',
+  'assets/snarky/leaderboard-holly-loop-01-poster.jpg',
+  'assets/snarky/recipes-gaspard-loop-01-poster.jpg',
+  'assets/snarky/livetest-chad-loop-01-poster.jpg',
   // Transparent cutouts — header flankers, dividers, the bouncing greeter
   'assets/snarky/avatar-wrongston.webp', 'assets/snarky/avatar-holly.webp',
   'assets/snarky/avatar-gaspard.webp', 'assets/snarky/avatar-alex.webp'

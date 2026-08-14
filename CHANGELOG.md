@@ -6,6 +6,16 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-13-2026-6] - August 13, 2026
+
+### Added
+- **The page moves now.** Measured the reference first (melyssagriffin.com's entire "alive" quality is one silent `autoplay muted loop playsinline` video and *zero* CSS animations), then applied the recipe:
+  - **🔴 LIVE newsroom wall** on the home screen — five remote-interview monitors ("The desk is on. The desk is always on."), one per cast member, each a silent looping video with a lower-third name plate (WRONGSTON · Senior Correspondent, Corrections …). Built from the existing character loops; the planned Higgsfield interview batch replaces the files, not the code. Videos are `preload="none"` + poster and **play only while on screen** (IntersectionObserver) — zero cost until scrolled to, paused when scrolled away, posters-only under `prefers-reduced-motion`, horizontal scroll strip on phones.
+  - **Cast idle-sway** — hero cutouts and the welcome-card popper gently bob on staggered cycles. Animates the independent `translate` property so the inline tilt/mirror transforms are untouched.
+  - Newsroom-wall posters added to the SW precache so monitors show a frame offline; the loops themselves stay runtime-cached (offline gate: PASS before ship).
+
+---
+
 ## [08-13-2026-5] - August 13, 2026
 
 ### Changed
