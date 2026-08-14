@@ -392,6 +392,50 @@
       position: absolute; left: 0; right: 0; bottom: 0; top: 0;
       pointer-events: none; z-index: 0;
     }
+
+    /* ── Ambient motion (the melyssagriffin lesson: her whole "alive" feel is
+       one silent looping video + nothing static that could move) ────────────
+       Cast cutouts idle-sway. Animates the independent `translate`/`rotate`
+       properties so the inline `transform` (tilt + mirror) is untouched;
+       browsers without them just render still, which is a fine fallback. */
+    @keyframes castSway {
+      0%, 100% { translate: 0 0; }
+      50%      { translate: 0 -7px; }
+    }
+    .hero-cast img { animation: castSway 5.5s ease-in-out infinite; }
+    .hero-cast img:nth-child(2) { animation-delay: -1.8s; animation-duration: 6.4s; }
+    .hero-cast img:nth-child(3) { animation-delay: -3.1s; }
+    .hero-cast img:nth-child(4) { animation-delay: -4.4s; animation-duration: 6.1s; }
+    .pop-frame .popper { animation: castSway 6.2s ease-in-out infinite; }
+
+    /* ── Newsroom wall: remote-interview monitors on the home page. Uses the
+       existing character loops now; swaps to Higgsfield interview takes when
+       that batch lands (same filenames-in, no code change). ─────────────── */
+    .newsroom-wall { margin: 30px 0 8px; }
+    .nw-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .nw-live {
+      color: #fff; background: #DC2626; font-weight: 800; font-size: 11px;
+      letter-spacing: .08em; border-radius: var(--r-pill); padding: 4px 10px;
+      animation: nwPulse 2.2s ease-in-out infinite;
+    }
+    @keyframes nwPulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+    .nw-title { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+    .nw-grid { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; -webkit-overflow-scrolling: touch; }
+    @media (min-width: 860px) { .nw-grid { display: grid; grid-template-columns: repeat(5, 1fr); overflow: visible; } }
+    .nw-mon {
+      flex: 0 0 158px; margin: 0; border-radius: var(--r-md); overflow: hidden;
+      background: #101014; border: 2px solid #2a2a31; box-shadow: var(--e-2);
+    }
+    .nw-mon video, .nw-mon img {
+      display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: #101014;
+    }
+    .nw-mon figcaption { padding: 7px 10px 8px; border-top: 2px solid #2a2a31; }
+    .nw-mon figcaption b { display: block; color: var(--accent); font-size: 11px; letter-spacing: .07em; }
+    .nw-mon figcaption span { display: block; color: #9ca3af; font-size: 10px; line-height: 1.25; margin-top: 1px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-cast img, .pop-frame .popper, .nw-live { animation: none; }
+    }
     /* --h drives both the rendered height and the calc() that offsets each
        character by its own measured transparent gutter. Outer pair scales all
        the way down to phones (one per side is far better than none); the inner
@@ -2820,6 +2864,70 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
       // Section divider: a cutout peeking in, deliberately off-centre and tilted,
       // alternating sides. Purely decorative — hidden from screen readers.
+      // ── Newsroom wall — five remote-interview monitors, always "on air".
+      // Videos are preload="none" + poster and only PLAY while on screen
+      // (IntersectionObserver), so the wall costs nothing until scrolled to
+      // and stops burning battery when it leaves. Reduced-motion gets posters.
+      // Sources are the existing character loops; the Higgsfield interview
+      // batch replaces the files, not the code.
+      var NEWSROOM_FEEDS = [
+        { loop: 'qa-wrongston-loop-01', who: 'WRONGSTON', role: 'Senior Correspondent, Corrections' },
+        { loop: 'hints-diane-loop-01', who: 'DIANE', role: 'Asking For Everybody At Home' },
+        { loop: 'leaderboard-holly-loop-01', who: 'HOLLY', role: 'Engagement Desk' },
+        { loop: 'recipes-gaspard-loop-01', who: 'GASPARD', role: 'Test Kitchen, Flame Unit' },
+        { loop: 'livetest-chad-loop-01', who: 'CHAD', role: 'Clock Management' }
+      ];
+
+      function NewsroomWall(props) {
+        var wrapRef = useRef(null);
+        var reduced = prefersReducedMotion();
+
+        useEffect(function () {
+          if (props.skin !== 'snarky' || reduced || !wrapRef.current) return;
+          if (typeof IntersectionObserver === 'undefined') return; // videos just idle on poster
+          var vids = wrapRef.current.querySelectorAll('video');
+          var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (en) {
+              var v = en.target;
+              if (en.isIntersecting) {
+                var p = v.play();
+                if (p && p.catch) p.catch(function () {});
+              } else {
+                v.pause();
+              }
+            });
+          }, { threshold: 0.25 });
+          vids.forEach(function (v) { io.observe(v); });
+          return function () { io.disconnect(); };
+        }, [props.skin]);
+
+        if (props.skin !== 'snarky') return null;
+
+        return createElement('div', { ref: wrapRef, className: 'newsroom-wall' },
+          createElement('div', { className: 'nw-head' },
+            createElement('span', { className: 'nw-live' }, '● LIVE'),
+            createElement('span', { className: 'nw-title' }, 'The desk is on. The desk is always on.')
+          ),
+          createElement('div', { className: 'nw-grid' },
+            NEWSROOM_FEEDS.map(function (f) {
+              return createElement('figure', { key: f.loop, className: 'nw-mon' },
+                reduced
+                  ? createElement('img', { src: 'assets/snarky/' + f.loop + '-poster.jpg', alt: f.who, loading: 'lazy' })
+                  : createElement('video', {
+                      src: 'assets/snarky/' + f.loop + '.mp4',
+                      poster: 'assets/snarky/' + f.loop + '-poster.jpg',
+                      preload: 'none', muted: true, loop: true, playsInline: true
+                    }),
+                createElement('figcaption', null,
+                  createElement('b', null, f.who),
+                  createElement('span', null, f.role)
+                )
+              );
+            })
+          )
+        );
+      }
+
       function CastDivider(props) {
         if (props.skin !== 'snarky') return null;
         var pick = props.pick || CUTOUTS[0];
@@ -3934,7 +4042,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                   )
                 ])
               )
-            )
+            ),
+
+            createElement(NewsroomWall, { skin: props.skin })
 
             )), // end BAND 1
 
