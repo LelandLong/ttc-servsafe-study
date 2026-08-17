@@ -5,7 +5,7 @@ description: The end-to-end workflow for working a feature / bug fix in the Chef
 
 # Feature / Bug Workflow (Chef's Kitchen)
 
-> Crossfeed flow adaptation: `feature-flow` template v1.2 (`~/crossfeed/flows/`). This copy
+> Crossfeed flow adaptation: `feature-flow` template v1.3 (`~/crossfeed/flows/`). This copy
 > predates the template and comes from the same FXP/Scheduler family it was distilled from.
 
 Standing process for any feature or fix in this repo. **Drive it end-to-end so Leland doesn't have to prompt each step.** Announce actions as you take them (so he can interrupt), but don't block on a question he already answered. Numbered steps are the flow; the **🔑 rules** are Chef's Kitchen conventions (sourced from `CLAUDE.md` + session history).
@@ -110,6 +110,10 @@ Before every commit, in this order:
 
 ## 13. Close the loop
 - Report what shipped, what was verified (with evidence), anything deferred, and any follow-up the change created (e.g. "admin.html is still an ungated URL"). If something failed or was skipped, say so plainly.
+- 🔴 **END THE REPLY WITH A SUMMARY — always** (template v1.3, Leland's standing order via TTC-019, 2026-08-17: *"I always want a damn summary so I can mentally acknowledge I have read everything I NEED TO READ."*). This applies to EVERY substantive reply, not just ship reports.
+  - **He is NOT asking for shorter answers** (*"I dont mind the constant chatter and descripive explanations; they can be useful"*) — the summary is **ADDITIONAL and it goes LAST**. Trimming the explanation instead of adding the summary fails it twice over.
+  - It's his **read-receipt to himself** — without a closing block he can't tell he's finished reading. And the perverse incentive: the deeper the turn (a full ship chain, a measured design fix), the more it needs the summary and the more likely we are to drop it.
+  - **Shape:** a handful of bullets at the very end — what changed · what it means · what (if anything) is on him. No re-explaining the body. Anything needing his decision or action is the **last thing on the page**, never buried mid-reply.
 
 ## 14. Return to main
 - `git checkout main && git pull`. Keep the feature branch unless Leland says delete (`--delete-branch=false` on merge). Working tree should end clean.
