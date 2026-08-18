@@ -86,11 +86,12 @@ Before every commit, in this order:
 3. **`plan.md`** — if development status/roadmap changed.
 4. **`CLAUDE.md`** — if project context changed (new features, patterns, courses, tables).
 5. **`README.md`** — if features/deployment changed. **`PRIVATE-PAGES.md`** — if the private-pages system changed.
-- Commit with a clear subject + body (what/why), ending `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
+- Commit with a clear subject + body (what/why), ending with TWO trailers: `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>` then `Crossfeed-Seat: CHEF` (account-wide attribution convention, SCH-134 2026-08-18 — additive, so `git log --grep 'Crossfeed-Seat: CHEF'` attributes pushes to this seat).
 - Push branch → `gh pr create --base main` with Summary + Test plan, ending `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
 
 ## 9. Review
-- No CI and no bot reviewers on this repo — the merge gate is your own verification (steps 4–6) plus Leland. If he wants eyes on it first, hold at the open PR; if the plan says ship, proceed.
+- **Claude review only** (since 2026-08-18, Leland's account-wide call; CodeRabbit is uninstalled): the Claude Code review action runs on every PR open/push. **A clean review posts NOTHING — silence is PASS, not skip; verify via the Actions run, never the comment thread.** An auth/app-install error there is an account-level problem — report it via crossfeed, don't debug the workflow (it's proven in scheduler).
+- The merge GATE is still your own verification (steps 4–6) plus Leland — nothing on this account can enforce a check before merge (free-tier posture, explicitly accepted 2026-08-18). If he wants eyes on it first, hold at the open PR; if the plan says ship, read the review run's outcome, then proceed.
 
 ## 10. If code changed → back to step 4
 - Any post-review change loops through syntax → curl checks → browser → push. Don't merge on stale verification.

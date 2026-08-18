@@ -1,0 +1,31 @@
+# Claude Code review on every PR — installed 2026-08-18 per Leland's account-wide
+# decision (crossfeed SCH-133; scheduler's copy is the canonical reference).
+# Known behaviors, so nobody re-diagnoses them:
+#   - A clean review posts NOTHING. Silence = pass, not skip — verify via the
+#     Actions run, not the comment thread.
+#   - `--comment` in the prompt is mandatory, or findings go only to the runner log.
+#   - pull-requests: write is required, or reviews generate and get DISCARDED.
+#   - Auth errors mean the CLAUDE_CODE_OAUTH_TOKEN secret VALUE is wrong — report
+#     via crossfeed for a re-paste; do not debug the workflow, it is proven.
+name: Claude Code Review
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+jobs:
+  claude-review:
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 1 }
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
+          plugins: 'code-review@claude-code-plugins'
+          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }} --comment'
