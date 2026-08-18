@@ -76,7 +76,7 @@ Snark lives in the chrome only — question text, options and explanations are n
 
 ## Technical Overview
 
-- **Current Version:** 06-16-2026-13
+- **Current Version:** see `version.js` (the live/deployed number; this line was stale for two months when it hardcoded one)
 - **Framework:** React 18 via CDN (no build step, no JSX)
 - **Styling:** Tailwind CSS via CDN + CSS variables for theming
 - **Backend:** Convex Cloud (production: `cautious-monitor-526.convex.cloud`)
@@ -283,6 +283,10 @@ npx convex deploy --yes
 
 **NEVER commit without asking.** Do not create commits or push without explicit user approval.
 
+**PR review (since 2026-08-18):** the Claude Code review action (`.github/workflows/claude-review.yml`) runs on every PR open/push. A clean review posts NOTHING — silence is pass, not skip; check the Actions run, not the comment thread. It deliberately skips PRs that modify workflow files. CodeRabbit is uninstalled account-wide. Merges are discipline-gated (nothing on the account can enforce a check) — the gate remains your own verification plus Leland.
+
+**Commit trailers:** every commit ends with `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>` then `Crossfeed-Seat: CHEF` (account-wide seat-attribution convention, 2026-08-18).
+
 **Pre-commit checklist:**
 1. **Update `version.js`** with new version number
 2. **Update `CHANGELOG.md`** with changes made
@@ -352,7 +356,7 @@ The developer works from multiple devices using VSCode with Claude Code extensio
 
 **Primary Developer:** Leland Long
 **AI Assistant:** Claude (Anthropic) — VS Code Claude Code extension
-**Last Updated:** June 9, 2026
+**Last Updated:** August 18, 2026
 
 ---
 
