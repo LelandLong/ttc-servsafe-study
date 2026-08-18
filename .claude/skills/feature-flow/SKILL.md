@@ -86,7 +86,7 @@ Before every commit, in this order:
 3. **`plan.md`** — if development status/roadmap changed.
 4. **`CLAUDE.md`** — if project context changed (new features, patterns, courses, tables).
 5. **`README.md`** — if features/deployment changed. **`PRIVATE-PAGES.md`** — if the private-pages system changed.
-- Commit with a clear subject + body (what/why), ending `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
+- Commit with a clear subject + body (what/why), ending with TWO trailers: `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>` then `Crossfeed-Seat: CHEF` (account-wide attribution convention, SCH-134 2026-08-18 — additive, so `git log --grep 'Crossfeed-Seat: CHEF'` attributes pushes to this seat).
 - Push branch → `gh pr create --base main` with Summary + Test plan, ending `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
 
 ## 9. Review
