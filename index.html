@@ -681,12 +681,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         } catch (e) {}
         return null;
       }
-      function writePrivatePagesCache(userId, list, pages) {
+      function writePrivatePagesCache(userId, list, pages, pageMeta) {
         try {
           localStorage.setItem(PRIVATE_PAGES_CACHE_KEY, JSON.stringify({
-            userId: userId, list: list, pages: pages || {}, cachedAt: Date.now()
+            userId: userId, list: list, pages: pages || {},
+            // pageMeta[slug].fetchedAt = when THIS DEVICE last pulled that body.
+            // Drives the "offline copy saved …" stamp, so a student abroad can
+            // tell a fresh page from one cached weeks ago.
+            pageMeta: pageMeta || {}, cachedAt: Date.now()
           }));
         } catch (e) {}
+      }
+      // "Aug 19, 2026, 9:56 AM" — locale-aware, never throws on a bad value.
+      function ppStamp(ms) {
+        if (!ms) return null;
+        try {
+          return new Date(ms).toLocaleString(undefined, {
+            month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+          });
+        } catch (e) { return null; }
       }
       function clearPrivatePagesCache() {
         try { localStorage.removeItem(PRIVATE_PAGES_CACHE_KEY); } catch (e) {}
@@ -821,13 +834,42 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // everything; the app only renders what the server returns. Page buttons
       // render on the home screen (HomeScreen); this helper shows a fetched
       // page's html in a full-screen overlay.
-      function openPrivatePageOverlay(html) {
+      // Freshness bar for a private page. Lives in the overlay chrome, OUTSIDE the
+      // iframe, so it is identical on every page and cannot be restyled by page CSS.
+      // The whole point: offline, a cached copy is otherwise pixel-identical to a
+      // live one, and a student abroad has no way to tell how old the info is.
+      function privatePageBanner(meta) {
+        meta = meta || {};
+        var revised = ppStamp(meta.updatedAt);
+        var synced = ppStamp(meta.fetchedAt);
+        var bar = document.createElement('div');
+        var live = !!meta.live;
+        var bg = live ? '#e8f4ea' : '#fdf0d5';
+        var fg = live ? '#1d5b2b' : '#7a4600';
+        var bd = live ? '#bedcc5' : '#efc684';
+        bar.setAttribute('style', 'flex:0 0 auto;background:' + bg + ';color:' + fg +
+          ';border-bottom:1px solid ' + bd +
+          ";padding:9px 56px 9px 14px;font:600 12.5px/1.45 -apple-system,'Helvetica Neue',sans-serif;");
+        var msg;
+        if (live) {
+          msg = '✓ Up to date, just checked' + (revised ? ' · info last revised ' + revised : '');
+        } else {
+          msg = '⚠️ OFFLINE COPY' + (synced ? ' saved on this device ' + synced : ' saved on this device') +
+                (revised ? ' · info last revised ' + revised : '') +
+                ' — reconnect and reopen to check for a newer version';
+        }
+        bar.textContent = msg;
+        return bar;
+      }
+
+      function openPrivatePageOverlay(html, meta) {
           if (document.getElementById('pp-overlay')) return;
           var ov = document.createElement('div');
           ov.id = 'pp-overlay';
-          ov.setAttribute('style', 'position:fixed;inset:0;z-index:9991;background:rgba(0,0,0,.55);');
+          ov.setAttribute('style', 'position:fixed;inset:0;z-index:9991;background:#faf6f0;display:flex;flex-direction:column;');
+          ov.appendChild(privatePageBanner(meta));
           var frame = document.createElement('iframe');
-          frame.setAttribute('style', 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#faf6f0;');
+          frame.setAttribute('style', 'flex:1 1 auto;width:100%;border:0;background:#faf6f0;');
           frame.srcdoc = html;
           var close = document.createElement('button');
           close.textContent = '\u2715';
@@ -4065,7 +4107,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                       createElement('span', { className: 'text-3xl' }, page.icon || '🔒'),
                       createElement('span', { className: 'font-bold text-lg text-gray-800' }, page.title)
                     ),
-                    page.blurb ? createElement('p', { className: 'text-gray-600 text-sm' }, page.blurb) : null
+                    page.blurb ? createElement('p', { className: 'text-gray-600 text-sm' }, page.blurb) : null,
+                    // Freshness at a glance, before they even open it — "look at the
+                    // date on the card" is the instruction students can be given.
+                    page.updatedAt ? createElement('p', {
+                      className: 'text-green-800 text-xs font-semibold mt-2'
+                    }, 'Info as of ' + (ppStamp(page.updatedAt) || '')) : null
                   );
                 })
               )
@@ -7650,7 +7697,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                 if (pages.length === 0) { clearPrivatePagesCache(); return; }
                 var cached = readPrivatePagesCache(user.userId);
                 var bodies = (cached && cached.pages) || {};
-                writePrivatePagesCache(user.userId, pages, bodies);
+                writePrivatePagesCache(user.userId, pages, bodies, (cached && cached.pageMeta) || {});
                 pages.forEach(function(p) {
                   convexQuery('privatePages:get', { userId: user.userId, slug: p.slug })
                     .then(function(html) {
@@ -7658,7 +7705,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                       var c = readPrivatePagesCache(user.userId);
                       if (!c) return;
                       c.pages[p.slug] = html;
-                      writePrivatePagesCache(user.userId, c.list, c.pages);
+                      var meta = c.pageMeta || {};
+                      meta[p.slug] = { fetchedAt: Date.now() };
+                      writePrivatePagesCache(user.userId, c.list, c.pages, meta);
                     }).catch(function() {});
                 });
               })
@@ -7678,16 +7727,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
         function handleOpenPrivatePage(slug) {
           if (!user || !user.userId) return;
+          function revisedFor(list) {
+            var hit = (list || []).filter(function(p) { return p.slug === slug; })[0];
+            return hit ? hit.updatedAt : null;
+          }
           convexQuery('privatePages:get', { userId: user.userId, slug: slug })
             .then(function(html) {
-              if (html) { openPrivatePageOverlay(html); return; }
-              throw new Error('no page');
+              if (!html) throw new Error('no page');
+              // Opened live — record it, so a later offline open stamps the real
+              // moment this device last held current content.
+              var c = readPrivatePagesCache(user.userId);
+              if (c) {
+                c.pages[slug] = html;
+                var meta = c.pageMeta || {};
+                meta[slug] = { fetchedAt: Date.now() };
+                writePrivatePagesCache(user.userId, c.list, c.pages, meta);
+              }
+              openPrivatePageOverlay(html, { live: true, updatedAt: revisedFor(privatePages) });
             })
             .catch(function() {
-              // Offline (or fetch failed): serve the prefetched copy
+              // Offline (or fetch failed): serve the prefetched copy, clearly stamped
               var cached = readPrivatePagesCache(user.userId);
               if (cached && cached.pages && cached.pages[slug]) {
-                openPrivatePageOverlay(cached.pages[slug]);
+                var pm = (cached.pageMeta && cached.pageMeta[slug]) || {};
+                openPrivatePageOverlay(cached.pages[slug], {
+                  live: false,
+                  updatedAt: revisedFor(cached.list),
+                  fetchedAt: pm.fetchedAt || cached.cachedAt
+                });
               }
             });
         }

@@ -23,6 +23,11 @@ export const list = query({
       title: p.title || p.slug,
       icon: p.icon || "🔒",
       blurb: p.blurb || "",
+      // When the CONTENT was last revised. The client shows this ("info dated…")
+      // alongside when THIS DEVICE last synced, so a student reading an offline
+      // copy can tell how old it is. Additive on purpose: `get` still returns a
+      // bare html string, so shells cached before this change keep working.
+      updatedAt: p.updatedAt,
     }));
   },
 });

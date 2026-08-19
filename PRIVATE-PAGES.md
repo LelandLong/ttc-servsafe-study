@@ -36,6 +36,21 @@ when the network is gone, so Trip Essentials' emergency numbers work in airplane
 per-user, refreshed on every online visit, cleared on sign-out and on access revocation. Requirement:
 one online visit after each content push for devices to pick up new page bodies.
 
+**Freshness stamps (added 08-19) — the reader can always tell how old the page is.** A cached page used
+to be indistinguishable from a live one, which is a real hazard for time-sensitive trip info (hotel,
+phone number) read abroad with no signal. Now every page carries a banner in the overlay chrome:
+up-to-date (green) when it came from the network, **OFFLINE COPY + the date this device saved it**
+(amber) when served from cache — both showing when the CONTENT was last revised, from `privatePages:list`'s
+`updatedAt`. The home card shows "Info as of &lt;date&gt;" before opening. Two dates, because only the pair
+answers "am I looking at current information?"
+
+⚠️ **`privatePages:get` deliberately still returns a bare HTML string.** Changing its shape would break
+every app shell already cached on a student's device — freshness metadata rides on `list` instead, which
+is additive and safe. Keep it that way.
+
+📌 **Content convention (Leland, 08-19):** each page's footer names the exact source file(s) its data came
+from plus the update date, so "which revision is this?" is answered by the page. Update it on every push.
+
 **Gotcha:** pages render inside a `srcdoc` iframe, where `#anchor` hrefs resolve against the PARENT app URL
 and navigate away. Any page using in-page anchors needs the small click-intercept script (see the existing
 pages) that calls `scrollIntoView` instead.

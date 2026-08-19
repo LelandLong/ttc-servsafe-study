@@ -6,6 +6,21 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-19-2026-1] - August 19, 2026
+
+### Added
+- **Every class page now says how fresh it is.** Offline, a cached page was pixel-identical to a live one — a student abroad with no signal had no way to tell whether they were reading current information or a copy saved weeks ago. That gap mattered the moment the itinerary was replaced (below): a device that last synced before Aug 19 still held the old hotel and the old phone number, and said nothing about it.
+  - **Overlay banner, outside the iframe so it is identical on every page:** green *"✓ Up to date, just checked · info last revised &lt;date&gt;"* when the page came from the network; amber *"⚠️ OFFLINE COPY saved on this device &lt;date&gt; · info last revised &lt;date&gt; — reconnect and reopen to check for a newer version"* when served from cache.
+  - **Two different dates, deliberately:** when the CONTENT was last revised (from Convex `updatedAt`) and when THIS DEVICE last pulled it. Only the pair answers "is what I'm looking at current?"
+  - **"Info as of &lt;date&gt;" on the home-screen card**, so freshness is visible before opening anything — the thing students can be told to check.
+  - `privatePages:list` now returns `updatedAt`. Additive on purpose: `get` still returns a bare HTML string, so app shells cached before this release keep working.
+
+### Changed
+- **HOS-190 Italy pages rebuilt from `2026 Study Abroad Italy CIC FINAL 8.18.26.docx`**, which replaced the Aug 10 itinerary. **Two of four hotels changed, phone numbers included** — the group now sleeps in **Acqui Terme** (Hotel La Meridiana, +39 0144 321761), not Asti, and Ferrara is **Hotel Astra** (+39 0532 206088). Also: four days reshuffled (9/7 Florence · 9/8 Bertinelli + cooking class · 9/9 Ziveri Claudio + balsamic · 9/10 Parma + Opera House), the 9/5 rewrite (Lavazza, Mercato Centrale, gianduja), named venues, departure times, flight terminals, the 9/16 Rome reorder (Colosseum first), and the chef-jacket note on 9/15. Map node and label moved with it.
+- **Each page footer now names the exact source file(s) its data came from**, plus the update date — so "which revision is this from?" is answered by the page itself rather than by memory.
+
+---
+
 ## [08-13-2026-6] - August 13, 2026
 
 ### Added
