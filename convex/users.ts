@@ -251,6 +251,7 @@ export const register = mutation({
       gamerName: gamerNameLower,
       firstName: firstNameLower,
       displayName: args.gamerName.trim(), // Preserve original casing
+      privateAccess: true, // Class Pages (Italy) on by default; revoke per-account in admin
       createdAt: now,
       lastActiveAt: now,
     });
