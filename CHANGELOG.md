@@ -6,6 +6,19 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-22-2026-1] - August 22, 2026
+
+### Added
+- **New accounts get Class Pages access automatically.** Registration now sets `privateAccess: true`, so HOS-190 students see the Italy itinerary, route map and trip essentials without the professor granting each account by hand. Existing accounts are unchanged and are still granted individually in admin. (`register` is the only place the code inserts a user, and the field was already optional in the schema, so there is no migration.)
+
+### Fixed
+- **Private pages are now read-many, write-curator-only — the access default had silently handed out edit rights.** These pages are reference material: nothing is filled in, `index.html` calls only `list`/`get`, `admin.html` does not touch them, and the sole writer in the codebase is the terminal script `scripts/push-private-page.mjs`. But a Convex mutation is a public HTTP endpoint whether or not a UI button exists for it, and `privatePages:set` was gated on the *same* flag as reading — so defaulting new accounts to `privateAccess` also let anyone who registered on the public site overwrite the itinerary and the emergency-contact page.
+  - Write now requires the **curator account**, identified by the `CURATOR_USER_ID` Convex environment variable, and **fails closed** if that variable is unset.
+  - ⚠️ **Deliberately not keyed on any users-table flag.** `users:setAdminAccess`, `users:setPrivateAccess` and `users:toggleProf` verify that the *target* account exists but never check who is calling — they back the admin dashboard's checkboxes and `admin.html` has no sign-in — and `users:getAllStudents` is open, so every userId is enumerable. A flag-based gate would have been self-grantable in one extra API call (`register` → `setAdminAccess(self)` → `set`). An environment variable is not reachable from any client.
+  - Verified as a matched pair on the dev deployment: an account **holding `adminAccess`** is refused, the **curator** succeeds.
+
+---
+
 ## [08-19-2026-1] - August 19, 2026
 
 ### Added

@@ -21,11 +21,23 @@ function canAccess(user: { isProf?: boolean; privateAccess?: boolean } | null) {
   return !!user && (user.isProf === true || user.privateAccess === true);
 }
 
-// WRITE: staff only. adminAccess is the curator (the push script runs as this
-// account); isProf is the professor role. privateAccess deliberately does NOT
-// grant write.
-function canWrite(user: { isProf?: boolean; adminAccess?: boolean } | null) {
-  return !!user && (user.isProf === true || user.adminAccess === true);
+// WRITE: the curator account only, identified by a Convex environment variable.
+//
+// ⚠️ It deliberately does NOT key on any users-table flag. EVERY flag on that
+// table is settable by an unauthenticated public mutation — `users:setAdminAccess`,
+// `users:setPrivateAccess` and `users:toggleProf` check that the TARGET exists
+// but never who is calling, because they back the admin dashboard's checkboxes
+// and `admin.html` has no sign-in. `users:getAllStudents` is likewise open, so
+// every userId is enumerable. A flag-based write gate is therefore self-grantable
+// in one extra API call: register → setAdminAccess(self) → set.
+// An environment variable is not reachable from any client.
+//
+// Fails CLOSED: if CURATOR_USER_ID is unset, nobody can write (including the
+// push script) rather than everybody. Set it with:
+//   npx convex env set CURATOR_USER_ID <userId> --prod
+function isCurator(user: { _id: unknown } | null) {
+  const curator = process.env.CURATOR_USER_ID;
+  return !!curator && !!user && String(user._id) === curator;
 }
 
 // List the pages the caller may see — metadata only, no html (kept light for the home screen)
@@ -74,7 +86,7 @@ export const set = mutation({
   },
   handler: async (ctx, args) => {
     const user = await ctx.db.get(args.userId);
-    if (!canWrite(user)) throw new Error("Not authorized");
+    if (!isCurator(user)) throw new Error("Not authorized");
     const existing = await ctx.db
       .query("privatePages")
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))

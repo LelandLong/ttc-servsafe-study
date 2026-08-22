@@ -55,6 +55,24 @@ from plus the update date, so "which revision is this?" is answered by the page.
 and navigate away. Any page using in-page anchors needs the small click-intercept script (see the existing
 pages) that calls `scrollIntoView` instead.
 
+## Who can write (added 08-22)
+
+Reading and writing are gated **separately**. Read = `isProf || privateAccess` (and new accounts now
+get `privateAccess` automatically, so students see the pages without a manual grant). **Write =
+the curator account only**, identified by the `CURATOR_USER_ID` Convex environment variable:
+
+```bash
+npx convex env set CURATOR_USER_ID <userId> --prod   # the account push-private-page.mjs runs as
+```
+
+It **fails closed** — if the variable is unset, nobody can write, including the push script.
+
+⚠️ **Do not "simplify" this back to a users-table flag.** `users:setAdminAccess`, `setPrivateAccess`
+and `toggleProf` check only that the target exists, never who is calling (they back admin.html's
+checkboxes, and that page has no sign-in), and `users:getAllStudents` is open so every userId is
+enumerable. Any flag-based write gate is self-grantable in one extra API call. An environment
+variable is not reachable from a client.
+
 ## Security honesty
 The gate is the server-side flag check keyed on your Convex userId, which functions as a bearer token.
 That comfortably beats "public URL" (the stated goal: keep casual eyes and crawlers out) but is not
