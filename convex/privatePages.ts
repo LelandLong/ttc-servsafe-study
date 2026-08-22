@@ -3,11 +3,29 @@ import { v } from "convex/values";
 
 // Private pages (e.g. the HOS-190 Italy itinerary).
 // Content lives ONLY in Convex — never in this public repo.
-// All endpoints verify the calling userId belongs to a user with isProf
-// OR privateAccess (page access without professor/admin rights).
+//
+// READ and WRITE are gated SEPARATELY on purpose (2026-08-22).
+// These pages are reference material: students read them, nobody fills anything
+// in, and no UI anywhere writes them — `index.html` only calls list/get, and
+// `admin.html` does not touch them at all. The sole writer in the codebase is
+// `scripts/push-private-page.mjs`, run from a terminal.
+// But a Convex mutation is a public HTTP endpoint whether or not a button
+// exists for it, so the gate is the only thing standing in front of `set`.
+// Since new accounts now default to privateAccess (see users.ts `register`),
+// read access is handed out automatically — so write must NOT ride on it, or
+// anyone who registers on the public app could overwrite the itinerary and the
+// emergency-contact page.
 
+// READ: students, family accounts, professors — anyone granted page access.
 function canAccess(user: { isProf?: boolean; privateAccess?: boolean } | null) {
   return !!user && (user.isProf === true || user.privateAccess === true);
+}
+
+// WRITE: staff only. adminAccess is the curator (the push script runs as this
+// account); isProf is the professor role. privateAccess deliberately does NOT
+// grant write.
+function canWrite(user: { isProf?: boolean; adminAccess?: boolean } | null) {
+  return !!user && (user.isProf === true || user.adminAccess === true);
 }
 
 // List the pages the caller may see — metadata only, no html (kept light for the home screen)
@@ -56,7 +74,7 @@ export const set = mutation({
   },
   handler: async (ctx, args) => {
     const user = await ctx.db.get(args.userId);
-    if (!canAccess(user)) throw new Error("Not authorized");
+    if (!canWrite(user)) throw new Error("Not authorized");
     const existing = await ctx.db
       .query("privatePages")
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
