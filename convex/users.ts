@@ -1,5 +1,6 @@
 import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requireStaff } from "./staffAuth";
 
 // ============ QUERIES ============
 
@@ -34,8 +35,12 @@ function getCourseProgress(progress: any, course?: string): any {
 
 // Get all students with summary stats (for professor dashboard)
 export const getAllStudents = query({
-  args: { course: v.optional(v.string()) },
+  args: {
+    actorUserId: v.id("users"),
+    course: v.optional(v.string())
+  },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     const users = await ctx.db.query("users").collect();
     const results = [];
 
@@ -71,8 +76,12 @@ export const getAllStudents = query({
 
 // Get detailed info for a single student (professor detail view)
 export const getStudentDetail = query({
-  args: { userId: v.id("users") },
+  args: {
+    actorUserId: v.id("users"),
+    userId: v.id("users")
+  },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     const user = await ctx.db.get(args.userId);
     if (!user) throw new Error("User not found");
 
@@ -202,8 +211,12 @@ export const getClassStats = query({
 
 // Get all progress archives for a student
 export const getStudentArchives = query({
-  args: { userId: v.id("users") },
+  args: {
+    actorUserId: v.id("users"),
+    userId: v.id("users")
+  },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     const archives = await ctx.db
       .query("progressArchives")
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
@@ -462,8 +475,12 @@ export const getAccess = query({
 // Set admin-link access on a user account (admin dashboard checkbox).
 // Shows the Admin-page button in the student app without marking them a professor.
 export const setAdminAccess = mutation({
-  args: { userId: v.id("users"), value: v.boolean() },
+  args: {
+    actorUserId: v.id("users"),
+    userId: v.id("users"), value: v.boolean()
+  },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     const user = await ctx.db.get(args.userId);
     if (!user) throw new Error("User not found");
     await ctx.db.patch(user._id, { adminAccess: args.value });
@@ -474,8 +491,12 @@ export const setAdminAccess = mutation({
 // Set private-page access on a user account (admin dashboard checkbox).
 // Grants viewing of private pages (HOS-190 etc.) only — no admin rights, still in class stats.
 export const setPrivateAccess = mutation({
-  args: { userId: v.id("users"), value: v.boolean() },
+  args: {
+    actorUserId: v.id("users"),
+    userId: v.id("users"), value: v.boolean()
+  },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     const user = await ctx.db.get(args.userId);
     if (!user) throw new Error("User not found");
     await ctx.db.patch(user._id, { privateAccess: args.value });
@@ -483,10 +504,39 @@ export const setPrivateAccess = mutation({
   },
 });
 
+// CLI-ONLY RECOVERY. internalMutation = not callable from any client, only via
+// `npx convex run users:grantStaff '{"gamerName":"rerun","adminAccess":true}' --prod`.
+// This exists so the staff gate on admin.html can never lock everyone out
+// permanently: if the last staff account loses its flag, this restores it from a
+// terminal. Same pattern as grantPrivateAccess above.
+export const grantStaff = internalMutation({
+  args: {
+    gamerName: v.string(),
+    isProf: v.optional(v.boolean()),
+    adminAccess: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_gamerName", (q) => q.eq("gamerName", args.gamerName.trim().toLowerCase()))
+      .first();
+    if (!user) throw new Error("User not found");
+    const patch: { isProf?: boolean; adminAccess?: boolean } = {};
+    if (args.isProf !== undefined) patch.isProf = args.isProf;
+    if (args.adminAccess !== undefined) patch.adminAccess = args.adminAccess;
+    await ctx.db.patch(user._id, patch);
+    return { gamerName: user.gamerName, ...patch };
+  },
+});
+
 // Toggle professor flag on a user account
 export const toggleProf = mutation({
-  args: { userId: v.id("users") },
+  args: {
+    actorUserId: v.id("users"),
+    userId: v.id("users")
+  },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     const user = await ctx.db.get(args.userId);
     if (!user) throw new Error("User not found");
     await ctx.db.patch(user._id, { isProf: !user.isProf });

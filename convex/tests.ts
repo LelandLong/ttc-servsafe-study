@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requireStaff } from "./staffAuth";
 
 // ============ QUERIES ============
 
@@ -132,6 +133,7 @@ export const getTestDetail = query({
 // Create a new test
 export const createTest = mutation({
   args: {
+    actorUserId: v.id("users"),
     name: v.string(),
     mode: v.string(),
     modeValue: v.optional(v.any()),
@@ -140,6 +142,7 @@ export const createTest = mutation({
     course: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     // Generate unique test ID
     const testId = "test-" + Date.now() + "-" + Math.random().toString(36).substring(2, 8);
 
@@ -161,8 +164,12 @@ export const createTest = mutation({
 
 // Start a test (professor hits Start)
 export const startTest = mutation({
-  args: { testId: v.string() },
+  args: {
+    actorUserId: v.id("users"),
+    testId: v.string()
+  },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     const test = await ctx.db
       .query("liveTests")
       .withIndex("by_testId", (q) => q.eq("testId", args.testId))
@@ -185,8 +192,12 @@ export const startTest = mutation({
 
 // End a test (timer expired or professor stopped early)
 export const endTest = mutation({
-  args: { testId: v.string() },
+  args: {
+    actorUserId: v.id("users"),
+    testId: v.string()
+  },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     const test = await ctx.db
       .query("liveTests")
       .withIndex("by_testId", (q) => q.eq("testId", args.testId))
@@ -255,8 +266,12 @@ export const submitAnswer = mutation({
 
 // Delete a test and all its results
 export const deleteTest = mutation({
-  args: { testId: v.string() },
+  args: {
+    actorUserId: v.id("users"),
+    testId: v.string()
+  },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     // Delete all results for this test
     const results = await ctx.db
       .query("testResults")

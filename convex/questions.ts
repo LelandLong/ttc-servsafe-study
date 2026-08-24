@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requireStaff } from "./staffAuth";
 
 // ============ QUERIES ============
 
@@ -72,6 +73,7 @@ export const getCount = query({
 // Add a new question
 export const addQuestion = mutation({
   args: {
+    actorUserId: v.id("users"),
     questionId: v.number(),
     question: v.string(),
     options: v.array(v.string()),
@@ -86,6 +88,7 @@ export const addQuestion = mutation({
     type: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     const newId = await ctx.db.insert("questions", args);
 
     // Update last modified timestamp
@@ -98,6 +101,7 @@ export const addQuestion = mutation({
 // Update an existing question
 export const updateQuestion = mutation({
   args: {
+    actorUserId: v.id("users"),
     id: v.id("questions"),
     questionId: v.number(),
     question: v.string(),
@@ -113,6 +117,7 @@ export const updateQuestion = mutation({
     type: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     const { id, ...data } = args;
     await ctx.db.patch(id, data);
 
@@ -123,8 +128,12 @@ export const updateQuestion = mutation({
 
 // Delete a question
 export const deleteQuestion = mutation({
-  args: { id: v.id("questions") },
+  args: {
+    actorUserId: v.id("users"),
+    id: v.id("questions")
+  },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     await ctx.db.delete(args.id);
 
     // Update last modified timestamp
@@ -134,8 +143,12 @@ export const deleteQuestion = mutation({
 
 // Add a new category
 export const addCategory = mutation({
-  args: { name: v.string() },
+  args: {
+    actorUserId: v.id("users"),
+    name: v.string()
+  },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     // Check if category already exists
     const existing = await ctx.db
       .query("categories")
@@ -152,8 +165,12 @@ export const addCategory = mutation({
 
 // Delete a category (only if no questions use it)
 export const deleteCategory = mutation({
-  args: { name: v.string() },
+  args: {
+    actorUserId: v.id("users"),
+    name: v.string()
+  },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     // Check if any questions use this category
     const questionsInCategory = await ctx.db
       .query("questions")
@@ -178,6 +195,7 @@ export const deleteCategory = mutation({
 // Bulk import questions (scoped to a course — only deletes/replaces that course's questions)
 export const bulkImport = mutation({
   args: {
+    actorUserId: v.id("users"),
     questions: v.array(v.object({
       questionId: v.number(),
       question: v.string(),
@@ -195,6 +213,7 @@ export const bulkImport = mutation({
     course: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     // Delete only questions for the specified course (or all if no course specified)
     const existing = await ctx.db.query("questions").collect();
     for (const q of existing) {
@@ -237,6 +256,7 @@ export const bulkImport = mutation({
 // Reset to original questions (scoped to a course)
 export const resetToOriginal = mutation({
   args: {
+    actorUserId: v.id("users"),
     questions: v.array(v.object({
       questionId: v.number(),
       question: v.string(),
@@ -254,6 +274,7 @@ export const resetToOriginal = mutation({
     course: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireStaff(ctx, args.actorUserId);
     // Delete only questions for the specified course (or all if no course specified)
     const existing = await ctx.db.query("questions").collect();
     for (const q of existing) {
