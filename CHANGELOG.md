@@ -6,6 +6,17 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-25-2026-1] - August 25, 2026
+
+### Added
+- **Class Pages now have an explicit order.** They sorted alphabetically by slug, which put the new Florence page above the itinerary. `privatePages` gained an optional `order` field and a curator-only `setOrder` mutation, so pages can be repositioned **without re-pushing their content** — re-publishing purely to reorder would bump every page's "info last revised" stamp and tell students the content had changed when it had not. Order is now: Italy Itinerary · Route Map · Florence · Trip Essentials.
+- **Florence page** (`hos190-florence`) — Ms. Buzzelli's D2L tips for the Sept 7 field trip, organised into sights / eat / shop / good-to-know, with her links and attribution intact, plus a prominent warning that the trip day is a **Monday**, when many Italian state museums traditionally close and the Accademia may be shut.
+
+### Fixed
+- **Private trip data removed from this public repo** (see the entry below for what, without repeating it). Two files carried specifics that belong only in Convex; both scrubbed, with the offline verifier's expectations moved to a gitignored file and made to fail closed. Git history still contains the originals.
+
+---
+
 ## [08-24-2026-1] - August 24, 2026
 
 ### Added

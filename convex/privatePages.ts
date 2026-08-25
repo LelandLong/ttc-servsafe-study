@@ -47,7 +47,14 @@ export const list = query({
     const user = await ctx.db.get(args.userId);
     if (!canAccess(user)) return [];
     const pages = await ctx.db.query("privatePages").collect();
-    pages.sort((a, b) => a.slug.localeCompare(b.slug));
+    // Explicit display order first (unset sorts last), then alphabetical by slug
+    // as a stable tiebreak. Alphabetical alone put Florence above the itinerary.
+    pages.sort((a, b) => {
+      const ao = a.order ?? 999;
+      const bo = b.order ?? 999;
+      if (ao !== bo) return ao - bo;
+      return a.slug.localeCompare(b.slug);
+    });
     return pages.map((p) => ({
       slug: p.slug,
       title: p.title || p.slug,
@@ -72,6 +79,28 @@ export const get = query({
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .first();
     return page ? page.html : null;
+  },
+});
+
+// Reposition a page on the home screen WITHOUT touching its html or updatedAt —
+// re-pushing content just to reorder would bump every page's "info last revised"
+// stamp and tell students the content changed when it did not.
+export const setOrder = mutation({
+  args: {
+    userId: v.id("users"),
+    slug: v.string(),
+    order: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!isCurator(user)) throw new Error("Not authorized");
+    const page = await ctx.db
+      .query("privatePages")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .first();
+    if (!page) throw new Error("No such page");
+    await ctx.db.patch(page._id, { order: args.order });
+    return { slug: args.slug, order: args.order };
   },
 });
 
