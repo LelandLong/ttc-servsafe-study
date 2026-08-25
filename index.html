@@ -7816,7 +7816,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             });
         }, [user ? user.userId : null]);
 
-        // Poll class stats every 5 seconds when user is logged in
+        // Poll class stats every 60s when signed in.
+        // WAS 5s, which alone produced 240K function calls in Aug 2026 and helped
+        // push the Convex team over its Database I/O limit. Class averages across
+        // ~44 students move slowly; 5s bought nothing a student could perceive.
         useEffect(function() {
           if (!user || !CONVEX_URL) return;
           function fetchStats() {
@@ -7825,13 +7828,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               .catch(function() {});
           }
           fetchStats();
-          var interval = setInterval(fetchStats, 5000);
+          var interval = setInterval(fetchStats, 60000);
           return function() { clearInterval(interval); };
         }, [user ? user.userId : null, activeCourse]);
 
-        // Poll for active tests every 3 seconds
+        // Poll for active tests: SLOW when nothing is happening, FAST once a test
+        // is in play. This effect already re-runs when testScreen changes, so the
+        // switch is automatic — the moment a test is detected the rate goes to 3s
+        // and the in-test experience is unchanged.
+        // WAS a flat 3s always: 399K calls in Aug 2026 (52% of ALL function calls
+        // on the team) to answer "is there a test?" with "no" almost every time.
+        // Cost of the change: a newly started test can take up to TEST_POLL_IDLE
+        // to appear, instead of 3s.
         useEffect(function() {
           if (!user || !CONVEX_URL) return;
+          var TEST_POLL_LIVE = 3000;
+          var TEST_POLL_IDLE = 30000;
+          var pollMs = testScreen ? TEST_POLL_LIVE : TEST_POLL_IDLE;
           var interval = setInterval(function() {
             convexQuery("tests:getActiveTest")
               .then(function(test) {
@@ -7894,7 +7907,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                 // Students keep their current test screen, will retry on next poll
                 console.log('Test poll failed (will retry):', err.message);
               });
-          }, 3000);
+          }, pollMs);
           return function() { clearInterval(interval); };
         }, [user ? user.userId : null, testScreen]);
 
