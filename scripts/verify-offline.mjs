@@ -18,6 +18,7 @@
 // Requires: npx playwright install chromium
 
 import { chromium } from 'playwright';
+import { readFileSync } from 'node:fs';
 
 const BASE = process.env.BASE || 'https://lelandlong.github.io/ttc-servsafe-study';
 // Any account with privateAccess/isProf. Not a secret — it is a user id, and the
@@ -26,6 +27,30 @@ const USER = {
   userId: process.env.CK_USER_ID || 'k17e9kk2wxe3rbarp11j4rtdyn80w5pp',
   gamerName: 'rerun', displayName: 'Rerun', firstName: 'leland'
 };
+
+// The two strings this asserts are PRIVATE (an emergency contact number and a
+// group insurance policy reference) and THIS REPO IS PUBLIC. They used to be
+// literals right here — the header below says "assert presence, don't echo the
+// secret", which was applied to stdout while the values sat in committed source.
+// They now come from a gitignored file or the environment, and the script FAILS
+// CLOSED if they are missing rather than silently asserting on undefined.
+//   private/offline-expectations.json  ->  { "emergency": "...", "policy": "..." }
+//   or: OFFLINE_EXPECT_EMERGENCY=... OFFLINE_EXPECT_POLICY=... node scripts/verify-offline.mjs
+const EXPECT = (() => {
+  let f = {};
+  try {
+    f = JSON.parse(readFileSync(new URL('../private/offline-expectations.json', import.meta.url), 'utf8'));
+  } catch (e) { /* fall through to env */ }
+  const emergency = process.env.OFFLINE_EXPECT_EMERGENCY || f.emergency;
+  const policy = process.env.OFFLINE_EXPECT_POLICY || f.policy;
+  if (!emergency || !policy) {
+    console.error('MISSING EXPECTATIONS: create private/offline-expectations.json with ' +
+      '{"emergency":"<number>","policy":"<reference>"} (private/ is gitignored), ' +
+      'or set OFFLINE_EXPECT_EMERGENCY / OFFLINE_EXPECT_POLICY.');
+    process.exit(2);
+  }
+  return { emergency, policy };
+})();
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext();
@@ -59,8 +84,8 @@ try {
     await page.getByText('Trip Essentials').first().click();
     await page.waitForTimeout(2000);
     const frame = page.frameLocator('#pp-overlay iframe');
-    emergencyOk = (await frame.getByText('463-274-2241').count().catch(() => 0)) > 0;
-    policyOk = (await frame.getByText('CC013309-D-E-20477977').count().catch(() => 0)) > 0;
+    emergencyOk = (await frame.getByText(EXPECT.emergency).count().catch(() => 0)) > 0;
+    policyOk = (await frame.getByText(EXPECT.policy).count().catch(() => 0)) > 0;
   }
 } catch (e) {
   note = e.message.split('\n')[0];
