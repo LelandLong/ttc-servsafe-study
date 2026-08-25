@@ -42,7 +42,7 @@ Format: `MM-DD-YYYY-BUILD`
   - `privatePages:list` now returns `updatedAt`. Additive on purpose: `get` still returns a bare HTML string, so app shells cached before this release keep working.
 
 ### Changed
-- **HOS-190 Italy pages rebuilt from `2026 Study Abroad Italy CIC FINAL 8.18.26.docx`**, which replaced the Aug 10 itinerary. **Two of four hotels changed, phone numbers included** — the group now sleeps in **Acqui Terme** (Hotel La Meridiana, +39 0144 321761), not Asti, and Ferrara is **Hotel Astra** (+39 0532 206088). Also: four days reshuffled (9/7 Florence · 9/8 Bertinelli + cooking class · 9/9 Ziveri Claudio + balsamic · 9/10 Parma + Opera House), the 9/5 rewrite (Lavazza, Mercato Centrale, gianduja), named venues, departure times, flight terminals, the 9/16 Rome reorder (Colosseum first), and the chef-jacket note on 9/15. Map node and label moved with it.
+- **HOS-190 Italy pages rebuilt from the replacement itinerary** (`2026 Study Abroad Italy CIC FINAL 8.18.26.docx`, which superseded the Aug 10 version). Two of the four hotel bases changed, along with their contact details, and four days were reshuffled; several venues gained named suppliers, and departure times, flight terminals and the Rome running order were updated. **The specifics are deliberately not repeated here — this repo is public.** The pages themselves are the record: `hos190-italy`, `hos190-map`, `hos190-trip-info` in Convex `privatePages`, sourced from the docx named above.
 - **Each page footer now names the exact source file(s) its data came from**, plus the update date — so "which revision is this from?" is answered by the page itself rather than by memory.
 
 ---
