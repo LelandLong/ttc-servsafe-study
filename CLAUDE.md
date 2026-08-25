@@ -297,6 +297,19 @@ npx convex deploy --yes
 6. **Ask the user** for permission to commit
 7. **User commits in VSCode** and pushes to GitHub
 
+### AI-memory mirror (device + cloud portability)
+
+The assistant's memory (`~/.claude/projects/.../memory/`) is **local to one machine**. It does
+not sync between devices, and a **cloud session started from a phone clones this repo and gets
+nothing else**. So every durable rule the assistant relies on is mirrored into
+**[`docs/ai-memory.md`](./docs/ai-memory.md)**, committed, and kept current in the same turn a
+memory is written. Verify with `node ~/crossfeed/check-memory-mirror.mjs`.
+
+> ⚠️ **PUBLIC-REPO CARVE-OUT.** This repo serves GitHub Pages, so the mirror carries durable
+> **rules only**. Private reference material is *named* in the mirror without its contents.
+> The checker cannot tell "withheld on purpose" from "forgotten" and will report exactly one
+> gap here (`higgsfield-interview-loop-prompts`) — **that gap is intentional and correct.**
+
 ### Multi-Device Development
 
 The developer works from multiple devices using VSCode with Claude Code extension (previously Claude desktop app).
