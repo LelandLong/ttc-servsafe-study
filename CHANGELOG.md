@@ -6,6 +6,17 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-25-2026-2] - August 25, 2026
+
+### Fixed
+- **Cut Convex usage ~11×, which is what pushed the account over its Free-plan limits.** The dashboard showed **Database I/O at 3.2 GB against a 1 GB limit** — the only breached resource — and named the cause: `tests:getActiveTest` **399K calls** and `users:getClassStats` **240K**, together 84% of every function call on the team for August.
+  - **`tests:getActiveTest` polled every 3 seconds, always** — asking "is there a live test?" and being told "no" almost every time. It is now **30s while idle and 3s the moment a test is in play**; the effect already re-ran on `testScreen`, so the switch is automatic and the in-test experience is unchanged. Cost: a newly started test can take up to 30s to appear instead of 3s.
+  - **`users:getClassStats` polled every 5 seconds** for class averages across ~44 students, which move slowly. Now 60s.
+  - **Measured, not estimated:** an idle signed-in student made **34 Convex calls per 65s before and 3 after** — roughly **1,883/hour down to 166/hour**. Projected against August's actuals that is ~762K function calls down to ~163K, and Database I/O back well inside 1 GB.
+  - ⚠️ This was never a burst from development work: the usage scales with student study time, so it would have grown as term ramped up rather than settling.
+
+---
+
 ## [08-25-2026-1] - August 25, 2026
 
 ### Added
