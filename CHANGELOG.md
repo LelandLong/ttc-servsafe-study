@@ -6,6 +6,19 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [08-24-2026-1] - August 24, 2026
+
+### Added
+- **The professor dashboard now requires a sign-in — the same one the study app uses.** `admin.html` was a public URL on GitHub Pages with no login of any kind, and every mutation behind it verified only that the row being changed existed, never who was calling. Anyone who opened the page — or skipped the page and called the HTTP API directly — could delete questions, wipe a course's entire bank via "Reset to Original", reset a student's progress, run live tests, or grant themselves professor rights.
+  - **Sign in with gamer name + first name**, exactly as in the student app, sharing the same `chefKitchenUser` session — so a professor already signed in there walks straight through. Access requires `isProf` **or** `adminAccess` (the same test the student app uses to show the Admin link; the curator account is `adminAccess`, not `isProf`, so gating on "professor" alone would have locked the owner out).
+  - **The real control is server-side**, not the login screen: `convex/staffAuth.ts` `requireStaff()` now guards 17 admin-only functions — 7 question mutations, 4 live-test mutations, the 3 access-flag mutations, and the 3 student-record queries. The client login only supplies the identity the server checks.
+  - **This also closes a privilege-escalation path:** `setAdminAccess` / `setPrivateAccess` / `toggleProf` previously let any caller grant themselves any flag, which defeated every flag-based gate in the app. They now require an existing staff account.
+  - **Student records are no longer world-readable.** `users:getAllStudents` returned every account's real first name, gamer name, id and stats to an unauthenticated request; it now requires staff.
+  - **Lockout-proof:** `users:grantStaff` is an `internalMutation` (CLI-only, no client can call it), so staff access can always be restored from a terminal: `npx convex run users:grantStaff '{"gamerName":"rerun","adminAccess":true}' --prod`.
+  - Verified in a real browser against the dev backend: signed-out shows only the sign-in card, a non-staff account is refused with a reason, a staff account reaches the dashboard, the gated roster query succeeds with the stored actor, and sign-out returns to the gate. Server-side matched pairs confirm a non-staff account is refused, a non-staff account cannot grant itself professor, the old no-actor call shape is rejected outright, and staff succeeds.
+
+---
+
 ## [08-22-2026-1] - August 22, 2026
 
 ### Added

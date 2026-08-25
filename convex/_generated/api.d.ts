@@ -13,6 +13,7 @@ import type * as privatePages from "../privatePages.js";
 import type * as questions from "../questions.js";
 import type * as recipes from "../recipes.js";
 import type * as seed from "../seed.js";
+import type * as staffAuth from "../staffAuth.js";
 import type * as tests from "../tests.js";
 import type * as users from "../users.js";
 
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   questions: typeof questions;
   recipes: typeof recipes;
   seed: typeof seed;
+  staffAuth: typeof staffAuth;
   tests: typeof tests;
   users: typeof users;
 }>;

@@ -352,7 +352,36 @@
       var useConvex = !!CONVEX_URL;
 
       // Direct HTTP API calls to Convex (no SDK needed)
+      // ---- Staff session ------------------------------------------------
+      // admin.html is a public URL. The REAL control is server-side
+      // (convex/staffAuth.ts requireStaff); this identifies who is calling so
+      // the server can check them. Same sign-in as the student app: gamer name
+      // + first name, same localStorage key, so a professor already signed in
+      // there is recognised here.
+      var ADMIN_USER_KEY = 'chefKitchenUser';
+      var ADMIN_ACTOR = null; // userId of the signed-in staff account
+
+      // Functions that take actorUserId. Convex REJECTS unexpected args, so the
+      // actor is injected only for these — keep in sync with convex/staffAuth.ts
+      // callers.
+      var STAFF_GATED = {
+        'users:getAllStudents': 1, 'users:getStudentDetail': 1, 'users:getStudentArchives': 1,
+        'users:setAdminAccess': 1, 'users:setPrivateAccess': 1, 'users:toggleProf': 1,
+        'questions:addQuestion': 1, 'questions:updateQuestion': 1, 'questions:deleteQuestion': 1,
+        'questions:addCategory': 1, 'questions:deleteCategory': 1, 'questions:bulkImport': 1,
+        'questions:resetToOriginal': 1,
+        'tests:createTest': 1, 'tests:startTest': 1, 'tests:endTest': 1, 'tests:deleteTest': 1
+      };
+      function withActor(functionName, args) {
+        args = args || {};
+        if (STAFF_GATED[functionName] && ADMIN_ACTOR) {
+          args = Object.assign({}, args, { actorUserId: ADMIN_ACTOR });
+        }
+        return args;
+      }
+
       function convexQuery(functionName, args) {
+        args = withActor(functionName, args);
         return fetch(CONVEX_URL + '/api/query', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -366,6 +395,7 @@
       }
 
       function convexMutation(functionName, args) {
+        args = withActor(functionName, args);
         return fetch(CONVEX_URL + '/api/mutation', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2791,7 +2821,102 @@
       }
 
       // Render
-      ReactDOM.createRoot(document.getElementById('root')).render(e(AdminApp));
+      // ---- Sign-in gate ---------------------------------------------------
+      // Renders the dashboard only for a professor (isProf) or the curator
+      // (adminAccess) — the same predicate the student app uses to show the
+      // Admin link, and the same one the server enforces.
+      function AdminGate(props) {
+        const [state, setState] = useState('checking'); // checking | login | ok
+        const [gamerName, setGamerName] = useState('');
+        const [firstName, setFirstName] = useState('');
+        const [error, setError] = useState('');
+        const [busy, setBusy] = useState(false);
+        const [who, setWho] = useState('');
+
+        // Accept an already-signed-in session from the student app.
+        useEffect(function () {
+          var saved = null;
+          try { saved = JSON.parse(localStorage.getItem(ADMIN_USER_KEY)); } catch (e) {}
+          if (!saved || !saved.userId) { setState('login'); return; }
+          convexQuery('users:getAccess', { userId: saved.userId })
+            .then(function (a) {
+              if (a && (a.isProf || a.adminAccess)) {
+                ADMIN_ACTOR = saved.userId;
+                setWho(saved.displayName || saved.gamerName || '');
+                setState('ok');
+              } else {
+                setError('That account is not a professor or admin account.');
+                setState('login');
+              }
+            })
+            .catch(function () { setState('login'); });
+        }, []);
+
+        function submit(ev) {
+          if (ev && ev.preventDefault) ev.preventDefault();
+          if (!gamerName.trim() || !firstName.trim()) { setError('Enter both fields.'); return; }
+          setBusy(true); setError('');
+          convexMutation('users:login', { gamerName: gamerName.trim(), firstName: firstName.trim() })
+            .then(function (u) {
+              return convexQuery('users:getAccess', { userId: u.userId }).then(function (a) {
+                if (!a || !(a.isProf || a.adminAccess)) {
+                  throw new Error('That account does not have professor or admin access.');
+                }
+                try {
+                  localStorage.setItem(ADMIN_USER_KEY, JSON.stringify({
+                    userId: u.userId, displayName: u.displayName, gamerName: gamerName.trim().toLowerCase()
+                  }));
+                } catch (e) {}
+                ADMIN_ACTOR = u.userId;
+                setWho(u.displayName || gamerName);
+                setState('ok');
+              });
+            })
+            .catch(function (err) { setError(err.message || 'Sign-in failed.'); })
+            .then(function () { setBusy(false); });
+        }
+
+        function signOut() {
+          try { localStorage.removeItem(ADMIN_USER_KEY); } catch (e) {}
+          ADMIN_ACTOR = null; setState('login'); setGamerName(''); setFirstName('');
+        }
+
+        if (state === 'checking') {
+          return e('div', { style: { padding: '60px', textAlign: 'center', color: 'var(--text-secondary,#666)' } }, 'Checking access\u2026');
+        }
+        if (state === 'login') {
+          return e('div', { style: { maxWidth: '380px', margin: '60px auto', padding: '28px', border: '1px solid #ddd', borderRadius: '14px', fontFamily: 'system-ui, sans-serif' } },
+            e('h1', { style: { fontSize: '20px', fontWeight: 800, marginBottom: '6px' } }, '\uD83D\uDC69\u200D\uD83C\uDF73 Professor sign-in'),
+            e('p', { style: { fontSize: '14px', color: '#666', marginBottom: '18px' } }, 'Same sign-in as the study app. Professor or admin accounts only.'),
+            e('form', { onSubmit: submit },
+              e('input', {
+                value: gamerName, onChange: function (ev) { setGamerName(ev.target.value); },
+                placeholder: 'Gamer name', autoFocus: true,
+                style: { width: '100%', padding: '11px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '9px', fontSize: '15px' }
+              }),
+              e('input', {
+                value: firstName, onChange: function (ev) { setFirstName(ev.target.value); },
+                placeholder: 'First name',
+                style: { width: '100%', padding: '11px', marginBottom: '14px', border: '1px solid #ccc', borderRadius: '9px', fontSize: '15px' }
+              }),
+              e('button', {
+                type: 'submit', disabled: busy,
+                style: { width: '100%', padding: '12px', border: 0, borderRadius: '9px', background: '#c1502e', color: '#fff', fontWeight: 800, fontSize: '15px', cursor: 'pointer' }
+              }, busy ? 'Checking\u2026' : 'Sign in')
+            ),
+            error ? e('p', { style: { color: '#b3261e', fontSize: '13px', marginTop: '12px' } }, error) : null
+          );
+        }
+        return e(React.Fragment, null,
+          e('div', { style: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px', padding: '6px 14px', fontSize: '12px', color: '#666' } },
+            e('span', null, 'Signed in: ', e('b', null, who)),
+            e('button', { onClick: signOut, style: { border: '1px solid #ccc', background: 'transparent', borderRadius: '7px', padding: '3px 9px', cursor: 'pointer', font: 'inherit' } }, 'Sign out')
+          ),
+          e(AdminApp)
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(e(AdminGate));
     })();
   </script>
 </body>
