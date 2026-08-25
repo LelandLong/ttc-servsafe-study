@@ -8,6 +8,7 @@ export default defineSchema({
     title: v.optional(v.string()),  // Button label on the home screen
     icon: v.optional(v.string()),   // Emoji shown on the button
     blurb: v.optional(v.string()),  // One-line subtitle on the button
+    order: v.optional(v.number()),  // Display position on the home screen; unset sorts last, then by slug
     updatedAt: v.number(),
   }).index("by_slug", ["slug"]),
 
