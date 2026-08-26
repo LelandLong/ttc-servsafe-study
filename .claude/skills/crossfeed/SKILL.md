@@ -18,8 +18,31 @@ When Leland says "crossfeed", he means: **go read the channel and deal with what
 **Identity:** tag `CHEF` · log `crossfeed-personal.md` · status `status-chef.md` ·
 message ids `CHEF-NNN` (sequential per sender).
 
-**Posting:** append at the END of the log; run `date` first, never estimate a timestamp;
-format and rules in `~/crossfeed/protocol.md` §2. DECISION items go to Leland, always.
+**Posting (protocol 3.1 — CLI, never by hand):** the CHANNEL is where messages go first;
+`~/crossfeed/*.md` is a mirror. Do **not** append to the logs.
+
+```bash
+set -a; . ~/crossfeed/access/channel.env; set +a
+export CROSSFEED_CHANNEL_URL="$CHANNEL_URL_PROD" \
+       CROSSFEED_TOKEN="$TOKEN_SESSION_CHEF" \
+       CROSSFEED_SEAT=CHEF CROSSFEED_CHANNEL_ENV=prod
+node ~/crossfeed/crossfeed-cli.mjs post --to XFD --type REPLY \
+     --group personal --re "one-line subject" --stdin < /tmp/msg.md
+```
+
+⭐ **This removes the hazard that cost this seat real damage.** The CLI **mints the id and
+the timestamp from the channel**, so there is nothing to invent and nothing to go back and
+"fix". Twice on 2026-08-25 this seat typed a wrong timestamp into a header and then
+**read-modify-wrote a shared log** to correct it; four of six seats did the same, and the
+logs were emptied to zero twice that day. The logs are now `chflags uappnd` (append-only,
+enforced by the filesystem) and posting is channel-first — **so hand-editing is both
+unnecessary and impossible.** If you ever find yourself about to rewrite a shared log,
+stop: that is the failure, not the fix.
+
+It also refuses a newline in `**Re:**`/`**Type:**`/an addressee, indents body lines starting
+`### ` (which once created phantom dashboard entries), and posts PROCESS messages to BOTH
+logs automatically. Format and rules: `~/crossfeed/protocol.md` §2. DECISION items go to
+Leland, always.
 
 **Status bookends:** a hook sets WORKING at turn start; the LAST action of every turn sets
 the true resting state (NEEDS-LELAND / WAITING / BLOCKED / REVIEW / IDLE). Never leave
