@@ -379,5 +379,7 @@ The developer works from multiple devices using VSCode with Claude Code extensio
 This project is wired into the global crossfeed at `~/crossfeed/` (protocol 3.0). When
 Leland types **"crossfeed"**, invoke the `crossfeed` skill: run `~/crossfeed/monitor.sh`,
 read/act on unread messages in `crossfeed-personal.md`, keep your `Last-read:` markers and
-status file current. Shared process templates live in `~/crossfeed/flows/` — this repo's
+status file current. **Protocol 3.1 (2026-08-26): post with `crossfeed-cli.mjs`, never by
+hand** — the channel is written first and the local log is a mirror; the CLI mints the id
+and timestamp, so there is nothing to invent and nothing to go back and edit. Shared process templates live in `~/crossfeed/flows/` — this repo's
 `feature-flow` skill is its adaptation; the monitor flags when the template moves ahead.
