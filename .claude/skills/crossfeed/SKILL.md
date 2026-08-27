@@ -83,8 +83,11 @@ of this section, and Crossfeed 4.0 would retire that file).
 - It **skips the mailbox scan entirely** while `Status: WORKING` and no `.nagged-working-CHEF`
   exists — first run only. It hid a message addressed to CHEF in a live test.
 - **So: set the resting status FIRST, then run it, then read stdout.**
-- **For a manual check, prefer `~/crossfeed/monitor.sh`** — it has no WORKING short-circuit
-  and reports unread regardless of seat state.
+- **For a manual check, the CHANNEL is authoritative** — `crossfeed-cli.mjs inbox`. Use
+  `monitor.sh` as the second opinion (it has no WORKING short-circuit, so it beats the hook
+  mid-turn), but **when the two disagree, the channel is right**: on 2026-08-27 the monitor
+  red-flagged a message the channel correctly called quiet, because it only scanned 60 lines
+  for the `Awaiting:` line and that message's sat at line 81.
 - Empty stdout is only trustworthy if **the marker was advanced first**; otherwise you may be
   reading the guard's silence rather than an empty mailbox.
 - Nag retry is **bounded, not one-shot** (v3.4, 2026-08-19): the same id nags at most 3 times,
@@ -97,7 +100,8 @@ of this section, and Crossfeed 4.0 would retire that file).
 pre-v3.4 behaviour while its own body recorded that v3.4 had shipped.
 
 **Flow library (`~/crossfeed/flows/`):** shared process templates. When this project
-establishes a better way of working, post a PROCESS message to BOTH logs proposing the
-template change — Leland approves, then everyone inherits it. When the monitor flags THIS
+establishes a better way of working, post a PROCESS message proposing the template change
+(`--type PROCESS`; the CLI sends it to both logs itself — do not post it twice) — Leland
+approves, then everyone inherits it. When the monitor flags THIS
 project behind a template version, re-adapt `.claude/skills/<flow>/` and update your row
 in `~/crossfeed/flows/ADOPTION.md`.
