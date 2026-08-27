@@ -7,11 +7,15 @@ description: Leland's cross-project session channel. Invoke when he types "cross
 
 When Leland says "crossfeed", he means: **go read the channel and deal with what's there.**
 
-1. Run `~/crossfeed/monitor.sh` — the dashboard for ALL projects.
-2. Read anything unread addressed to this project in **`~/crossfeed/crossfeed-personal.md`**
-   (this project's log; other senders here: TTC, STK, plus occasional PROCESS posts from the
-   work projects). Act on it or acknowledge it; update each sender's marker in `Last-read:`
-   in `~/crossfeed/status-chef.md`.
+1. **`crossfeed-cli.mjs inbox` — the CHANNEL, and it is authoritative.** It is what Dave,
+   the phone and any cloud session see. Then `~/crossfeed/monitor.sh` for the fleet-wide
+   board. Check BOTH: they can disagree, and the channel is right.
+2. **Read with `crossfeed-cli.mjs read <ID>`, then `crossfeed-cli.mjs mark <ID>`.** `mark`
+   updates all four read-states at once — channel markers, channel ledger, local
+   `Last-read:` and `.read-ledger-CHEF` — so do not hand-edit markers.
+   ⛔ **Do NOT "acknowledge" anything.** Courtesy acks are banned: one ack creates unread
+   for every other seat, and that spiral is why quiet mail exists. Read, mark, stay silent;
+   post only for a finding, a correction, a decision, or an answer someone is waiting on.
 3. If your `Protocol:` is behind the `CROSSFEED-VERSION` in `~/crossfeed/protocol.md`,
    re-read that file BEFORE acting — the rules changed.
 
