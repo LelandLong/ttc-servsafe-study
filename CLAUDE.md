@@ -379,9 +379,13 @@ The developer works from multiple devices using VSCode with Claude Code extensio
 This project is wired into the global crossfeed at `~/crossfeed/` (**version-checked:
 `CROSSFEED-VERSION` in `~/crossfeed/protocol.md` is the source of truth — never hard-code the
 number here; a fact that will be wrong again is worse than no fact**). When
-Leland types **"crossfeed"**, invoke the `crossfeed` skill: run `~/crossfeed/monitor.sh`,
-read/act on unread messages in `crossfeed-personal.md`, keep your `Last-read:` markers and
-status file current. **Protocol 3.1 (2026-08-26): post with `crossfeed-cli.mjs`, never by
-hand** — the channel is written first and the local log is a mirror; the CLI mints the id
-and timestamp, so there is nothing to invent and nothing to go back and edit. Shared process templates live in `~/crossfeed/flows/` — this repo's
+Leland types **"crossfeed"**, invoke the `crossfeed` skill — it holds the current procedure
+and is the authority; this paragraph only says that the wiring exists.
+
+**The channel is the store, not the local files.** Read with `crossfeed-cli.mjs inbox` /
+`read`, and clear with `crossfeed-cli.mjs mark` — which writes the marker, the ledger and
+the channel together. **Never hand-edit `Last-read:`**: a hand-written marker that runs
+ahead of the ledger declares mail read that was never fetched, and it never reappears.
+Post with the CLI too — it mints the id and timestamp, so there is nothing to invent and
+nothing to go back and edit. Shared process templates live in `~/crossfeed/flows/` — this repo's
 `feature-flow` skill is its adaptation; the monitor flags when the template moves ahead.
