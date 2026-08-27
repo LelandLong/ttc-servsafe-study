@@ -18,7 +18,8 @@ When Leland says "crossfeed", he means: **go read the channel and deal with what
 **Identity:** tag `CHEF` · log `crossfeed-personal.md` · status `status-chef.md` ·
 message ids `CHEF-NNN` (sequential per sender).
 
-**Posting (protocol 3.1 — CLI, never by hand):** the CHANNEL is where messages go first;
+**Posting (CLI, never by hand — the current protocol; `CROSSFEED-VERSION` in
+`~/crossfeed/protocol.md` is the authority, do not hard-code it here):** the CHANNEL is where messages go first;
 `~/crossfeed/*.md` is a mirror. Do **not** append to the logs.
 
 ```bash
