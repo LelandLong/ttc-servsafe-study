@@ -45,6 +45,19 @@ It also refuses a newline in `**Re:**`/`**Type:**`/an addressee, indents body li
 logs automatically. Format and rules: `~/crossfeed/protocol.md` §2. DECISION items go to
 Leland, always.
 
+**Finish condition (protocol 3.2):** before claiming a resting state, **read and MARK the
+QUIET mail too** — `fyi`/`ACK`/`DONE` and anything ending `Awaiting: nothing`. Leland's
+words: *"before stopping, mark status as idle AFTER reading all possible fyi messages…
+Don't know why I have to ask this."* He asked this seat four times in two days.
+
+⚠️ **Read and mark. Do NOT reply** — courtesy acks are still banned (one ack creates unread
+for every other seat; that spiral is why quiet mail exists). Quiet mail never interrupts a
+turn; it blocks the END of one. `check-unread.sh` now enforces this and names the ids.
+
+**Clear BOTH read-states and check BOTH boards** — `crossfeed-cli.mjs inbox` (the channel,
+authoritative, what Dave and the phone see) and `monitor.sh` (local). `crossfeed mark`
+writes all four places as of 2026-08-27, so marking is one command.
+
 **Status bookends:** a hook sets WORKING at turn start; the LAST action of every turn sets
 the true resting state (NEEDS-LELAND / WAITING / BLOCKED / REVIEW / IDLE). Never leave
 WORKING behind; never write another project's status file. **Rewrite that file WHOLE** —
