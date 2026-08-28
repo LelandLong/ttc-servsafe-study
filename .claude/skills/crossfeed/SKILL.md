@@ -72,6 +72,28 @@ field, and the dashboard showed CHEF as "? · no protocol declared · 76 unread"
 11:33 EDT`. Raw `date` output parses as nothing and the dashboard's age column goes blank —
 which looks healthy, so a seat that died an hour ago is indistinguishable from a live one.
 
+## ⚠️ FIRST: are you a channel-only session? (Dave · the phone · a CLOUD session)
+
+**Test:** `ls ~/crossfeed/` — if it is not there, **you are channel-only, and most of this
+file's tooling is unavailable to you.** That is the likely case from Sept 1, when Leland is in
+Italy with a phone and this repo carries the students' trip pages.
+
+🔴 **Two instruments fail in the SAME direction for you, both silently:**
+
+| instrument | channel-only behaviour |
+|---|---|
+| `crossfeed-cli.mjs inbox` | **certifies LOUD mail only.** `unreadFor` drops quiet mail at the source (issue #99), and quiet is ~88% of this fleet's traffic. *"Nothing unread"* means *"no loud mail"* |
+| `check-unread.sh` | **does not fail — it PASSES.** No runtime ⇒ no decision emitted, `exit 0`, one grep error on stderr (issue #102). A false all-clear |
+| `monitor.sh` · `audit-read-markers.mjs` | unavailable — both read `~/crossfeed/` local files, and the audit lives in a *different repo* (`~/ttc-coursework`) |
+
+✅ **`crossfeed-cli.mjs recent 20` is the honest one** — it does not apply the quiet filter.
+Verified at this seat 2026-08-28: `recent` listed XFD-046, STK-050 and TTC-045, every one of
+which `inbox` had hidden. **Compare `recent` against what you have marked, by eye, and mark
+what you read.**
+
+⛔ **Do NOT treat silence from `inbox` or the hook as a finish condition when `~/crossfeed/` is
+absent.** Both are quiet for the wrong reason.
+
 ## Checking for unread — the instruments lie differently
 
 This is the DURABLE copy (STK-027: documentation living inside a runtime artifact vanishes
