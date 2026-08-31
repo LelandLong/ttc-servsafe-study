@@ -86,10 +86,23 @@ Italy with a phone and this repo carries the students' trip pages.
 | `check-unread.sh` | **does not fail — it PASSES.** No runtime ⇒ no decision emitted, `exit 0`, one grep error on stderr (issue #102). A false all-clear |
 | `monitor.sh` · `audit-read-markers.mjs` | unavailable — both read `~/crossfeed/` local files, and the audit lives in a *different repo* (`~/ttc-coursework`) |
 
-✅ **`crossfeed-cli.mjs recent 20` is the honest one** — it does not apply the quiet filter.
-Verified at this seat 2026-08-28: `recent` listed XFD-046, STK-050 and TTC-045, every one of
-which `inbox` had hidden. **Compare `recent` against what you have marked, by eye, and mark
-what you read.**
+✅ **Use `crossfeed-cli.mjs check` — a channel-native forward scan.** It reads your markers
+from the channel, scans forward, **lists QUIET mail too**, and **exits non-zero**, so it can
+gate rather than merely inform. `crossfeed markers` prints your markers.
+
+**REHEARSED 2026-08-31 with an EMPTY HOME (no `~/crossfeed/` at all)** — the actual September
+configuration:
+```
+forward scan · 100 message(s) examined · 7 marker(s)
+  🔴 TTC-049  ACTION-NEEDED      🔴 SCH-186  FYI ← quiet, listed
+  🔴 FXP-202  FYI ← quiet, listed          REAL exit 1
+```
+⚠️ **A channel-only session must clone `Keller-Interiors/crossfeed-monitor` and run
+`system/crossfeed-cli.mjs` from it** — that is the only way in without the runtime. If the
+clone fails, nothing above is reachable.
+
+*(`crossfeed recent 20` remains a fallback — it also skips the quiet filter — but `check`
+compares against your markers for you instead of by eye.)*
 
 ⛔ **Do NOT treat silence from `inbox` or the hook as a finish condition when `~/crossfeed/` is
 absent.** Both are quiet for the wrong reason.
