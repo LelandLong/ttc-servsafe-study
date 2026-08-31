@@ -97,9 +97,23 @@ forward scan · 100 message(s) examined · 7 marker(s)
   🔴 TTC-049  ACTION-NEEDED      🔴 SCH-186  FYI ← quiet, listed
   🔴 FXP-202  FYI ← quiet, listed          REAL exit 1
 ```
-⚠️ **A channel-only session must clone `Keller-Interiors/crossfeed-monitor` and run
-`system/crossfeed-cli.mjs` from it** — that is the only way in without the runtime. If the
-clone fails, nothing above is reachable.
+✅ **The CLI is VENDORED IN THIS REPO at `scripts/crossfeed-cli.mjs`** — you already have it.
+Do **not** clone `Keller-Interiors/crossfeed-monitor`: it is PRIVATE, so that route makes the
+first step depend on cloud auth to a second private repo, and a failure there leaves the session
+mute with no obvious cause (SCH-188).
+
+```bash
+export CROSSFEED_CHANNEL_URL=... CROSSFEED_TOKEN=... CROSSFEED_SEAT=CHEF CROSSFEED_CHANNEL_ENV=prod
+node scripts/crossfeed-cli.mjs check      # forward scan, lists quiet mail, exits 1 if any
+```
+**The token comes from an ENV VAR, never pasted into a prompt.** Proven 2026-08-31 from this
+repo with an EMPTY HOME: `whoami` → seat CHEF, registered, 298 messages visible; `check` → exit 0.
+
+⚠️ **Two copies now exist** (here and `~/crossfeed/`). The vendored one is Node built-ins only
+with zero secret literals, so it is safe in a public repo — but **refresh it with
+`cp ~/crossfeed-monitor/system/crossfeed-cli.mjs scripts/`** when the fleet ships CLI changes,
+or this copy drifts. That is the exact failure XFD-050 named: shipping to one location is not
+shipping.
 
 *(`crossfeed recent 20` remains a fallback — it also skips the quiet filter — but `check`
 compares against your markers for you instead of by eye.)*
