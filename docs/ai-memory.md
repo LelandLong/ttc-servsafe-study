@@ -132,22 +132,92 @@ for the other standing cross-seat directive.
 
 ---
 
-## ship-window-until-fall-term
+## ~~ship-window-until-fall-term~~ — 🛑 EXPIRED 2026-08-21
 
-**Type:** feedback · Standing order (2026-08-11) — ship ALL changes live immediately without asking, EXPIRES when fall term starts ~Aug 21 2026
+**Type:** feedback · 🛑 **EXPIRED. The ship-immediately window is OVER — ask before
+committing, merging or deploying.** Kept in struck form, not deleted, so the grant is
+not re-read as live.
 
-Leland, 2026-08-11: "until class starts, I want all changes pushed live immediately, always,
-with the usual doc updating and version bump."
+**The default is back:** never commit / merge / deploy without Leland's approval
+(`CLAUDE.md` + `.claude/skills/feature-flow/SKILL.md`).
 
-**Why:** no classes in session → nobody on the app → the empty window is the safest ship time,
-and per-change asks were pure friction while he drives rapid directives across sessions.
+**What this was:** Leland, 2026-08-11 — *"until class starts, I want all changes pushed
+live immediately, always, with the usual doc updating and version bump."* It was safe
+because no class was in session and nobody was on the app.
 
-**How to apply:** run the full feature-flow chain (docs + version bump + commit → PR → merge →
-verify live) straight through for every change, announcing as you go. **EXPIRY: fall term
-start, ~Aug 21 2026** (Leland's first class Fri Aug 21). After that, the repo's
-never-commit-without-asking default returns. If today is past ~Aug 21, this memory is STALE —
-delete it and ask before shipping. Also recorded with the same expiry in
-[[.claude/skills/feature-flow/SKILL.md]] in-repo.
+**It ended when fall term started — first HOS-190 class Fri 2026-08-21.** Roughly 44
+student accounts are on the app now, so the ask-first gate applies.
+
+⚠️ **Why this is struck rather than deleted, and why it was missed here:** the original
+carried its own expiry (*"if today is past ~Aug 21, this memory is STALE"*). That clause
+worked — but **a self-invalidating rule still has to be invalidated by someone**, or every
+new session re-reads a live-looking grant and applies the soft self-check inconsistently.
+It was struck in the local memory file and in `feature-flow/SKILL.md` (PR #39, 2026-08-27)
+— **and missed HERE for six days**, in the one copy written for a session that has nothing
+else. Shipping a correction to two of three locations is not shipping it (XFD-050).
+
+**Exception that still applies:** when Leland gives an ordered plan or says "make it live"
+/ "deploy it", execute that whole chain straight through without re-asking mid-chain — see
+[[finish-through-never-park-work]].
+---
+
+
+## crossfeed-from-a-phone-or-cloud-session
+
+**Type:** project · If `~/crossfeed/` is absent you are a **channel-only** session — two of
+the usual instruments then report "all clear" for the wrong reason. Landed 2026-08-31
+(PRs #41, #42); mirrored here 2026-08-31 because this is the exact scenario the file is for.
+
+**Test:** `ls ~/crossfeed/`. Not there ⇒ channel-only (Dave · the phone · any cloud session).
+This is the expected configuration while Leland is in Italy, Sept 1–17 2026.
+
+🔴 **Two instruments fail in the SAME direction, both silently:**
+
+| instrument | channel-only behaviour |
+|---|---|
+| `crossfeed-cli.mjs inbox` | certifies **LOUD mail only** — `unreadFor` drops quiet mail at the source (issue #99), and quiet is ~88% of this fleet's traffic. *"Nothing unread"* means *"no loud mail"* |
+| `check-unread.sh` | **does not fail — it PASSES.** No runtime ⇒ no decision emitted, `exit 0`, one grep error on stderr (issue #102). A false all-clear |
+| `monitor.sh` · `audit-read-markers.mjs` | unavailable — both read `~/crossfeed/` local files, and the audit lives in a different repo (`~/ttc-coursework`) |
+
+✅ **Use `crossfeed-cli.mjs check`** — a channel-native forward scan. It reads your markers
+from the channel, scans forward, **lists QUIET mail too**, and **exits non-zero**, so it can
+gate rather than merely inform. `crossfeed-cli.mjs markers` prints your markers.
+
+✅ **The CLI is VENDORED IN THIS REPO at `scripts/crossfeed-cli.mjs`** — no clone needed:
+
+```bash
+export CROSSFEED_CHANNEL_URL=... CROSSFEED_TOKEN=... CROSSFEED_SEAT=CHEF CROSSFEED_CHANNEL_ENV=prod
+node scripts/crossfeed-cli.mjs check      # forward scan, lists quiet mail, exits 1 if any
+```
+
+- **The token comes from an ENV VAR, never pasted into a prompt**, and never committed.
+- Do **not** clone `Keller-Interiors/crossfeed-monitor`: it is PRIVATE, so that route makes
+  the first step depend on cloud auth to a second private repo, and a failure there leaves
+  the session mute with no obvious cause (SCH-188).
+- ⚠️ **Two copies now exist.** Refresh with `cp ~/crossfeed-monitor/system/crossfeed-cli.mjs
+  scripts/` when the fleet ships CLI changes, or this copy drifts (XFD-050: shipping to one
+  location is not shipping).
+
+⛔ **Do NOT treat silence from `inbox` or the status hook as a finish condition when
+`~/crossfeed/` is absent** — both are quiet for the wrong reason. The finish condition is a
+**BARE** board: no unread *and* no fyi. Read and MARK quiet mail; never post a courtesy ack
+(the marker is the receipt). Related: [[private-content-never-inline-in-crossfeed]].
 
 ---
 
+## mirror-checker-blind-spot
+
+**Type:** project · `check-memory-mirror.mjs` compares FILENAMES in `~/.claude/.../memory/`
+against this file. It cannot see two things, and both have already bitten:
+
+1. **Content that went stale.** A section can be present and mirrored while saying the
+   opposite of the live rule — the ship-window grant sat here reading as LIVE for six days
+   after it was struck everywhere else, and the checker stayed green on it.
+2. **Durable rules that live in a SKILL file, not a memory file.** Nothing in
+   `.claude/skills/**` is in the checker's input set, so a rule can ship to the skill and
+   never reach the phone.
+
+**How to apply:** when a durable rule changes, update **all three** — the memory file, the
+skill, and this mirror — in the same turn, then re-read this file end to end. The checker's
+one expected red flag is `higgsfield-interview-loop-prompts` (withheld on purpose, see
+above); **a green run on everything else is the guard's silence, not proof of currency.**

@@ -306,9 +306,25 @@ nothing else**. So every durable rule the assistant relies on is mirrored into
 memory is written. Verify with `node ~/crossfeed/check-memory-mirror.mjs`.
 
 > ⚠️ **PUBLIC-REPO CARVE-OUT.** This repo serves GitHub Pages, so the mirror carries durable
-> **rules only**. Private reference material is *named* in the mirror without its contents.
-> The checker cannot tell "withheld on purpose" from "forgotten" and will report exactly one
-> gap here (`higgsfield-interview-loop-prompts`) — **that gap is intentional and correct.**
+> **rules only**. Private reference material is *named* in the mirror without its contents —
+> `higgsfield-interview-loop-prompts` is withheld on purpose, and the checker cannot tell
+> "withheld" from "forgotten". **That omission is intentional and correct.**
+>
+> 🔴 **The checker measures COVERAGE, not CURRENCY, and its verdict is SIZE-SENSITIVE.** It
+> compares memory *filenames* against this file and scores each by text overlap, so:
+> - a section can be present and mirrored while stating the **opposite** of the live rule —
+>   the expired ship-window grant read as LIVE here for six days after being struck in the
+>   memory file and the skill (found 2026-08-31);
+> - durable rules that live in `.claude/skills/**` are **not in its input set at all**, so a
+>   rule can ship to the skill and never reach the phone (that is how the channel-only
+>   crossfeed path was missed);
+> - the withheld-memory verdict **flips with unrelated edits** — adding the two sections above
+>   moved it from `✗ NOT MIRRORED (23%) / exit 1` to `~ thin coverage (25%) / exit 0` without
+>   anything about that memory changing. Do not treat either outcome as news.
+>
+> **So a green run is the guard's silence, not proof of currency.** When a durable rule
+> changes, update all three — memory file, skill, and mirror — in the same turn, then re-read
+> the mirror end to end.
 
 ### Multi-Device Development
 
