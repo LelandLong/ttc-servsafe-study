@@ -243,10 +243,10 @@ function play(node, v){
   var f = document.createElement('iframe');
   f.className = 'player';
   f.height = node.offsetHeight > 60 ? node.offsetHeight : 200;
-  f.setAttribute('allow','accelerometer; encrypted-media; picture-in-picture; fullscreen');
+  f.setAttribute('allow','accelerometer; autoplay; encrypted-media; picture-in-picture; fullscreen');
   f.setAttribute('allowfullscreen','');
   // nocookie + rel=0: no related-video grid tempting them back out to YouTube.
-  f.src = 'https://www.youtube-nocookie.com/embed/' + v.id + '?rel=0&modestbranding=1&autoplay=1';
+  f.src = 'https://www.youtube-nocookie.com/embed/' + v.id + '?rel=0&modestbranding=1&playsinline=1&autoplay=1';
   node.parentNode.replaceChild(f, node);
 }
 
@@ -333,9 +333,13 @@ function jumpTo(i){
     el = document.querySelector(sel);
   }
   if (!el) return;
-  el.scrollIntoView({ behavior:'smooth', block:'center' });
+  // Order matters and it is not cosmetic: play() must run in the SAME task as
+  // the tap. Deferring it (setTimeout, or awaiting the scroll) drops the user-
+  // activation context, and iOS then loads the embed but refuses to start it -
+  // a silent black box. Scrolling has no such requirement, so it goes second.
   var th = el.querySelector('.th');
-  if (th) setTimeout(function(){ play(th, v); }, 420);
+  if (th) play(th, v);
+  el.scrollIntoView({ behavior:'smooth', block:'center' });
 }
 
 /* ---------- NEW STRIP ---------- */
