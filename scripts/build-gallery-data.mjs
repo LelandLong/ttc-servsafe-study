@@ -31,9 +31,12 @@ const uploaded = JSON.parse(fs.readFileSync(path.join(WEB,'uploaded.json'),'utf8
 const sections = secFile.photos || {};
 const places   = secFile.places || {};
 
-// The five cooking-class days (TTC-050). Only used for the day badge; photos
-// still land in whatever section they were sorted into.
-const COOK_DAYS = new Set(['2026-09-03','2026-09-04','2026-09-08','2026-09-12','2026-09-15']);
+// NO COOKING CONCEPT ON THE PHOTO PAGE. Cooking class was captured on VIDEO, not
+// stills - a cooking-class day badge here labelled whole days off one stray shot,
+// and the "cooking demos" section held exactly 1 photo out of 226. Leland asked
+// for it stripped entirely. The one genuine cooking-class still (9/8) is folded
+// into "food", which is the closest home; it is not discarded.
+const SECTION_MAP = { cooking: 'food' };
 
 const allKeys = new Set(manifest.map(m => m.day + '/' + m.name));
 function excluded(key){
@@ -49,7 +52,8 @@ let noUrl = 0, unsorted = 0;
 for (const m of manifest) {
   const key = m.day + '/' + m.name;
   if (excluded(key)) continue;
-  const sec = sections[key] && sections[key].section;
+  let sec = sections[key] && sections[key].section;
+  sec = SECTION_MAP[sec] || sec;
   if (!sec || sec === 'skip') { unsorted++; continue; }
   const up = uploaded[key];
   if (!up || !up.full || !up.full.url || !up.thumb || !up.thumb.url) { noUrl++; continue; }
@@ -61,8 +65,7 @@ for (const m of manifest) {
     time:  m.shotTime || '',
     place: places[m.shot] || '',
     what:  (sections[key].what || ''),
-    added: ADDED,
-    cook:  COOK_DAYS.has(m.shot)
+    added: ADDED
   });
 }
 
@@ -76,7 +79,7 @@ const lines = rows.map(r =>
   (r.place ? ', place:' + JSON.stringify(r.place) : ', place:""') +
   (r.what  ? ', what:'  + JSON.stringify(r.what)  : ', what:""') +
   ', added:' + JSON.stringify(r.added) +
-  (r.cook ? ', cook:true' : '') + ' }'
+  ' }'
 ).join(',\n');
 
 let html = fs.readFileSync(PAGE, 'utf8');
@@ -88,7 +91,7 @@ fs.writeFileSync(PAGE, html);
 
 const by = rows.reduce((a,r) => (a[r.section] = (a[r.section]||0)+1, a), {});
 console.log('  gallery entries : ' + rows.length);
-for (const k of ['cooking','food','out']) console.log('    ' + k.padEnd(8) + (by[k]||0));
+for (const k of ['food','out']) console.log('    ' + k.padEnd(8) + (by[k]||0));
 console.log('  excluded        : ' + (manifest.length - rows.length - noUrl - unsorted));
 console.log('  no URL (skipped): ' + noUrl + '   unsorted: ' + unsorted);
 console.log('  captions written: ' + rows.filter(r => r.what).length);

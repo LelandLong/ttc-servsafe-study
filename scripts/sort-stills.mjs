@@ -6,7 +6,7 @@
  * derived from a file - only the DATE can. Typing 283 entries is exactly the
  * chore Leland said he did not want, so this is one keypress per photo instead:
  *
- *     1 = cooking demo      2 = restaurant / food     3 = out & about
+ *     1 = restaurant / food     2 = out & about
  *     0 = skip (leave it out of the gallery)
  *     left arrow = go back        (progress saves after every keypress)
  *
@@ -65,14 +65,13 @@ kbd{background:#17130f;border:1px solid #4d3b32;border-radius:5px;padding:1px 6p
 </header>
 <main><img id="img" alt=""><div class="done" id="done" style="display:none"></div></main>
 <footer>
-  <button class="k1" data-s="cooking">1 &middot; Cooking demo</button>
-  <button class="k2" data-s="food">2 &middot; Restaurant / food</button>
-  <button class="k3" data-s="out">3 &middot; Out &amp; about</button>
+  <button class="k2" data-s="food">1 &middot; Restaurant / food</button>
+  <button class="k3" data-s="out">2 &middot; Out &amp; about</button>
   <button class="k0" data-s="skip">0 &middot; Skip</button>
   <button id="back">&larr; Back</button>
   <input id="place" placeholder="Place for this day (applies to the whole day)" size="34">
   <input id="cap" placeholder="Caption (optional)" size="26">
-  <span class="meta">keys <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>0</kbd> &middot; <kbd>&larr;</kbd> back</span>
+  <span class="meta">keys <kbd>1</kbd><kbd>2</kbd><kbd>0</kbd> &middot; <kbd>&larr;</kbd> back</span>
 </footer>
 <script>
 var P=[],S={photos:{},places:{}},i=0;
@@ -112,8 +111,8 @@ document.querySelectorAll('button[data-s]').forEach(function(b){ b.onclick=funct
 document.getElementById('back').onclick=function(){ if(i>0){ i--; render(); } };
 document.addEventListener('keydown',function(e){
   if(e.target.tagName==='INPUT'&&e.key!=='Enter') return;
-  if(e.key==='1')assign('cooking'); else if(e.key==='2')assign('food');
-  else if(e.key==='3')assign('out'); else if(e.key==='0')assign('skip');
+  if(e.key==='1')assign('food'); else if(e.key==='2')assign('out');
+  else if(e.key==='0')assign('skip');
   else if(e.key==='ArrowLeft'&&i>0){i--;render();}
 });
 fetch('/api/photos').then(r=>r.json()).then(function(d){ P=d.photos; S=d.sections; i=firstUnsorted(); render(); });
@@ -152,6 +151,6 @@ http.createServer((req, res) => {
   const n = Object.keys(sections.photos).length;
   console.log('Sort stills:  http://localhost:' + PORT);
   console.log(photos.length + ' photos, ' + n + ' already sorted' + (n ? ' (resuming where you left off)' : ''));
-  console.log('keys: 1 cooking · 2 restaurant/food · 3 out & about · 0 skip · left arrow back');
+  console.log('keys: 1 restaurant/food · 2 out & about · 0 skip · left arrow back');
   console.log('saves to ' + secPath + ' after every keypress. Ctrl-C when done.');
 });
