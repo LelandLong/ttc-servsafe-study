@@ -27,7 +27,7 @@ npx convex run users:grantPrivateAccess '{"gamerName":"rerun","grant":true}' --p
 3. `CK_USER_ID=<your-userId> node scripts/push-private-page.mjs <slug> private/<file>.html "<Title>" "<emoji>" "<blurb>"`
 4. Deploy Convex if schema changed: `npx convex deploy --yes`
 
-Current pages, in display order: `hos190-italy` (Italy Itinerary) · `hos190-map` (Route Map) · `hos190-florence` (Florence) · `hos190-trip-info` (Trip Essentials) · `hos190-video-hub` (Video Hub).
+Current pages, in display order: `hos190-italy` (Italy Itinerary) · `hos190-map` (Route Map) · `hos190-florence` (Florence) · `hos190-trip-info` (Trip Essentials) · `hos190-video-hub` (Video Hub) · `hos190-photos` (Photo Gallery).
 
 > Ordering is an explicit `order` field, set with `privatePages:setOrder` — **not** alphabetical by slug, and
 > changing it does **not** re-publish the page, so repositioning never bumps a page's "info last revised" stamp.
