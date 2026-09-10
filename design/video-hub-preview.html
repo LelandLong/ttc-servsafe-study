@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Design preview of the HOS-190 video hub. PLACEHOLDER ENTRIES ONLY.
+     The real page lives in Convex privatePages (slug hos190-video-hub); its
+     source is private/video-hub.html, which is gitignored because the live
+     version carries real video ids. Nothing here is private data. -->
+<title>Italy Video Hub</title>
+<style>
+
+:root{--terra:#c1502e;--olive:#6b7b3a;--ink:#2b2320;--paper:#faf6f0;--card:#fff;--mute:#8a7f76;--line:#e8ded2;--film:#171210;--gold:#f0b26a}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Helvetica Neue',sans-serif;background:var(--paper);color:var(--ink);line-height:1.45;padding-bottom:48px}
+header{background:linear-gradient(160deg,#2b2320,#4a2f22 60%,#8f3a20);color:#fff;padding:32px 20px 24px;text-align:center}
+header h1{font-size:28px;font-weight:900;letter-spacing:.02em}
+header p{opacity:.9;font-size:14px;margin-top:6px}
+nav{position:sticky;top:0;background:var(--paper);display:flex;gap:8px;overflow-x:auto;padding:10px 14px;border-bottom:1px solid var(--line);z-index:5}
+nav a{flex:0 0 auto;font-size:14px;font-weight:700;color:var(--terra);text-decoration:none;background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 14px}
+section{padding:18px 14px 4px;max-width:660px;margin:0 auto;scroll-margin-top:54px}
+.leg{font-size:13px;font-weight:800;letter-spacing:.18em;color:var(--olive);margin:14px 4px 4px;text-transform:uppercase}
+.sub{font-size:13px;color:var(--mute);margin:0 4px 12px}
+
+/* ---- NEW strip ---- */
+#newwrap{background:#2b2320;padding:14px 0 16px;margin-top:0}
+#newwrap .leg{color:var(--gold);margin-left:18px}
+#newwrap .sub{color:#c9bcb2;margin-left:18px}
+.strip{display:flex;gap:10px;overflow-x:auto;padding:2px 14px 4px;-webkit-overflow-scrolling:touch}
+.strip .mini{flex:0 0 172px;background:#3a2c25;border-radius:12px;overflow:hidden;cursor:pointer;border:1px solid #4d3b32}
+.strip .mini .th{height:96px}
+.strip .mini .mt{padding:8px 9px 10px;font-size:12px;color:#f5efe6;font-weight:700;line-height:1.3}
+.strip .mini .md{font-size:11px;color:#bda99c;font-weight:600;margin-top:3px}
+
+/* ---- thumb ---- */
+.th{position:relative;background:linear-gradient(135deg,#5c4034,#2b2320);display:flex;align-items:center;justify-content:center;background-size:cover;background-position:center}
+.th::after{content:"";width:0;height:0;border-left:16px solid rgba(255,255,255,.92);border-top:10px solid transparent;border-bottom:10px solid transparent;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+.th.playing::after{display:none}
+.dur{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.82);color:#fff;font-size:11px;font-weight:800;padding:2px 6px;border-radius:5px;letter-spacing:.02em}
+
+/* ---- WATCH THESE ---- */
+.big{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:14px;box-shadow:0 1px 4px rgba(60,40,20,.06)}
+.big .th{height:186px;cursor:pointer}
+.big .body{padding:13px 15px 15px}
+.big .ttl{font-size:16px;font-weight:800;line-height:1.3}
+.big .meta{font-size:12.5px;color:var(--mute);font-weight:700;margin-top:5px}
+.big .desc{font-size:14px;margin-top:7px;color:#4a3f38}
+
+/* ---- ARCHIVE (low weight) ---- */
+.day{margin-top:16px}
+.daylabel{font-size:13px;font-weight:800;color:var(--ink);margin:0 4px 7px;display:flex;align-items:center;gap:7px}
+.cook{background:#f6e3d7;color:#8f3a20;font-size:10.5px;font-weight:900;padding:2px 7px;border-radius:999px;letter-spacing:.04em}
+.row{display:flex;gap:11px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 11px;margin-bottom:7px;cursor:pointer}
+.row .th{width:74px;height:44px;border-radius:7px;flex:0 0 auto}
+.row .th::after{border-left-width:11px;border-top-width:7px;border-bottom-width:7px}
+.row .th .dur{display:none}  /* the loud pill on the right already says it */
+.row .rt{flex:1 1 auto;min-width:0}
+.row .rttl{font-size:13.5px;font-weight:700;line-height:1.3}
+.row .rmeta{font-size:11.5px;color:var(--mute);font-weight:600;margin-top:2px}
+.long{flex:0 0 auto;background:#2b2320;color:var(--gold);font-size:12px;font-weight:900;padding:5px 9px;border-radius:8px;letter-spacing:.02em;white-space:nowrap}
+.long.hrs{background:#8f3a20;color:#fff}
+
+.newbadge{display:inline-block;background:var(--gold);color:#2b2320;font-size:10.5px;font-weight:900;padding:2px 7px;border-radius:999px;margin-left:7px;letter-spacing:.04em;vertical-align:middle}
+.added{font-size:11.5px;color:var(--mute);font-weight:700}
+.chips{display:flex;gap:7px;margin:0 4px 10px;flex-wrap:wrap}
+.chip{font-size:12.5px;font-weight:700;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer}
+.chip.on{background:var(--terra);color:#fff;border-color:var(--terra)}
+.empty{font-size:14px;color:var(--mute);padding:8px 6px 14px}
+.flag{background:#2b2320;color:#f5efe6;border-radius:16px;padding:15px;margin-bottom:12px;font-size:14px}
+.flag b{color:var(--gold)}
+footer{max-width:660px;margin:22px auto 0;padding:0 18px;font-size:12.5px;color:var(--mute);text-align:center;line-height:1.55}
+iframe.player{width:100%;border:0;display:block;background:#000}
+
+
+/* ---------- preview chrome (NOT part of the shipped page) ---------- */
+.pv{background:#171210;color:#f5efe6;padding:16px 18px 15px;font-family:-apple-system,'Helvetica Neue',sans-serif}
+.pvin{max-width:760px;margin:0 auto;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start}
+.pvtxt{flex:1 1 320px;min-width:260px}
+.pvk{font-size:11px;font-weight:800;letter-spacing:.18em;color:#f0b26a;text-transform:uppercase}
+.pvh{font-size:16px;font-weight:800;margin-top:5px;line-height:1.3}
+.pvp{font-size:13px;color:#c9bcb2;margin-top:6px;line-height:1.5;max-width:62ch}
+.pvbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pvb{font-family:inherit;font-size:12.5px;font-weight:800;background:#3a2c25;color:#f5efe6;border:1px solid #5c4034;
+     border-radius:999px;padding:8px 14px;cursor:pointer}
+.pvb:hover{background:#4a382f}
+.pvb.on{background:#f0b26a;color:#2b2320;border-color:#f0b26a}
+.pvb:focus-visible{outline:2px solid #f0b26a;outline-offset:2px}
+.pvnote{font-size:11.5px;color:#8a7f76;margin-top:9px}
+/* phone stage: students read this on a phone, so preview it at phone width */
+.stage{max-width:440px;margin:0 auto;background:#faf6f0;box-shadow:0 10px 40px rgba(0,0,0,.28);min-height:100vh}
+@media(min-width:760px){ .stage{margin:22px auto 40px;border-radius:20px;overflow:hidden;min-height:0} }
+body{background:#241c19}
+
+</style></head><body>
+
+<div class="pv"><div class="pvin">
+  <div class="pvtxt">
+    <div class="pvk">Design preview &middot; not published to students</div>
+    <div class="pvh">Italy Video Hub &mdash; first pass</div>
+    <div class="pvp">The layout is real; every entry is a <b>placeholder</b>. One tile plays an actual video so you can
+      see the inline player work &mdash; the rest say &ldquo;no video attached yet&rdquo; rather than faking it.
+      Shown at phone width, in the app&rsquo;s existing page styling, because that is exactly how students will see it.</div>
+    <div class="pvnote">Sections, label format and the return-visit goal come from STK-058; the cooking-day
+      emphasis and the Oct&nbsp;1 luncheon date from TTC-050/051.</div>
+  </div>
+  <div class="pvbtns">
+    <button class="pvb on" id="pv-first" type="button">First visit</button>
+    <button class="pvb" id="pv-return" type="button">Returning visitor</button>
+  </div>
+</div></div>
+
+<div class="stage">
+
+
+<header>
+  <h1>&#127909; ITALY &mdash; VIDEO HUB</h1>
+  <p>HOS-190 Study Abroad &middot; new material added through the trip</p>
+</header>
+
+<nav>
+  <a href="#watch">&#9654;&#65039; Watch these</a>
+  <a href="#archive">&#128252; Full archive</a>
+</nav>
+
+<div id="newwrap" style="display:none">
+  <div class="leg" id="newleg">&#127381; New since you last looked</div>
+  <div class="sub" id="newsub"></div>
+  <div class="strip" id="newstrip"></div>
+</div>
+
+<section id="watch">
+  <div class="leg">&#9654;&#65039; Watch these</div>
+  <div class="sub">Short, edited pieces &mdash; best first. Start here.</div>
+  <div id="watchlist"></div>
+</section>
+
+<section id="archive">
+  <div class="leg">&#128252; The full archive</div>
+  <div class="sub">Raw and unedited, in order. <b>These are long</b> &mdash; check the runtime before you open one.</div>
+  <div class="chips">
+    <div class="chip on" data-filter="all">Everything</div>
+    <div class="chip" data-filter="cook">&#127859; Cooking days only</div>
+  </div>
+  <div id="archivelist"></div>
+</section>
+
+<footer>
+  Source: design brief in crossfeed STK-058 (sections, label format, return-visit goal) and TTC-050
+  (cooking-day emphasis, Oct 1 luncheon). Entries above are <b>placeholders</b> pending real uploads.<br>
+  Page drafted 9/10/26.
+</footer>
+
+<script>
+/* =====================================================================
+   THE ONLY THING YOU EDIT IS THIS LIST.
+   One object per video. Add to the top or bottom - order does not matter,
+   the page sorts itself.
+
+     id     unlisted YouTube id  (the bit after v= ). NEVER goes in the repo.
+     kind   "edited" -> Watch These      |  "raw" -> Full Archive
+     date   YYYY-MM-DD the day it was SHOT   (archive order + the label)
+     place  where                            e.g. "Bertinelli"
+     what   what happened, plain words       e.g. "the wheel test, and why they tap it"
+     dur    "4m20s" or "3h12m"               (shown as-is; put hours as 'h')
+     added  YYYY-MM-DD you PUT IT UP         (drives the NEW badge + top strip)
+     rank   Watch These order, 1 = first     (edited only; omit for raw)
+     cook   true on the five cooking-class days
+   ===================================================================== */
+var VIDEOS = [
+  { id:"aqz-KE-bpKQ", kind:"edited", rank:1, date:"2026-09-08", place:"Bertinelli",
+    what:"Parmigiano Reggiano \u2014 the wheel test, and why they tap it",
+    dur:"4m20s", added:"2026-09-10", cook:true,
+    desc:"The inspector's hammer, what he is listening for, and why a whole wheel gets rejected." },
+
+  { id:"REPLACE_ME_2", kind:"edited", rank:2, date:"2026-09-04", place:"Nizza Monferrato",
+    what:"Making agnolotti by hand, start to plate",
+    dur:"6m02s", added:"2026-09-10", cook:true,
+    desc:"Dough, filling, the pinch-and-fold, and the sauce it goes into." },
+
+  { id:"REPLACE_ME_3", kind:"edited", rank:3, date:"2026-09-03", place:"Nizza Monferrato",
+    what:"First cooking class \u2014 the kitchen, the crew, the rules",
+    dur:"3m48s", added:"2026-09-09", cook:true,
+    desc:"How the teaching kitchen runs and what the chef expects before you touch a knife." },
+
+  { id:"REPLACE_ME_R1", kind:"raw", date:"2026-09-08", place:"Bertinelli",
+    what:"Parmigiano Reggiano \u2014 full visit, 7:45 AM",
+    dur:"3h12m", added:"2026-09-10", cook:true },
+
+  { id:"REPLACE_ME_R2", kind:"raw", date:"2026-09-08", place:"Salsomaggiore",
+    what:"Cooking class \u2014 full session",
+    dur:"2h41m", added:"2026-09-10", cook:true },
+
+  { id:"REPLACE_ME_R3", kind:"raw", date:"2026-09-04", place:"Nizza Monferrato",
+    what:"Cooking class \u2014 full session, second day",
+    dur:"2h58m", added:"2026-09-09", cook:true },
+
+  { id:"REPLACE_ME_R4", kind:"raw", date:"2026-09-03", place:"Nizza Monferrato",
+    what:"Cooking class \u2014 full session, first day",
+    dur:"3h04m", added:"2026-09-09", cook:true },
+
+  { id:"REPLACE_ME_R5", kind:"raw", date:"2026-09-06", place:"Acqui Terme",
+    what:"Walking the town, market morning",
+    dur:"48m12s", added:"2026-09-09", cook:false }
+];
+
+/* ---------- helpers ---------- */
+var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function parseD(s){ var p = String(s||'').split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+function pretty(s){ var d = parseD(s); return MON[d.getMonth()] + ' ' + d.getDate(); }
+function isHours(d){ return /h/.test(String(d||'')); }
+function realId(v){ return v.id && !/^REPLACE/.test(v.id); }
+
+/* last-seen: namespaced so it cannot collide with the app's own keys.
+   Wrapped - a blocked/absent store must degrade, never break the page. */
+var SEEN_KEY = 'ckVideoHubLastSeen';
+function readSeen(){ try { return localStorage.getItem(SEEN_KEY) || ''; } catch(e){ return ''; } }
+function writeSeen(v){ try { localStorage.setItem(SEEN_KEY, v); } catch(e){} }
+
+function thumb(v){
+  var d = document.createElement('div');
+  d.className = 'th';
+  var dur = document.createElement('div');
+  dur.className = 'dur'; dur.textContent = v.dur || '';
+  d.appendChild(dur);
+  if (realId(v)) {
+    // Load the YouTube still opportunistically. If it fails (offline, blocked)
+    // the gradient placeholder simply stays - no broken image.
+    var img = new Image();
+    img.onload = function(){ d.style.backgroundImage = 'url(' + img.src + ')'; };
+    img.src = 'https://img.youtube.com/vi/' + v.id + '/hqdefault.jpg';
+  }
+  d.onclick = function(e){ e.stopPropagation(); play(d, v); };
+  return d;
+}
+
+function play(node, v){
+  if (!realId(v)) {
+    node.classList.add('playing');
+    node.style.background = '#3a2c25';
+    node.innerHTML = '<div style="color:#f0b26a;font-size:12.5px;font-weight:800;text-align:center;padding:10px">'
+      + 'Placeholder &mdash; no video attached yet<br>'
+      + '<span style="color:#c9bcb2;font-weight:600">add the YouTube id to this entry</span></div>';
+    return;
+  }
+  var f = document.createElement('iframe');
+  f.className = 'player';
+  f.height = node.offsetHeight > 60 ? node.offsetHeight : 200;
+  f.setAttribute('allow','accelerometer; encrypted-media; picture-in-picture; fullscreen');
+  f.setAttribute('allowfullscreen','');
+  // nocookie + rel=0: no related-video grid tempting them back out to YouTube.
+  f.src = 'https://www.youtube-nocookie.com/embed/' + v.id + '?rel=0&modestbranding=1&autoplay=1';
+  node.parentNode.replaceChild(f, node);
+}
+
+function label(v){ return pretty(v.date) + ' \u00b7 ' + v.place; }
+
+/* ---------- WATCH THESE ---------- */
+function renderWatch(seen){
+  var wrap = document.getElementById('watchlist');
+  var list = VIDEOS.filter(function(v){ return v.kind === 'edited'; })
+                   .sort(function(a,b){ return (a.rank||99) - (b.rank||99); });
+  if (!list.length){ wrap.innerHTML = '<div class="empty">Edited pieces will appear here.</div>'; return; }
+  list.forEach(function(v){
+    var c = document.createElement('div'); c.className = 'big';
+    c.appendChild(thumb(v));
+    var b = document.createElement('div'); b.className = 'body';
+    var t = document.createElement('div'); t.className = 'ttl';
+    t.textContent = v.what;
+    if (seen && v.added > seen) { var n = document.createElement('span'); n.className='newbadge'; n.textContent='NEW'; t.appendChild(n); }
+    b.appendChild(t);
+    var m = document.createElement('div'); m.className = 'meta';
+    m.textContent = label(v) + ' \u00b7 ' + v.dur + '  \u2022  added ' + pretty(v.added);
+    b.appendChild(m);
+    if (v.desc){ var d = document.createElement('div'); d.className='desc'; d.textContent = v.desc; b.appendChild(d); }
+    c.appendChild(b); wrap.appendChild(c);
+  });
+}
+
+/* ---------- FULL ARCHIVE ---------- */
+var archFilter = 'all';
+function renderArchive(seen){
+  var wrap = document.getElementById('archivelist');
+  wrap.innerHTML = '';
+  var list = VIDEOS.filter(function(v){ return v.kind === 'raw'; })
+                   .filter(function(v){ return archFilter === 'all' || v.cook; })
+                   .sort(function(a,b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+  if (!list.length){ wrap.innerHTML = '<div class="empty">Nothing here yet under this filter.</div>'; return; }
+  var days = {}, order = [];
+  list.forEach(function(v){ if(!days[v.date]){ days[v.date]=[]; order.push(v.date); } days[v.date].push(v); });
+  order.forEach(function(dt){
+    var box = document.createElement('div'); box.className = 'day';
+    var lab = document.createElement('div'); lab.className = 'daylabel';
+    lab.appendChild(document.createTextNode(pretty(dt)));
+    if (days[dt].some(function(v){ return v.cook; })){
+      var ck = document.createElement('span'); ck.className='cook'; ck.textContent='\u{1F373} COOKING CLASS'; lab.appendChild(ck);
+    }
+    box.appendChild(lab);
+    days[dt].forEach(function(v){
+      var r = document.createElement('div'); r.className = 'row';
+      r.appendChild(thumb(v));
+      var rt = document.createElement('div'); rt.className = 'rt';
+      var tt = document.createElement('div'); tt.className='rttl'; tt.textContent = v.what;
+      if (seen && v.added > seen){ var n=document.createElement('span'); n.className='newbadge'; n.textContent='NEW'; tt.appendChild(n); }
+      rt.appendChild(tt);
+      var mm = document.createElement('div'); mm.className='rmeta';
+      mm.textContent = v.place + ' \u00b7 added ' + pretty(v.added);
+      rt.appendChild(mm);
+      r.appendChild(rt);
+      var L = document.createElement('div');
+      L.className = 'long' + (isHours(v.dur) ? ' hrs' : '');
+      L.textContent = v.dur;
+      r.appendChild(L);
+      r.onclick = function(){ var th = r.querySelector('.th'); if (th) play(th, v); };
+      box.appendChild(r);
+    });
+    wrap.appendChild(box);
+  });
+}
+
+/* ---------- NEW STRIP ---------- */
+function renderNew(seen){
+  var fresh = VIDEOS.filter(function(v){ return seen && v.added > seen; });
+  var leg = document.getElementById('newleg'), sub = document.getElementById('newsub');
+  if (!fresh.length){
+    // First visit, or nothing new: show the most recent batch instead of nothing.
+    var newest = VIDEOS.map(function(v){ return v.added; }).sort().pop();
+    fresh = VIDEOS.filter(function(v){ return v.added === newest; });
+    leg.innerHTML = '\u{1F195} Recently added';
+    sub.textContent = fresh.length + ' added ' + pretty(newest) + ' \u2014 come back for more, he is uploading through the trip.';
+  } else {
+    leg.innerHTML = '\u{1F195} New since you last looked';
+    sub.textContent = fresh.length + ' new ' + (fresh.length === 1 ? 'video' : 'videos') + ' since your last visit.';
+  }
+  if (!fresh.length) return;
+  var strip = document.getElementById('newstrip');
+  fresh.sort(function(a,b){ return (a.rank||99)-(b.rank||99); });
+  fresh.forEach(function(v){
+    var m = document.createElement('div'); m.className = 'mini';
+    m.appendChild(thumb(v));
+    var t = document.createElement('div'); t.className='mt'; t.textContent = v.what;
+    var d = document.createElement('div'); d.className='md'; d.textContent = label(v) + ' \u00b7 ' + v.dur;
+    t.appendChild(d); m.appendChild(t);
+    strip.appendChild(m);
+  });
+  document.getElementById('newwrap').style.display = 'block';
+}
+
+/* ---------- boot ---------- */
+var seen = readSeen();
+renderNew(seen);
+renderWatch(seen);
+renderArchive(seen);
+
+Array.prototype.forEach.call(document.querySelectorAll('.chip'), function(c){
+  c.onclick = function(){
+    Array.prototype.forEach.call(document.querySelectorAll('.chip'), function(x){ x.classList.remove('on'); });
+    c.classList.add('on'); archFilter = c.getAttribute('data-filter'); renderArchive(seen);
+  };
+});
+
+// Stamp the visit LAST, so this render still shows what was new.
+var maxAdded = VIDEOS.map(function(v){ return v.added; }).sort().pop();
+if (maxAdded) writeSeen(maxAdded);
+
+// srcdoc iframe: #hash hrefs resolve against the PARENT url and navigate away.
+document.addEventListener('click', function(e){
+  var a = e.target.closest ? e.target.closest('a') : null;
+  if(!a) return;
+  var h = a.getAttribute('href') || '';
+  if(h.charAt(0) === '#'){
+    e.preventDefault();
+    var el = document.getElementById(h.slice(1));
+    if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+});
+
+/* ---------- preview-only: let him see BOTH states of the NEW strip ---------- */
+(function(){
+  var first  = document.getElementById('pv-first');
+  var ret    = document.getElementById('pv-return');
+  if(!first || !ret) return;
+  function reload(stamp){
+    try { if(stamp) localStorage.setItem(SEEN_KEY, stamp); else localStorage.removeItem(SEEN_KEY); } catch(e){}
+    location.reload();
+  }
+  first.addEventListener('click', function(){ reload(null); });
+  ret.addEventListener('click',   function(){ reload('2026-09-09'); });
+  // reflect which state is actually showing
+  try {
+    var s = localStorage.getItem(SEEN_KEY);
+    var returning = s && s < '2026-09-10';
+    first.classList.toggle('on', !returning);
+    ret.classList.toggle('on', !!returning);
+  } catch(e){}
+})();
+</script>
+
+</div>
+</body></html>

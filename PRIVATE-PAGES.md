@@ -27,7 +27,16 @@ npx convex run users:grantPrivateAccess '{"gamerName":"rerun","grant":true}' --p
 3. `CK_USER_ID=<your-userId> node scripts/push-private-page.mjs <slug> private/<file>.html "<Title>" "<emoji>" "<blurb>"`
 4. Deploy Convex if schema changed: `npx convex deploy --yes`
 
-Current pages: `hos190-italy` (Italy Itinerary) · `hos190-map` (Route Map) · `hos190-trip-info` (Trip Essentials).
+Current pages, in display order: `hos190-italy` (Italy Itinerary) · `hos190-map` (Route Map) · `hos190-florence` (Florence) · `hos190-trip-info` (Trip Essentials) · `hos190-video-hub` (Video Hub).
+
+> Ordering is an explicit `order` field, set with `privatePages:setOrder` — **not** alphabetical by slug, and
+> changing it does **not** re-publish the page, so repositioning never bumps a page's "info last revised" stamp.
+> A page pushed without an order can float to the top; set it in the same session you push.
+
+> 📄 **Design previews live in [`design/`](./design/), committed and public.** A mockup made of placeholder
+> entries is not private content, and parking one in gitignored `private/` means it exists on exactly one
+> machine — unreachable from a phone or a cloud session, which is where it usually needs to be looked at.
+> Only the page's real DATA (video ids, trip specifics) stays out of the repo.
 
 ## Offline behaviour (added 08-11)
 The app shell works offline via `sw.js` (see CHANGELOG 08-11-2026-1). Private pages are additionally
