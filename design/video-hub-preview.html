@@ -75,6 +75,23 @@ iframe.player{width:100%;border:0;display:block;background:#000}
 .note{font-size:12px;color:#6b6152;background:#f2ece3;border-left:3px solid #b9ab97;padding:7px 10px;border-radius:0 8px 8px 0;margin-top:8px;line-height:1.45}
 .row .note{margin:6px 0 0}
 audio.player{width:100%;display:block}
+/* A player inside the archive ROW inherited the 74px thumbnail slot and rendered
+   about 185px wide - and YouTube picks its rendition to match the PLAYER, not the
+   screen, so a small player is served a low resolution and looks terrible. The
+   row is replaced by a full-width 16:9 stage instead. */
+.stagewrap{margin:0 0 10px;border-radius:11px;overflow:hidden;background:#000}
+.stagewrap .ratio{position:relative;width:100%;padding-top:56.25%}
+.stagewrap .ratio > *{position:absolute;inset:0;width:100%;height:100%;border:0}
+.stagecap{font-size:12px;color:var(--mute);font-weight:700;padding:7px 4px 0}
+/* The page is a 660px reading column, which is right for text and wrong for a
+   video: measured, an iPad and a 1920 desktop both got the SAME 632px player as a
+   landscape phone, and at dpr 1 that is only ~632 device px, so YouTube served
+   ~480p on a laptop. On wide screens the player breaks out of the column and
+   centres itself, which is what actually raises the rendition. */
+@media (min-width: 760px){
+  .stagewrap{ width: min(92vw, 1100px); margin-left: 50%; transform: translateX(-50%); }
+  .stagewrap .stagecap{ text-align: center; }
+}
 nav button.cross{font-family:inherit;background:#2b2320;color:var(--gold);border:1px solid #2b2320;cursor:pointer}
 .xmsg{display:none;margin:10px 14px 0;background:#f6e3d7;color:#8f3a20;font-size:13px;font-weight:700;padding:10px 13px;border-radius:10px}
 
@@ -281,6 +298,35 @@ function play(node, v){
 
 function label(v){ return pretty(v.date) + ' \u00b7 ' + v.place; }
 
+/* Play an archive entry at FULL WIDTH. Swapping only the thumbnail left the
+   player in a 74px flex slot, rendering about 185px wide - and YouTube picks its
+   rendition to match the PLAYER, not the screen, so a small player is served a
+   low resolution and looks terrible however fast the connection is. */
+function bitsRow(){ var a=[]; for (var i=0;i<arguments.length;i++){ if(arguments[i]) a.push(arguments[i]); } return a.join(' \u00b7 '); }
+
+function playRow(row, v){
+  if (!hasMedia(v)) { var th0 = row.querySelector('.th'); if (th0) play(th0, v); return; }
+  var wrap = document.createElement('div'); wrap.className = 'stagewrap';
+  if (isAudio(v)) {
+    var a = document.createElement('audio');
+    a.className = 'player'; a.controls = true; a.autoplay = true; a.src = v.src;
+    wrap.appendChild(a);                       // audio needs no 16:9 box
+  } else {
+    var ratio = document.createElement('div'); ratio.className = 'ratio';
+    var f = document.createElement('iframe');
+    f.className = 'player';
+    f.setAttribute('allow','accelerometer; autoplay; encrypted-media; picture-in-picture; fullscreen');
+    f.setAttribute('allowfullscreen','');
+    f.src = 'https://www.youtube-nocookie.com/embed/' + v.id + '?rel=0&modestbranding=1&playsinline=1&autoplay=1';
+    ratio.appendChild(f); wrap.appendChild(ratio);
+  }
+  var cap = document.createElement('div'); cap.className = 'stagecap';
+  cap.textContent = bitsRow(v.what, v.place, pretty(v.date), v.dur);
+  wrap.appendChild(cap);
+  row.parentNode.replaceChild(wrap, row);
+  track(isAudio(v) ? 'audio' : 'video', v.id || v.src || null, label(v) + ' \u00b7 ' + v.what);
+}
+
 /* ---------- WATCH THESE ---------- */
 function renderWatch(seen){
   var wrap = document.getElementById('watchlist');
@@ -343,7 +389,7 @@ function renderArchive(seen){
       L.className = 'long' + (isHours(v.dur) ? ' hrs' : '');
       L.textContent = v.dur;
       r.appendChild(L);
-      r.onclick = function(){ var th = r.querySelector('.th'); if (th) play(th, v); };
+      r.onclick = function(){ playRow(r, v); };
       box.appendChild(r);
     });
     wrap.appendChild(box);
