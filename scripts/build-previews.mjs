@@ -40,7 +40,7 @@ const PAGES = [
        + 'the audio-only case: video either side of the rehearsal, audio through the middle.' },
   { key:'photos', src:'private/photos.html', out:'design/photos-preview.html',
     title:'Italy Photo Gallery &mdash; first pass',
-    blurb:'Three sections, small thumbnails, and a full-image viewer with forward/back. Every tile is a '
+    blurb:'Two sections, small thumbnails, and a full-image viewer with forward/back. Every tile is a '
         + '<b>placeholder</b> &mdash; the coloured squares are where real photos go.',
     note:'Tap any thumbnail to open the viewer, then use the arrows, swipe, or the left/right keys. '
        + 'The &ldquo;Videos&rdquo; button top-right is the cross-link to the other page.' }

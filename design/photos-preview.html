@@ -36,7 +36,6 @@ section{padding:18px 14px 4px;max-width:660px;margin:0 auto;scroll-margin-top:54
 .cell .cap{font-size:9.5px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);line-height:1.25}
 .cell .nb{position:absolute;top:5px;right:5px;background:var(--gold);color:#2b2320;font-size:8.5px;font-weight:900;padding:1px 5px;border-radius:999px;letter-spacing:.03em}
 .daysep{font-size:12px;font-weight:800;color:var(--ink);margin:14px 4px 6px;display:flex;align-items:center;gap:7px}
-.cook{background:#f6e3d7;color:#8f3a20;font-size:10px;font-weight:900;padding:2px 7px;border-radius:999px;letter-spacing:.04em}
 .empty{font-size:14px;color:var(--mute);padding:6px 6px 14px}
 
 /* ---- lightbox ---- */
@@ -86,7 +85,7 @@ body{background:#241c19}
   <div class="pvtxt">
     <div class="pvk">Design preview &middot; not published to students</div>
     <div class="pvh">Italy Photo Gallery &mdash; first pass</div>
-    <div class="pvp">Three sections, small thumbnails, and a full-image viewer with forward/back. Every tile is a <b>placeholder</b> &mdash; the coloured squares are where real photos go.
+    <div class="pvp">Two sections, small thumbnails, and a full-image viewer with forward/back. Every tile is a <b>placeholder</b> &mdash; the coloured squares are where real photos go.
       Shown at phone width, in the app&rsquo;s existing page styling, because that is exactly how students will see it.</div>
     <div class="pvnote">Tap any thumbnail to open the viewer, then use the arrows, swipe, or the left/right keys. The &ldquo;Videos&rdquo; button top-right is the cross-link to the other page.</div>
   </div>
@@ -105,7 +104,6 @@ body{background:#241c19}
 </header>
 
 <nav>
-  <a href="#cooking">&#127859; Cooking</a>
   <a href="#food">&#127860; Restaurants</a>
   <a href="#out">&#128694; Out &amp; about</a>
   <button class="cross" id="tovideo" type="button">&#127909; Videos &rarr;</button>
@@ -117,12 +115,6 @@ body{background:#241c19}
   <div class="sub" id="newsub"></div>
   <div class="strip" id="newstrip"></div>
 </div>
-
-<section id="cooking">
-  <div class="leg">&#127859; Cooking demos <span class="count" id="c-cooking"></span></div>
-  <div class="sub">In the teaching kitchens &mdash; technique, prep and plating.</div>
-  <div id="g-cooking"></div>
-</section>
 
 <section id="food">
   <div class="leg">&#127860; Restaurants &amp; food <span class="count" id="c-food"></span></div>
@@ -163,12 +155,11 @@ body{background:#241c19}
      src      full-size image URL.  Leave "" and the tile shows a labelled
               placeholder instead of a broken image.
      thumb    optional smaller URL. Omitted -> the full image is used.
-     section  "cooking" | "food" | "out"
+     section  "food" | "out"
      date     YYYY-MM-DD it was TAKEN   (groups + orders within a section)
      place    where
      what     what it is, plain words
      added    YYYY-MM-DD you PUT IT UP  (drives the NEW badge + top strip)
-     cook     true on the five cooking-class days
    ===================================================================== */
 var PHOTOS = [
 { src:"", thumb:"", section:"food", date:"2026-09-09", place:"", what:"", added:"2026-09-10" },
@@ -189,21 +180,21 @@ var PHOTOS = [
 { src:"", thumb:"", section:"out", date:"2026-09-09", place:"", what:"", added:"2026-09-10" },
 { src:"", thumb:"", section:"out", date:"2026-09-09", place:"", what:"", added:"2026-09-10" },
 { src:"", thumb:"", section:"out", date:"2026-09-09", place:"", what:"", added:"2026-09-10" },
-{ src:"", thumb:"", section:"cooking", date:"2026-09-08", place:"", what:"", added:"2026-09-10", cook:true },
-{ src:"", thumb:"", section:"food", date:"2026-09-08", place:"", what:"", added:"2026-09-10", cook:true },
-{ src:"", thumb:"", section:"food", date:"2026-09-08", place:"", what:"", added:"2026-09-10", cook:true },
-{ src:"", thumb:"", section:"food", date:"2026-09-08", place:"", what:"", added:"2026-09-10", cook:true },
-{ src:"", thumb:"", section:"food", date:"2026-09-08", place:"", what:"", added:"2026-09-10", cook:true },
-{ src:"", thumb:"", section:"out", date:"2026-09-08", place:"", what:"", added:"2026-09-10", cook:true },
-{ src:"", thumb:"", section:"out", date:"2026-09-08", place:"", what:"", added:"2026-09-10", cook:true },
-{ src:"", thumb:"", section:"out", date:"2026-09-08", place:"", what:"", added:"2026-09-10", cook:true },
-{ src:"", thumb:"", section:"out", date:"2026-09-08", place:"", what:"", added:"2026-09-10", cook:true },
-{ src:"", thumb:"", section:"out", date:"2026-09-08", place:"", what:"", added:"2026-09-10", cook:true },
-{ src:"", thumb:"", section:"out", date:"2026-09-08", place:"", what:"", added:"2026-09-10", cook:true },
-{ src:"", thumb:"", section:"out", date:"2026-09-08", place:"", what:"", added:"2026-09-10", cook:true }
+{ src:"", thumb:"", section:"food", date:"2026-09-08", place:"", what:"", added:"2026-09-10" },
+{ src:"", thumb:"", section:"food", date:"2026-09-08", place:"", what:"", added:"2026-09-10" },
+{ src:"", thumb:"", section:"food", date:"2026-09-08", place:"", what:"", added:"2026-09-10" },
+{ src:"", thumb:"", section:"food", date:"2026-09-08", place:"", what:"", added:"2026-09-10" },
+{ src:"", thumb:"", section:"food", date:"2026-09-08", place:"", what:"", added:"2026-09-10" },
+{ src:"", thumb:"", section:"out", date:"2026-09-08", place:"", what:"", added:"2026-09-10" },
+{ src:"", thumb:"", section:"out", date:"2026-09-08", place:"", what:"", added:"2026-09-10" },
+{ src:"", thumb:"", section:"out", date:"2026-09-08", place:"", what:"", added:"2026-09-10" },
+{ src:"", thumb:"", section:"out", date:"2026-09-08", place:"", what:"", added:"2026-09-10" },
+{ src:"", thumb:"", section:"out", date:"2026-09-08", place:"", what:"", added:"2026-09-10" },
+{ src:"", thumb:"", section:"out", date:"2026-09-08", place:"", what:"", added:"2026-09-10" },
+{ src:"", thumb:"", section:"out", date:"2026-09-08", place:"", what:"", added:"2026-09-10" }
 ];
 
-var SECTIONS = ['cooking','food','out'];
+var SECTIONS = ['food','out'];
 var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 PHOTOS.forEach(function(p,i){ p._i = i; });
 
@@ -249,10 +240,6 @@ function renderSection(key){
   order.forEach(function(dt){
     var sep = document.createElement('div'); sep.className = 'daysep';
     sep.appendChild(document.createTextNode(pretty(dt)));
-    if (days[dt].some(function(p){ return p.cook; })){
-      var c = document.createElement('span'); c.className='cook'; c.textContent='\u{1F373} COOKING CLASS';
-      sep.appendChild(c);
-    }
     wrap.appendChild(sep);
     var g = document.createElement('div'); g.className = 'grid';
     days[dt].forEach(function(p){
