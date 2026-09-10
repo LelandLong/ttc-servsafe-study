@@ -211,20 +211,19 @@ var VIDEOS = [
     what:"Walking the town, market morning",
     dur:"48m12s", added:"2026-09-09", cook:false },
 
-  /* A day where filming was not permitted for part of it. Video either side,
-     audio through the middle - all three sit in the same day, in order. */
-  { id:"REPLACE_ME_R6", kind:"raw", date:"2026-09-10", place:"Rehearsal venue",
-    what:"Before - walking in and setting up",
-    dur:"9m41s", added:"2026-09-10", cook:false },
-
-  { media:"audio", src:"", kind:"raw", date:"2026-09-10", place:"Rehearsal venue",
-    what:"The rehearsal itself",
-    dur:"1h07m", added:"2026-09-10", cook:false,
-    note:"We were asked not to film or photograph the rehearsal, so this is an audio recording. Nothing was filmed during this stretch." },
-
-  { id:"REPLACE_ME_R7", kind:"raw", date:"2026-09-10", place:"Rehearsal venue",
-    what:"After - debrief and packing up",
-    dur:"14m08s", added:"2026-09-10", cook:false }
+  /* Sept 10: filming was not permitted, so these are audio recordings. */
+  { media:"audio", src:"", kind:"raw", date:"2026-09-10",
+    place:"Liceo Artistico Statale Paolo Toschi", what:"Liceo Artistico Statale Paolo Toschi",
+    dur:"33m34s", added:"2026-09-10",
+    note:"We were asked not to film or photograph, so this stretch is an audio recording only." },
+  { media:"audio", src:"", kind:"raw", date:"2026-09-10",
+    place:"Liceo Artistico Statale Paolo Toschi", what:"Liceo Artistico Statale Paolo Toschi 2",
+    dur:"12m42s", added:"2026-09-10",
+    note:"We were asked not to film or photograph, so this stretch is an audio recording only." },
+  { media:"audio", src:"", kind:"raw", date:"2026-09-10",
+    place:"Liceo Artistico Statale Paolo Toschi", what:"Liceo Artistico Statale Paolo Toschi 3",
+    dur:"24m12s", added:"2026-09-10",
+    note:"We were asked not to film or photograph, so this stretch is an audio recording only." },
 ];
 
 VIDEOS.forEach(function(v,i){ v._i = i; });
@@ -240,6 +239,15 @@ function hasMedia(v){ return isAudio(v) ? !!v.src : realId(v); }
 
 /* last-seen: namespaced so it cannot collide with the app's own keys.
    Wrapped - a blocked/absent store must degrade, never break the page. */
+// See the note in photos.html - queue via the app, silent if unavailable.
+function track(kind, itemId, label){
+  try {
+    if (window.parent && typeof window.parent.chefKitchenTrackView === 'function') {
+      window.parent.chefKitchenTrackView({ slug:'hos190-video-hub', kind:kind, itemId:itemId, label:label });
+    }
+  } catch(e){}
+}
+
 var SEEN_KEY = 'ckVideoHubLastSeen';
 function readSeen(){ try { return localStorage.getItem(SEEN_KEY) || ''; } catch(e){ return ''; } }
 function writeSeen(v){ try { localStorage.setItem(SEEN_KEY, v); } catch(e){} }
@@ -262,6 +270,9 @@ function thumb(v, noClick){
 }
 
 function play(node, v){
+  // Record the intent to watch. YouTube reports its own watch time; this records
+  // WHO pressed play inside the app, which YouTube cannot tell us.
+  track(isAudio(v) ? 'audio' : 'video', v.id || v.src || null, label(v) + ' \u00b7 ' + v.what);
   if (isAudio(v) && v.src){
     var a = document.createElement('audio');
     a.className = 'player'; a.controls = true; a.autoplay = true; a.src = v.src;
@@ -415,8 +426,15 @@ function renderNew(seen){
 
 /* ---------- cross-link to the Photo Gallery ---------- */
 document.getElementById('tophotos').onclick = function(){
-  // A private page cannot open a sibling page directly, so close this overlay
-  // and point at the other card.
+  // ONE TAP when the app exposes the opener (added 09-10-2026); the fallback
+  // below is what older cached app shells still get, so this degrades instead
+  // of breaking on a phone that has not reloaded yet.
+  try {
+    if (window.parent && typeof window.parent.chefKitchenOpenPrivatePage === 'function') {
+      window.parent.chefKitchenOpenPrivatePage('hos190-photos');
+      return;
+    }
+  } catch(e){}
   var closed = false;
   try {
     var ov = window.parent && window.parent.document.getElementById('pp-overlay');
