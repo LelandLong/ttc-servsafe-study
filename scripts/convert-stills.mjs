@@ -58,8 +58,20 @@ function dims(file){
   } catch { return null; }
 }
 
+// 🛑 NEVER RECREATE A PHOTO THAT WAS DELIBERATELY REMOVED.
+// This script derives everything from the ORIGINALS, so without this it happily
+// re-converts photos marked "skip" - personal shots that were deleted on purpose -
+// every time a new day is offloaded. Found exactly that way: adding day 091026
+// converted 51 files when the day held 31.
+const secPath = path.join(WEB, 'sections.json');
+const removedKeys = new Set();
+if (fs.existsSync(secPath)) {
+  const ph = (JSON.parse(fs.readFileSync(secPath, 'utf8')).photos) || {};
+  for (const [k, v] of Object.entries(ph)) if (v && v.section === 'skip') removedKeys.add(k);
+}
+
 const manifest = [];
-let made = 0, skipped = 0, failed = 0;
+let made = 0, skipped = 0, failed = 0, skippedRemoved = 0;
 
 for (const day of days) {
   const srcDir = path.join(ROOT, day);
@@ -71,6 +83,7 @@ for (const day of days) {
   for (const f of files) {
     const src  = path.join(srcDir, f);
     const base = f.replace(EXT, '');
+    if (removedKeys.has(day + '/' + base)) { skippedRemoved++; continue; }
     const outs = Object.fromEntries(Object.keys(SIZES).map(k => [k, path.join(outDir, base + '-' + k + '.jpg')]));
     const fresh = !FORCE && Object.values(outs).every(o =>
       fs.existsSync(o) && fs.statSync(o).mtimeMs >= fs.statSync(src).mtimeMs);
@@ -114,7 +127,7 @@ for (const day of days) {
 
 fs.writeFileSync(path.join(WEB, 'manifest.json'), JSON.stringify(manifest, null, 2));
 const totalMB = manifest.reduce((s,m) => s + m.bytes, 0) / 1048576;
-console.log('\nconverted ' + made + ' · skipped ' + skipped + ' · failed ' + failed);
+console.log('\nconverted ' + made + ' · unchanged ' + skipped + ' · failed ' + failed + ' · excluded(removed) ' + skippedRemoved);
 console.log('manifest: ' + manifest.length + ' photos, full-size total ' + totalMB.toFixed(1) + ' MB');
 console.log('output:   ' + WEB);
 if (failed) process.exit(1);
