@@ -207,6 +207,17 @@ function bits(){ var a=[]; for(var i=0;i<arguments.length;i++){ if(arguments[i])
 // what the viewer calls this photo when no caption was written
 function titleOf(p){ return p.what || p.place || pretty(p.date); }
 
+// Report a view to the app, which queues it and syncs when there is a network.
+// Wrapped and silent: an older cached app shell has no tracker, and a page must
+// never break because telemetry is unavailable.
+function track(kind, itemId, label){
+  try {
+    if (window.parent && typeof window.parent.chefKitchenTrackView === 'function') {
+      window.parent.chefKitchenTrackView({ slug:'hos190-photos', kind:kind, itemId:itemId, label:label });
+    }
+  } catch(e){}
+}
+
 var SEEN_KEY = 'ckPhotoHubLastSeen';
 function readSeen(){ try { return localStorage.getItem(SEEN_KEY) || ''; } catch(e){ return ''; } }
 function writeSeen(v){ try { localStorage.setItem(SEEN_KEY, v); } catch(e){} }
@@ -306,6 +317,10 @@ function step(n){
 }
 function paintLb(){
   var p = lbList[lbPos];
+  // the storage id off the URL: stable, unique, and read from the thing that issued it
+  // bits() drops the empty parts, so an uncaptioned photo reads "Sep 9" rather
+  // than "Sep 9 \u00b7 Sep 9" - titleOf already falls back to the date.
+  track('photo', (p.src || '').split('/').pop() || null, bits(p.what, p.place, pretty(p.date)));
   if (hasSrc(p)){
     lbImg.style.display = 'block'; lbPh.style.display = 'none';
     lbImg.src = p.src; lbImg.alt = p.what + ' \u2014 ' + p.place;
@@ -341,8 +356,15 @@ document.getElementById('lbstage').addEventListener('touchend', function(e){
 
 /* ---------- cross-link to the Video Hub ---------- */
 document.getElementById('tovideo').onclick = function(){
-  // These pages open in a full-screen overlay in the app; a private page cannot
-  // open a sibling directly, so close this one and point at the other card.
+  // ONE TAP when the app exposes the opener (added 09-10-2026); the fallback
+  // below is what older cached app shells still get, so this degrades instead
+  // of breaking on a phone that has not reloaded yet.
+  try {
+    if (window.parent && typeof window.parent.chefKitchenOpenPrivatePage === 'function') {
+      window.parent.chefKitchenOpenPrivatePage('hos190-video-hub');
+      return;
+    }
+  } catch(e){}
   var closed = false;
   try {
     var ov = window.parent && window.parent.document.getElementById('pp-overlay');
