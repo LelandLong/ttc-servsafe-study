@@ -119,6 +119,30 @@ function build(pg){
   const style = /<style>([\s\S]*?)<\/style>/.exec(src)[1];
   let   body  = /<body>([\s\S]*?)<\/body>/.exec(src)[1];
 
+  // 🛑 THE PUBLIC PREVIEW MUST NEVER CARRY REAL MEDIA URLS.
+  // private/photos.html holds the LIVE gallery: 226 Convex storage URLs that are
+  // UNAUTHENTICATED - anyone holding one fetches the photo. This repo is public
+  // and serves Pages, so committing them would publish the whole gallery to the
+  // world. Strip every src/thumb here, and cap the entry count so the committed
+  // file stays a layout preview rather than a copy of the data.
+  // (Caught before the first commit: the generated preview had jumped to 82 KB.)
+  {
+    const before = (body.match(/convex\.cloud/g) || []).length;
+    body = body.replace(/src:"https?:\/\/[^"]*"/g, 'src:""')
+               .replace(/thumb:"https?:\/\/[^"]*"/g, 'thumb:""');
+    const m = /var PHOTOS = \[([\s\S]*?)\n\];/.exec(body);
+    if (m) {
+      const entries = m[1].split(/\},\s*\n/).filter(Boolean);
+      if (entries.length > 30) {
+        const trimmed = entries.slice(0, 30).map(e => e.trim().replace(/\}$/, '') + ' }').join(',\n');
+        body = body.replace(m[0], 'var PHOTOS = [\n' + trimmed + '\n];');
+      }
+    }
+    const after = (body.match(/convex\.cloud/g) || []).length;
+    if (after) { console.error('FAIL: ' + after + ' media URLs survived into ' + pg.out); process.exit(1); }
+    if (before) console.log('  stripped ' + before + ' live media URLs from the public preview');
+  }
+
   // the "setting this up" notice is live-only chrome; the preview says it better
   body = body.replace(/<div style="background:#f6e3d7;[\s\S]*?<\/div>\n/, '');
 
