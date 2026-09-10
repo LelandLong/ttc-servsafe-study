@@ -6,6 +6,14 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [09-10-2026-1] - September 10, 2026
+
+### Added
+- **Class Pages can now open each other in one tap.** The Italy trip has two media pages — Video Hub and Photo Gallery — and each carries a link to the other. Private pages render in a full-screen overlay, and a page had no way to open a sibling: the link could only close itself and ask the reader to go find the other card. The app now exposes an opener that a Class Page can call, so the link switches pages directly.
+  - **Degrades rather than breaks.** A phone still running an older cached app shell has no opener to call, so those pages fall back to the previous close-and-point behaviour until the device reloads. Nothing errors in the meantime.
+
+---
+
 ## [08-25-2026-2] - August 25, 2026
 
 ### Fixed

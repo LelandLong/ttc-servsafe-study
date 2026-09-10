@@ -7759,6 +7759,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             });
         }
 
+        // Let one Class Page open another. These pages render in a full-screen
+        // overlay, so without this a page can only close itself and ask the
+        // reader to find the other card - two taps for what should be one.
+        // The overlay refuses to open while another exists, so close first.
+        useEffect(function() {
+          window.chefKitchenOpenPrivatePage = function(slug) {
+            var ov = document.getElementById('pp-overlay');
+            if (ov && ov.parentNode) ov.parentNode.removeChild(ov);
+            handleOpenPrivatePage(slug);
+          };
+          return function() { try { delete window.chefKitchenOpenPrivatePage; } catch (e) {} };
+        }, [user, privatePages]);
+
         // Version check state
         const [updateAvailable, setUpdateAvailable] = useState(null);
 
