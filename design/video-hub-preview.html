@@ -103,9 +103,9 @@ body{background:#241c19}
   <div class="pvtxt">
     <div class="pvk">Design preview &middot; not published to students</div>
     <div class="pvh">Italy Video Hub &mdash; first pass</div>
-    <div class="pvp">The layout is real; every entry is a <b>placeholder</b>. One tile plays an actual video so you can see the inline player work &mdash; the rest say &ldquo;no video attached yet&rdquo; rather than faking it.
+    <div class="pvp">Real content: 6 videos and 3 audio recordings from Sept 10. Media URLs are stripped from this public preview, so tiles here show placeholders &mdash; in the app they play.
       Shown at phone width, in the app&rsquo;s existing page styling, because that is exactly how students will see it.</div>
-    <div class="pvnote">Tapping a <b>Recently added</b> tile jumps to that video and plays it full size. The 9/10 entries show the audio-only case: video either side of the rehearsal, audio through the middle.</div>
+    <div class="pvnote">Sept 10 shows the audio-only case: video either side of the rehearsal, audio through the middle, where filming was not permitted. Labels are capture times until real descriptions are written.</div>
   </div>
   <div class="pvbtns">
     <button class="pvb on" id="pv-first" type="button">First visit</button>
@@ -176,42 +176,22 @@ body{background:#241c19}
      note   one line of context shown under the entry, e.g. why it is audio only
    ===================================================================== */
 var VIDEOS = [
-  { id:"aqz-KE-bpKQ", kind:"edited", rank:1, date:"2026-09-08", place:"Bertinelli",
-    what:"Parmigiano Reggiano \u2014 the wheel test, and why they tap it",
-    dur:"4m20s", added:"2026-09-10", cook:true,
-    desc:"The inspector's hammer, what he is listening for, and why a whole wheel gets rejected." },
+  /* Sept 10 - Parma. Video either side of the rehearsal, audio through the
+     middle, where filming was not permitted. Labels are the capture TIME
+     until someone writes a real description - a filename is not a label. */
+  { id:"oTDRKfQg4QA", kind:"raw", date:"2026-09-10", place:"Parma", what:"10:01 AM",
+    dur:"0m52s", added:"2026-09-10" },
+  { id:"3fIcn2Zgsvk", kind:"raw", date:"2026-09-10", place:"Parma", what:"10:52 AM",
+    dur:"1m26s", added:"2026-09-10" },
+  { id:"2vdqJVbeq9g", kind:"raw", date:"2026-09-10", place:"Parma", what:"10:54 AM",
+    dur:"5m41s", added:"2026-09-10" },
+  { id:"VqpilNgz8IE", kind:"raw", date:"2026-09-10", place:"Parma", what:"12:58 PM",
+    dur:"1m20s", added:"2026-09-10" },
+  { id:"pqBH5-0cjDw", kind:"raw", date:"2026-09-10", place:"Parma", what:"1:35 PM",
+    dur:"0m31s", added:"2026-09-10" },
+  { id:"R1L47U8bpcM", kind:"raw", date:"2026-09-10", place:"Parma", what:"1:49 PM",
+    dur:"5m29s", added:"2026-09-10" },
 
-  { id:"REPLACE_ME_2", kind:"edited", rank:2, date:"2026-09-04", place:"Nizza Monferrato",
-    what:"Making agnolotti by hand, start to plate",
-    dur:"6m02s", added:"2026-09-10", cook:true,
-    desc:"Dough, filling, the pinch-and-fold, and the sauce it goes into." },
-
-  { id:"REPLACE_ME_3", kind:"edited", rank:3, date:"2026-09-03", place:"Nizza Monferrato",
-    what:"First cooking class \u2014 the kitchen, the crew, the rules",
-    dur:"3m48s", added:"2026-09-09", cook:true,
-    desc:"How the teaching kitchen runs and what the chef expects before you touch a knife." },
-
-  { id:"REPLACE_ME_R1", kind:"raw", date:"2026-09-08", place:"Bertinelli",
-    what:"Parmigiano Reggiano \u2014 full visit, 7:45 AM",
-    dur:"3h12m", added:"2026-09-10", cook:true },
-
-  { id:"REPLACE_ME_R2", kind:"raw", date:"2026-09-08", place:"Salsomaggiore",
-    what:"Cooking class \u2014 full session",
-    dur:"2h41m", added:"2026-09-10", cook:true },
-
-  { id:"REPLACE_ME_R3", kind:"raw", date:"2026-09-04", place:"Nizza Monferrato",
-    what:"Cooking class \u2014 full session, second day",
-    dur:"2h58m", added:"2026-09-09", cook:true },
-
-  { id:"REPLACE_ME_R4", kind:"raw", date:"2026-09-03", place:"Nizza Monferrato",
-    what:"Cooking class \u2014 full session, first day",
-    dur:"3h04m", added:"2026-09-09", cook:true },
-
-  { id:"REPLACE_ME_R5", kind:"raw", date:"2026-09-06", place:"Acqui Terme",
-    what:"Walking the town, market morning",
-    dur:"48m12s", added:"2026-09-09", cook:false },
-
-  /* Sept 10: filming was not permitted, so these are audio recordings. */
   { media:"audio", src:"", kind:"raw", date:"2026-09-10",
     place:"Liceo Artistico Statale Paolo Toschi", what:"Liceo Artistico Statale Paolo Toschi",
     dur:"33m34s", added:"2026-09-10",

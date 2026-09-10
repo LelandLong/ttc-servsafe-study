@@ -34,14 +34,14 @@ import path from 'path';
 const PAGES = [
   { key:'video-hub', src:'private/video-hub.html', out:'design/video-hub-preview.html',
     title:'Italy Video Hub &mdash; first pass',
-    blurb:'The layout is real; every entry is a <b>placeholder</b>. One tile plays an actual video so you can '
-        + 'see the inline player work &mdash; the rest say &ldquo;no video attached yet&rdquo; rather than faking it.',
-    note:'Tapping a <b>Recently added</b> tile jumps to that video and plays it full size. The 9/10 entries show '
-       + 'the audio-only case: video either side of the rehearsal, audio through the middle.' },
+    blurb:'Real content: 6 videos and 3 audio recordings from Sept 10. Media URLs are stripped from this '
+        + 'public preview, so tiles here show placeholders &mdash; in the app they play.',
+    note:'Sept 10 shows the audio-only case: video either side of the rehearsal, audio through the middle, '
+       + 'where filming was not permitted. Labels are capture times until real descriptions are written.' },
   { key:'photos', src:'private/photos.html', out:'design/photos-preview.html',
     title:'Italy Photo Gallery &mdash; first pass',
-    blurb:'Two sections, small thumbnails, and a full-image viewer with forward/back. Every tile is a '
-        + '<b>placeholder</b> &mdash; the coloured squares are where real photos go.',
+    blurb:'242 real photos in two sections, with a full-image viewer. Media URLs are stripped from this public '
+        + 'preview, so the coloured squares stand in for them &mdash; in the app they are the photographs.',
     note:'Tap any thumbnail to open the viewer, then use the arrows, swipe, or the left/right keys. '
        + 'The &ldquo;Videos&rdquo; button top-right is the cross-link to the other page.' }
 ];

@@ -37,6 +37,11 @@ async function title(id) {
   return (await r.json()).title;
 }
 
+// YouTube rewrites the filename it uses as a title: IMG_0675.MOV becomes
+// "IMG 0675" - underscores become spaces and the extension is dropped. So match
+// on a NORMALISED form rather than the raw string, or every id looks unmatched.
+const norm = s => String(s).trim().toLowerCase().replace(/\.[^.]+$/, '').replace(/[^a-z0-9]+/g, '');
+
 // Index every source file by basename, so a title can be matched back to disk.
 const byName = {};
 for (const day of fs.readdirSync(ROOT).filter(d => /^\d{6}$/.test(d))) {
@@ -46,7 +51,8 @@ for (const day of fs.readdirSync(ROOT).filter(d => /^\d{6}$/.test(d))) {
     if (!/\.(mov|mp4)$/i.test(f)) continue;
     const base = f.replace(/\.[^.]+$/, '');
     // prefer the ORIGINAL for metadata: same content, and it carries the capture time
-    if (!byName[base] || /\.mov$/i.test(f)) byName[base] = path.join(dir, f);
+    const k = norm(base);
+    if (!byName[k] || /\.mov$/i.test(f)) byName[k] = { file: path.join(dir, f), base };
   }
 }
 
@@ -75,9 +81,9 @@ const rows = [];
 for (const id of ids) {
   const t = await title(id);
   if (!t) { console.error('  ' + id + ': could not read title (private? wrong id?)'); continue; }
-  const base = t.trim();
-  const file = byName[base];
-  if (!file) { console.error('  ' + id + ': title "' + base + '" matches no file on disk'); continue; }
+  const hit = byName[norm(t)];
+  if (!hit) { console.error('  ' + id + ': title "' + t.trim() + '" matches no file on disk'); continue; }
+  const file = hit.file, base = hit.base;
   const day = path.basename(path.dirname(file));
   const shotFromDay = '20' + day.slice(4,6) + '-' + day.slice(0,2) + '-' + day.slice(2,4);
   const mm = meta(file);
@@ -85,11 +91,22 @@ for (const id of ids) {
   console.error('  matched ' + id + '  ->  ' + base + '  (' + day + ', ' + mm.dur + ')');
 }
 
+// A filename is not a description. Until someone writes a real label, use the
+// TIME OF DAY - it is true, it is derived from the file, and it lets a viewer
+// tell morning from evening. The filename stays available as a fallback.
+function clock(t) {
+  if (!t) return '';
+  const [H, M] = t.split(':').map(Number);
+  const ampm = H >= 12 ? 'PM' : 'AM';
+  const h12 = H % 12 === 0 ? 12 : H % 12;
+  return h12 + ':' + String(M).padStart(2, '0') + ' ' + ampm;
+}
+
 rows.sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time));
 const today = new Date().toISOString().slice(0,10);
 console.log('\n// paste into the VIDEOS list in private/video-hub.html');
 for (const r of rows) {
   console.log('  { id:' + JSON.stringify(r.id) + ', kind:"raw", date:' + JSON.stringify(r.date) +
-    ', place:"", what:' + JSON.stringify(r.base) + ',');
+    ', place:"", what:' + JSON.stringify(clock(r.time) || r.base) + ',');
   console.log('    dur:' + JSON.stringify(r.dur) + ', added:' + JSON.stringify(today) + ' },');
 }
