@@ -31,21 +31,21 @@
 import fs from 'fs';
 import path from 'path';
 
-const SRC = 'private/video-hub.html';
-const OUT = 'design/video-hub-preview.html';
-const fragOut = process.argv[2] || null;
-
-if (!fs.existsSync(SRC)) {
-  console.error('missing ' + SRC + ' (gitignored - it lives only on the curator machine)');
-  process.exit(1);
-}
-const src = fs.readFileSync(SRC, 'utf8');
-
-const style = /<style>([\s\S]*?)<\/style>/.exec(src)[1];
-let body    = /<body>([\s\S]*?)<\/body>/.exec(src)[1];
-
-// the "setting this up" notice is live-only chrome; the preview says it better
-body = body.replace(/<div style="background:#f6e3d7;[\s\S]*?<\/div>\n/, '');
+const PAGES = [
+  { key:'video-hub', src:'private/video-hub.html', out:'design/video-hub-preview.html',
+    title:'Italy Video Hub &mdash; first pass',
+    blurb:'The layout is real; every entry is a <b>placeholder</b>. One tile plays an actual video so you can '
+        + 'see the inline player work &mdash; the rest say &ldquo;no video attached yet&rdquo; rather than faking it.',
+    note:'Tapping a <b>Recently added</b> tile jumps to that video and plays it full size. The 9/10 entries show '
+       + 'the audio-only case: video either side of the rehearsal, audio through the middle.' },
+  { key:'photos', src:'private/photos.html', out:'design/photos-preview.html',
+    title:'Italy Photo Gallery &mdash; first pass',
+    blurb:'Three sections, small thumbnails, and a full-image viewer with forward/back. Every tile is a '
+        + '<b>placeholder</b> &mdash; the coloured squares are where real photos go.',
+    note:'Tap any thumbnail to open the viewer, then use the arrows, swipe, or the left/right keys. '
+       + 'The &ldquo;Videos&rdquo; button top-right is the cross-link to the other page.' }
+];
+const fragDir = process.argv[2] || null;
 
 const previewCss = `
 /* ---------- preview chrome (NOT part of the shipped page) ---------- */
@@ -66,15 +66,13 @@ const previewCss = `
 body{background:#241c19}
 `;
 
-const chrome = `<div class="pv"><div class="pvin">
+const chromeFor = (pg) => `<div class="pv"><div class="pvin">
   <div class="pvtxt">
     <div class="pvk">Design preview &middot; not published to students</div>
-    <div class="pvh">Italy Video Hub &mdash; first pass</div>
-    <div class="pvp">The layout is real; every entry is a <b>placeholder</b>. One tile plays an actual video so you can
-      see the inline player work &mdash; the rest say &ldquo;no video attached yet&rdquo; rather than faking it.
+    <div class="pvh">${pg.title}</div>
+    <div class="pvp">${pg.blurb}
       Shown at phone width, in the app&rsquo;s existing page styling, because that is exactly how students will see it.</div>
-    <div class="pvnote">Tapping a <b>Recently added</b> tile jumps to that video and plays it full size &mdash; a tile
-      that small is below the size YouTube reliably plays at.</div>
+    <div class="pvnote">${pg.note}</div>
   </div>
   <div class="pvbtns">
     <button class="pvb on" id="pv-first" type="button">First visit</button>
@@ -82,8 +80,10 @@ const chrome = `<div class="pv"><div class="pvin">
   </div>
 </div></div>`;
 
+/* preview-only: let both states of the "new since you last looked" strip be seen.
+   SEEN_KEY differs per page, and each page defines its own - so this reads it
+   from the page rather than hard-coding either key. */
 const toggleJs = `
-/* ---------- preview-only: show BOTH states of the NEW strip ---------- */
 (function(){
   var first = document.getElementById('pv-first'), ret = document.getElementById('pv-return');
   if(!first || !ret) return;
@@ -101,13 +101,6 @@ const toggleJs = `
 })();
 `;
 
-let fragment = `<title>Italy Video Hub</title>\n<style>\n${style}\n${previewCss}\n</style>\n\n${chrome}\n\n<div class="stage">\n${body}\n</div>\n`;
-
-// the toggle has to sit after SEEN_KEY is defined - append inside the page's own script
-const close = fragment.lastIndexOf('</script>');
-fragment = fragment.slice(0, close) + toggleJs + fragment.slice(close);
-
-// ---- make it encoding-proof: \u escapes inside <script>, entities outside ----
 const escHtml = t => [...t].map(c => c.codePointAt(0) < 128 ? c : `&#${c.codePointAt(0)};`).join('');
 const escJs   = t => [...t].map(c => {
   const n = c.codePointAt(0);
@@ -116,25 +109,51 @@ const escJs   = t => [...t].map(c => {
     return `\\u${(0xD800 + (x >> 10)).toString(16).padStart(4,'0')}\\u${(0xDC00 + (x & 0x3FF)).toString(16).padStart(4,'0')}`; }
   return `\\u${n.toString(16).padStart(4,'0')}`;
 }).join('');
-{
-  const i = fragment.indexOf('<script>'), j = fragment.lastIndexOf('</script>');
-  fragment = escHtml(fragment.slice(0,i)) + escJs(fragment.slice(i,j)) + escHtml(fragment.slice(j));
-}
 
-const wrapped = `<!doctype html>
+function build(pg){
+  if (!fs.existsSync(pg.src)) {
+    console.error('missing ' + pg.src + ' (gitignored - lives only on the curator machine)');
+    process.exit(1);
+  }
+  const src   = fs.readFileSync(pg.src, 'utf8');
+  const style = /<style>([\s\S]*?)<\/style>/.exec(src)[1];
+  let   body  = /<body>([\s\S]*?)<\/body>/.exec(src)[1];
+
+  // the "setting this up" notice is live-only chrome; the preview says it better
+  body = body.replace(/<div style="background:#f6e3d7;[\s\S]*?<\/div>\n/, '');
+
+  let fragment = `<title>${/<title>(.*?)<\/title>/.exec(src)[1]}</title>\n<style>\n${style}\n${previewCss}\n</style>\n\n${chromeFor(pg)}\n\n<div class="stage">\n${body}\n</div>\n`;
+
+  const close = fragment.lastIndexOf('</script>');
+  fragment = fragment.slice(0, close) + toggleJs + fragment.slice(close);
+
+  {
+    const i = fragment.indexOf('<script>'), j = fragment.lastIndexOf('</script>');
+    fragment = escHtml(fragment.slice(0,i)) + escJs(fragment.slice(i,j)) + escHtml(fragment.slice(j));
+  }
+
+  const wrapped = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<!-- GENERATED by scripts/build-video-hub-preview.mjs from private/video-hub.html.
+<!-- GENERATED by scripts/build-previews.mjs from ${pg.src}.
      Do not hand-edit: edit the source and re-run. PLACEHOLDER ENTRIES ONLY -
-     real video ids and trip specifics never enter this repo. -->
+     real media URLs and trip specifics never enter this repo. -->
 ${fragment}</body></html>
 `.replace('</style>\n', '</style>\n</head><body>\n');
 
-fs.mkdirSync(path.dirname(OUT), { recursive: true });
-fs.writeFileSync(OUT, wrapped);
-console.log('wrote ' + OUT + '  (' + wrapped.length + ' bytes)');
-if (fragOut) { fs.writeFileSync(fragOut, fragment); console.log('wrote ' + fragOut + '  (' + fragment.length + ' bytes)'); }
+  fs.mkdirSync(path.dirname(pg.out), { recursive: true });
+  fs.writeFileSync(pg.out, wrapped);
+  console.log('wrote ' + pg.out + '  (' + wrapped.length + ' bytes)');
 
-const bad = [...wrapped].filter(c => c.codePointAt(0) > 127).length;
-if (bad) { console.error('FAIL: ' + bad + ' non-ASCII bytes survived'); process.exit(1); }
+  if (fragDir) {
+    const f = path.join(fragDir, pg.key + '.html');
+    fs.writeFileSync(f, fragment);
+    console.log('wrote ' + f + '  (' + fragment.length + ' bytes)');
+  }
+
+  const bad = [...wrapped].filter(c => c.codePointAt(0) > 127).length;
+  if (bad) { console.error('FAIL: ' + bad + ' non-ASCII bytes survived in ' + pg.out); process.exit(1); }
+}
+
+PAGES.forEach(build);
 console.log('ok: pure ASCII, no charset dependency');
