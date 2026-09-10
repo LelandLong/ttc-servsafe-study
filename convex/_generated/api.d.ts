@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as media from "../media.js";
 import type * as menus from "../menus.js";
 import type * as privatePages from "../privatePages.js";
 import type * as questions from "../questions.js";
@@ -24,6 +25,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  media: typeof media;
   menus: typeof menus;
   privatePages: typeof privatePages;
   questions: typeof questions;
