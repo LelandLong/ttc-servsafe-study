@@ -35,6 +35,24 @@ const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
 const statePath = path.join(WEB, 'uploaded.json');
 const state = fs.existsSync(statePath) ? JSON.parse(fs.readFileSync(statePath, 'utf8')) : {};
+
+// 🛑 NEVER re-upload what was deliberately taken out.
+// Two classes are excluded, and the guard lives HERE rather than only in the
+// gallery build, because convert-stills regenerates the manifest from the
+// originals - so a later run would happily re-upload a photo that was removed
+// on purpose, and the URLs are unauthenticated once they exist.
+//   · section "skip"  - personal / unrelated / not to be shared
+//   · the plain half of an iPhone Portrait pair (IMG_NNNN when IMG_ENNNN also
+//     exists) - the edited copy is the one with the depth-of-field blur
+const secPath = path.join(WEB, 'sections.json');
+const sections = fs.existsSync(secPath) ? JSON.parse(fs.readFileSync(secPath,'utf8')).photos || {} : {};
+const allKeys = new Set(manifest.map(m => m.day + '/' + m.name));
+function excluded(key){
+  if (sections[key] && sections[key].section === 'skip') return 'skipped';
+  const m = /^(.*\/)IMG_(\d+)$/.exec(key);
+  if (m && allKeys.has(m[1] + 'IMG_E' + m[2])) return 'portrait-duplicate';
+  return null;
+}
 const save  = () => fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
 
 async function convex(kind, fnPath, args) {
@@ -58,10 +76,12 @@ async function uploadOne(absPath) {
   return storageId;                       // read back from the issuer, never invented
 }
 
-let done = 0, skipped = 0, failed = 0, n = 0;
+let done = 0, skipped = 0, failed = 0, n = 0, excludedCount = 0;
 for (const m of manifest) {
   if (n >= LIMIT) break;
   const key = m.day + '/' + m.name;
+  const why = excluded(key);
+  if (why) { excludedCount++; continue; }
   state[key] = state[key] || {};
   let touched = false;
   for (const size of ['full','thumb']) {
@@ -99,7 +119,7 @@ if (ids.length) {
 
 const withUrl = Object.values(state).reduce((a,v) =>
   a + ['full','thumb'].filter(s => v[s] && v[s].url).length, 0);
-console.log('\nuploaded ' + done + ' · already there ' + skipped + ' · failed ' + failed);
+console.log('\nuploaded ' + done + ' · already there ' + skipped + ' · failed ' + failed + ' · excluded ' + excludedCount);
 console.log('files with URLs: ' + withUrl);
 console.log('state: ' + statePath);
 if (failed) process.exit(1);
