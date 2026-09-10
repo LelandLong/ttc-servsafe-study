@@ -9,6 +9,7 @@
  */
 
 import type * as media from "../media.js";
+import type * as mediaViews from "../mediaViews.js";
 import type * as menus from "../menus.js";
 import type * as privatePages from "../privatePages.js";
 import type * as questions from "../questions.js";
@@ -26,6 +27,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   media: typeof media;
+  mediaViews: typeof mediaViews;
   menus: typeof menus;
   privatePages: typeof privatePages;
   questions: typeof questions;

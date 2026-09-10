@@ -215,4 +215,24 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_owner", ["ownerId"]),
+
+  // Who looked at the trip media, and when. Append-only: a view is an event, not
+  // a state, so there is nothing to merge and an offline device can simply replay
+  // its queue on reconnect.
+  //
+  // Written in BATCHES from the client (one mutation per flush, not per photo) -
+  // this deployment is already tight on Database I/O, and a gallery of 226
+  // thumbnails would otherwise be 226 writes.
+  mediaViews: defineTable({
+    userId: v.id("users"),
+    gamerName: v.string(),        // denormalised so reporting needs no join
+    slug: v.string(),             // "hos190-photos" | "hos190-video-hub"
+    kind: v.string(),             // "page" | "photo" | "video" | "audio"
+    itemId: v.optional(v.string()),   // which photo/video; absent for a page open
+    label: v.optional(v.string()),    // human-readable, so a report reads without a lookup
+    at: v.number(),               // when it happened ON THE DEVICE (not when it synced)
+    syncedAt: v.number(),         // when it reached the server; the gap IS the offline time
+  }).index("by_user", ["userId"])
+    .index("by_slug", ["slug"])
+    .index("by_at", ["at"]),
 });

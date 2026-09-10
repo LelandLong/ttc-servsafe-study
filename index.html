@@ -945,6 +945,54 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         try { localStorage.setItem(PENDING_SYNC_KEY, val ? 'true' : 'false'); } catch (e) {}
       }
 
+      // ============ MEDIA VIEW TRACKING (offline-first) ============
+      // A view is an EVENT, not a state, so the offline story is simple: append
+      // to a local queue and replay it on reconnect. Nothing to merge, no
+      // conflicts, and the device's own timestamp is preserved - the server
+      // stamps arrival separately, so the gap tells you it was viewed offline.
+      var VIEW_QUEUE_KEY = 'chefKitchenViewQueue';
+      var VIEW_QUEUE_MAX = 500;   // a phone offline for a week must not grow without bound
+      var VIEW_FLUSH_MAX = 200;   // matches the server's per-call cap
+
+      function readViewQueue() {
+        try { var q = JSON.parse(localStorage.getItem(VIEW_QUEUE_KEY) || '[]'); return Array.isArray(q) ? q : []; }
+        catch (e) { return []; }
+      }
+      function writeViewQueue(q) {
+        try { localStorage.setItem(VIEW_QUEUE_KEY, JSON.stringify(q.slice(-VIEW_QUEUE_MAX))); } catch (e) {}
+      }
+      function queueView(evt) {
+        if (!evt || !evt.slug || !evt.kind) return;
+        var q = readViewQueue();
+        q.push({ slug: evt.slug, kind: evt.kind, itemId: evt.itemId, label: evt.label, at: Date.now() });
+        writeViewQueue(q);
+      }
+
+      var viewFlushInFlight = false;
+      function flushViews(userId) {
+        if (!userId || viewFlushInFlight) return Promise.resolve(0);
+        var q = readViewQueue();
+        if (!q.length) return Promise.resolve(0);
+        viewFlushInFlight = true;
+        var chunk = q.slice(0, VIEW_FLUSH_MAX);
+        return convexMutation('mediaViews:record', { userId: userId, events: chunk })
+          .then(function (res) {
+            // Drop ONLY what was sent, and re-read the queue first - events can be
+            // appended while the request is in flight, and truncating blindly
+            // would throw those away.
+            writeViewQueue(readViewQueue().slice(chunk.length));
+            viewFlushInFlight = false;
+            return (res && res.written) || 0;
+          })
+          .catch(function () {
+            // Still offline, or the call failed: leave the queue untouched and
+            // try again on the next trigger. Losing a view is acceptable; losing
+            // it silently while believing it was sent is not.
+            viewFlushInFlight = false;
+            return 0;
+          });
+      }
+
       // ============ CLOUD SYNC (DEBOUNCED) ============
       var syncTimeout = null;
 
@@ -7727,6 +7775,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
         function handleOpenPrivatePage(slug) {
           if (!user || !user.userId) return;
+          queueView({ slug: slug, kind: 'page' });
           function revisedFor(list) {
             var hit = (list || []).filter(function(p) { return p.slug === slug; })[0];
             return hit ? hit.updatedAt : null;
@@ -7758,6 +7807,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               }
             });
         }
+
+        // Media view tracking: the pages call this from inside their iframe.
+        // Queue locally, flush opportunistically - on mount, on reconnect, and
+        // periodically while the app is open.
+        useEffect(function () {
+          if (!user || !user.userId) return;
+          window.chefKitchenTrackView = function (evt) { queueView(evt); };
+          var uid = user.userId;
+          flushViews(uid);
+          var onOnline = function () { flushViews(uid); };
+          window.addEventListener('online', onOnline);
+          var t = setInterval(function () { flushViews(uid); }, 60000);
+          return function () {
+            window.removeEventListener('online', onOnline);
+            clearInterval(t);
+            try { delete window.chefKitchenTrackView; } catch (e) {}
+          };
+        }, [user]);
 
         // Let one Class Page open another. These pages render in a full-screen
         // overlay, so without this a page can only close itself and ask the

@@ -6,6 +6,17 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [09-10-2026-2] - September 10, 2026
+
+### Added
+- **View tracking for the trip media, and it works offline.** YouTube reports its own watch time, but the photo gallery reported nothing, and neither could say *who* opened a page from inside the app. Every page open, photo viewed and video or audio played is now recorded against the signed-in account.
+  - **Offline-first, because the app is.** A view is an event rather than a state, so there is nothing to merge: events queue in `localStorage` and replay when a network appears — on load, on reconnect, and once a minute while the app is open. A device with no signal records normally and syncs later.
+  - **Both timestamps are kept.** Each row carries when the view happened *on the device* and when it reached the server. The gap between them is the offline period, which is worth knowing rather than flattening.
+  - **Written in batches**, one call per flush rather than one per photo — a 226-thumbnail gallery must not become 226 writes on a deployment already tight on Database I/O. The queue is capped so a long offline stretch cannot grow without bound, and the server caps each call.
+  - **Failure is silent and safe:** a page whose tracker is unavailable (an older cached app shell) simply does not report, and the queue is only cleared for events the server confirms.
+
+---
+
 ## [09-10-2026-1] - September 10, 2026
 
 ### Added
