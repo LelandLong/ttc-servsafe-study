@@ -61,6 +61,7 @@ for (const day of days) {
   for (const f of files) {
     const key = day + '/' + f;
     const abs = path.join(ROOT, day, f);
+    if (state[key] && state[key].removed) { console.log('  replaced by a trimmed copy, skipping ' + key); continue; }
     if (!state[key] || !state[key].storageId) {
       const url = await convex('mutation', 'media:generateUploadUrl', { userId: USER });
       const res = await fetch(url, { method:'POST', headers:{ 'Content-Type':'audio/mp4' }, body: fs.readFileSync(abs) });
@@ -88,12 +89,14 @@ if (need.length) {
 // Upsert into the hub - keyed by the stored URL, so re-running never duplicates
 // an entry or overwrites a description someone has already written.
 const hub = readHub() || { entries: [] };
-const have = new Set(hub.entries.map(e => e.src).filter(Boolean));
+// Match on the SOURCE FILE as well as the URL: a trimmed recording is published at
+// a new URL, so matching on URL alone would re-add the untrimmed original.
+const have = new Set(hub.entries.flatMap(e => [e.src, e.source, e.file]).filter(Boolean));
 const today = new Date().toISOString().slice(0, 10);
 let added = 0;
 for (const e of entries) {
   const url = state[e.key].url;
-  if (!url || have.has(url)) continue;
+  if (!url || have.has(url) || have.has(path.join(ROOT, e.key)) || state[e.key].removed) continue;
   hub.entries.push({
     media: 'audio', src: url, kind: 'raw',
     date: '20' + e.day.slice(4, 6) + '-' + e.day.slice(0, 2) + '-' + e.day.slice(2, 4),
