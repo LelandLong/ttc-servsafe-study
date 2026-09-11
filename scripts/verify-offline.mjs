@@ -5,7 +5,10 @@
 // Usage:
 //   node scripts/verify-offline.mjs                 # against production
 //   BASE=http://localhost:8123 node scripts/verify-offline.mjs
-//   NEGATIVE_CONTROL=1 node scripts/verify-offline.mjs   # see note below
+//   (there is NO env var for the negative control - it is the manual procedure
+//    below. This line used to read `NEGATIVE_CONTROL=1 node ...`, which does
+//    nothing: the script never reads it, so it "passed" - a check that could
+//    not fail, advertised as the one that proves failure. Found 2026-09-11.)
 //
 // NEGATIVE CONTROL — the point of this file.
 // A check that has never been shown to FAIL is not evidence. Before trusting a

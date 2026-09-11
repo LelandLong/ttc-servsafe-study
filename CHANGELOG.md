@@ -6,6 +6,17 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [09-11-2026-1] - September 11, 2026
+
+### Fixed
+- **Audio recordings failed instantly on iPhone and in Safari.** Tapping any recording in the Video Hub showed an error and nothing played — on iOS and on a Mac in Safari. Chrome played them fine, which is why it went unnoticed.
+  - **Cause: the app's service worker.** It handled *every* request cache-first, including audio streamed from Convex storage. The browser asks for audio in byte **ranges**; the worker answered with its own cross-origin fetch — an **opaque** response — and **WebKit refuses to stream media from an opaque response a service worker hands it** (`MediaError 4`, "source not supported"). Chrome tolerates it.
+  - **Fix:** the worker now steps aside for **cross-origin audio, video and byte-range requests**, so the browser streams them from the network directly. Scoped deliberately: the app's own sounds and loops are untouched, and gallery **photos are still cached** for offline viewing.
+  - **Offline gate:** `verify-offline.mjs` passes against the change (emergency number and policy reference readable with no signal), and its negative control — the site with the service worker removed — fails as it must. Recordings themselves are not available offline; they never were.
+  - Reproduced before fixing: WebKit, local server, service worker controlling the page → `ERROR code 4`; the same test after the change → plays, 767s.
+
+---
+
 ## [09-10-2026-2] - September 10, 2026
 
 ### Added
