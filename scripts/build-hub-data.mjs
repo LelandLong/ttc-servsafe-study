@@ -90,7 +90,10 @@ const body = START + '\n  /* GENERATED from ' + HUB_JSON + ' by scripts/build-hu
   hub.entries.map(lit).join(',\n') + END;
 let rest = page.slice(b + END.length);
 const o = rest.indexOf(TX_OPEN), c = rest.indexOf(TX_CLOSE);
-if (o > -1 && c > o) rest = rest.slice(0, o) + rest.slice(c + TX_CLOSE.length);   // drop the previous block
+// Drop the previous block TOGETHER WITH the newline this build put in front of it -
+// leaving that newline behind made blank lines pile up one per rebuild, so the
+// output was never byte-identical twice and real diffs were buried in noise.
+if (o > -1 && c > o) rest = rest.slice(0, o).replace(/\n$/, '') + rest.slice(c + TX_CLOSE.length);
 fs.writeFileSync(HUB_PAGE, page.slice(0, a) + body + '\n' + txBlock + rest);
 for (const e of hub.entries) delete e.tid;   // derived at build time; never stored
 
