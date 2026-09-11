@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
- * Upload the trip's audio recordings to Convex storage and print ready-made
- * entries for the video hub's VIDEOS list.
+ * Upload the trip's audio recordings to Convex storage and add them to the hub
+ * (private/video-hub.json). It used to print entries to paste into the page,
+ * but the page's list is now GENERATED from that JSON, so pasted entries would
+ * be wiped on the next build.
  *
  * Audio needs NO conversion: these are AAC in an .m4a container, which every
  * current browser plays natively. Re-encoding would cost quality for nothing.
@@ -14,6 +16,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execFileSync } from 'child_process';
+import { readHub, writeHub, HUB_JSON } from './lib/media.mjs';
 
 const ARGS = process.argv.slice(2);
 const ROOT = ARGS.find(a => a.startsWith('/')) || '/Volumes/Andromeda/Screenflow/Italy';
@@ -82,11 +85,23 @@ if (need.length) {
   for (const e of entries) e.url = state[e.key].url;
 }
 
-console.log('\n--- paste-ready entries for the VIDEOS list in private/video-hub.html ---\n');
+// Upsert into the hub - keyed by the stored URL, so re-running never duplicates
+// an entry or overwrites a description someone has already written.
+const hub = readHub() || { entries: [] };
+const have = new Set(hub.entries.map(e => e.src).filter(Boolean));
+const today = new Date().toISOString().slice(0, 10);
+let added = 0;
 for (const e of entries) {
-  const shot = '20' + e.day.slice(4,6) + '-' + e.day.slice(0,2) + '-' + e.day.slice(2,4);
-  const title = e.file.replace(/\.[^.]+$/, '');
-  console.log('  { media:"audio", src:' + JSON.stringify(state[e.key].url) + ', kind:"raw",');
-  console.log('    date:' + JSON.stringify(shot) + ', place:"", what:' + JSON.stringify(title) + ',');
-  console.log('    dur:' + JSON.stringify(e.dur) + ', added:' + JSON.stringify(new Date().toISOString().slice(0,10)) + ' },');
+  const url = state[e.key].url;
+  if (!url || have.has(url)) continue;
+  hub.entries.push({
+    media: 'audio', src: url, kind: 'raw',
+    date: '20' + e.day.slice(4, 6) + '-' + e.day.slice(0, 2) + '-' + e.day.slice(2, 4),
+    place: '', what: '', dur: e.dur, added: today,
+    file: path.join(ROOT, e.key),
+  });
+  added++;
 }
+writeHub(hub);
+console.log('\nadded ' + added + ' audio entr' + (added === 1 ? 'y' : 'ies') + ' to ' + HUB_JSON);
+if (added) console.log('next: node scripts/describe-videos.mjs   then ask Claude to publish');

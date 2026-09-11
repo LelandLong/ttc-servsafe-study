@@ -1,75 +1,33 @@
 #!/usr/bin/env node
 /**
- * Turn a list of YouTube links into ready-made entries for the video hub.
+ * Add uploaded YouTube videos to the hub, from their links.
  *
- * WHY THIS NEEDS NO OAUTH: YouTube's oEmbed endpoint returns a video's TITLE
- * without any authentication, and an unlisted video is reachable by link - so a
- * link is enough to learn its title. Studio titles an upload after its FILENAME,
- * which is the join key back to the file on disk. Everything else - shoot date,
- * time of day, duration - is then read from the file itself rather than typed.
+ * NO OAUTH: YouTube's oEmbed endpoint returns a video's TITLE unauthenticated,
+ * and an unlisted video is reachable by link. Studio titles an upload after its
+ * FILENAME (rewritten: IMG_0675.MOV -> "IMG 0675"), which is the join key back to
+ * the file on disk. Date, time of day and duration then come from the FILE.
  *
- * The YouTube Data API would do this too, but it costs a Google Cloud project,
- * an OAuth client and a consent flow. For matching ids to files, that is a lot of
- * setup to learn something a public endpoint already tells us.
+ * Writes straight into private/video-hub.json - the hub's source of truth. It
+ * used to print entries to paste into the page, but the page's list is now
+ * GENERATED from the JSON, so anything pasted there would be wiped on the next
+ * build. Re-running is safe: an id already in the hub is left alone, including
+ * any description already written for it.
  *
  *   node scripts/link-videos.mjs <url-or-id> [more...]
- *   pbpaste | node scripts/link-videos.mjs        # paste a list, one per line
+ *   pbpaste | node scripts/link-videos.mjs
+ * then: node scripts/describe-videos.mjs  (descriptions)
+ *       node scripts/build-hub-data.mjs   (JSON -> page)
  */
 import fs from 'fs';
 import path from 'path';
-import { execFileSync } from 'child_process';
-
-const ROOT = '/Volumes/Andromeda/Screenflow/Italy';
+import { indexSources, oembedTitle, probe, clock, norm, readHub, writeHub, HUB_JSON } from './lib/media.mjs';
 
 function idOf(s) {
   s = String(s).trim();
   if (!s) return null;
-  let m = /(?:v=|youtu\.be\/|\/shorts\/|\/embed\/)([A-Za-z0-9_-]{11})/.exec(s);
+  const m = /(?:v=|youtu\.be\/|\/shorts\/|\/embed\/)([A-Za-z0-9_-]{11})/.exec(s);
   if (m) return m[1];
-  if (/^[A-Za-z0-9_-]{11}$/.test(s)) return s;
-  return null;
-}
-
-async function title(id) {
-  const r = await fetch('https://www.youtube.com/oembed?url=' +
-    encodeURIComponent('https://www.youtube.com/watch?v=' + id) + '&format=json');
-  if (!r.ok) return null;
-  return (await r.json()).title;
-}
-
-// YouTube rewrites the filename it uses as a title: IMG_0675.MOV becomes
-// "IMG 0675" - underscores become spaces and the extension is dropped. So match
-// on a NORMALISED form rather than the raw string, or every id looks unmatched.
-const norm = s => String(s).trim().toLowerCase().replace(/\.[^.]+$/, '').replace(/[^a-z0-9]+/g, '');
-
-// Index every source file by basename, so a title can be matched back to disk.
-const byName = {};
-for (const day of fs.readdirSync(ROOT).filter(d => /^\d{6}$/.test(d))) {
-  const dir = path.join(ROOT, day);
-  if (!fs.statSync(dir).isDirectory()) continue;
-  for (const f of fs.readdirSync(dir)) {
-    if (!/\.(mov|mp4)$/i.test(f)) continue;
-    const base = f.replace(/\.[^.]+$/, '');
-    // prefer the ORIGINAL for metadata: same content, and it carries the capture time
-    const k = norm(base);
-    if (!byName[k] || /\.mov$/i.test(f)) byName[k] = { file: path.join(dir, f), base };
-  }
-}
-
-function meta(file) {
-  try {
-    const out = execFileSync('ffprobe', ['-v','error','-show_entries',
-      'format=duration:format_tags=creation_time','-of','default=nw=1', file], {encoding:'utf8'});
-    const d = /duration=([\d.]+)/.exec(out);
-    const c = /creation_time=(\S+)/.exec(out);
-    const secs = d ? Math.round(parseFloat(d[1])) : 0;
-    const h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60), s = secs%60;
-    return {
-      dur: h ? h + 'h' + String(m).padStart(2,'0') + 'm' : m + 'm' + String(s).padStart(2,'0') + 's',
-      shot: c ? c[1].slice(0,10) : null,
-      time: c ? c[1].slice(11,16) : null,
-    };
-  } catch { return { dur: '', shot: null, time: null }; }
+  return /^[A-Za-z0-9_-]{11}$/.test(s) ? s : null;
 }
 
 const args = process.argv.slice(2);
@@ -77,36 +35,34 @@ const input = args.length ? args : fs.readFileSync(0, 'utf8').split(/\s+/);
 const ids = [...new Set(input.map(idOf).filter(Boolean))];
 if (!ids.length) { console.error('no YouTube links or ids found'); process.exit(1); }
 
-const rows = [];
+const hub = readHub() || { entries: [] };
+const have = new Set(hub.entries.map(e => e.id).filter(Boolean));
+const idx = indexSources();
+const today = new Date().toISOString().slice(0, 10);
+let added = 0, already = 0, failed = 0;
+
 for (const id of ids) {
-  const t = await title(id);
-  if (!t) { console.error('  ' + id + ': could not read title (private? wrong id?)'); continue; }
-  const hit = byName[norm(t)];
-  if (!hit) { console.error('  ' + id + ': title "' + t.trim() + '" matches no file on disk'); continue; }
-  const file = hit.file, base = hit.base;
-  const day = path.basename(path.dirname(file));
-  const shotFromDay = '20' + day.slice(4,6) + '-' + day.slice(0,2) + '-' + day.slice(2,4);
-  const mm = meta(file);
-  rows.push({ id, base, day, date: mm.shot || shotFromDay, time: mm.time || '', dur: mm.dur });
-  console.error('  matched ' + id + '  ->  ' + base + '  (' + day + ', ' + mm.dur + ')');
+  if (have.has(id)) { console.log('  already in hub  ' + id); already++; continue; }
+  const t = await oembedTitle(id);
+  if (!t) { console.error('  ' + id + ': no title (still a DRAFT? private? wrong id?)'); failed++; continue; }
+  const hit = idx[norm(t)];
+  if (!hit) { console.error('  ' + id + ': title "' + t + '" matches no file on disk'); failed++; continue; }
+  const meta = probe(hit.mov || hit.mp4);                 // the original carries the capture time
+  const day = hit.day;
+  hub.entries.push({
+    id, kind: 'raw',
+    date: meta.shot || ('20' + day.slice(4, 6) + '-' + day.slice(0, 2) + '-' + day.slice(2, 4)),
+    time: clock(meta.time), place: '', what: '', dur: meta.dur, added: today,
+    base: hit.base, file: hit.mp4 || hit.mov,             // mp4 plays in any browser
+  });
+  have.add(id); added++;
+  console.log('  added  ' + id + '  ->  ' + hit.base + '  (' + day + ', ' + meta.dur + ')');
 }
 
-// A filename is not a description. Until someone writes a real label, use the
-// TIME OF DAY - it is true, it is derived from the file, and it lets a viewer
-// tell morning from evening. The filename stays available as a fallback.
-function clock(t) {
-  if (!t) return '';
-  const [H, M] = t.split(':').map(Number);
-  const ampm = H >= 12 ? 'PM' : 'AM';
-  const h12 = H % 12 === 0 ? 12 : H % 12;
-  return h12 + ':' + String(M).padStart(2, '0') + ' ' + ampm;
-}
-
-rows.sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time));
-const today = new Date().toISOString().slice(0,10);
-console.log('\n// paste into the VIDEOS list in private/video-hub.html');
-for (const r of rows) {
-  console.log('  { id:' + JSON.stringify(r.id) + ', kind:"raw", date:' + JSON.stringify(r.date) +
-    ', place:"", what:' + JSON.stringify(clock(r.time) || r.base) + ',');
-  console.log('    dur:' + JSON.stringify(r.dur) + ', added:' + JSON.stringify(today) + ' },');
-}
+// keep the hub in capture order so the page and the describe tool agree
+hub.entries.sort((a, b) => (a.date + (a.media === 'audio' ? '~' : '') + (a.time || ''))
+  .localeCompare(b.date + (b.media === 'audio' ? '~' : '') + (b.time || '')));
+writeHub(hub);
+console.log('\nadded ' + added + ' · already there ' + already + ' · failed ' + failed + '  ->  ' + HUB_JSON);
+if (added) console.log('next: node scripts/describe-videos.mjs   then ask Claude to publish');
+if (failed) process.exit(1);
