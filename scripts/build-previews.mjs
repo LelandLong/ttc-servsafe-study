@@ -138,6 +138,19 @@ function build(pg){
         body = body.replace(m[0], 'var PHOTOS = [\n' + trimmed + '\n];');
       }
     }
+    // 🛑 AND THE TRANSCRIPTS. They contain other people's speech - classmates,
+    // the guide - and this repo is public. build-hub-data puts them in ONE block
+    // between /*TX*/ markers, so it is removed by position, not by parsing text
+    // that could contain anything. Then refuse to build if transcript STRUCTURE
+    // survives anywhere, in case the text ever arrives by another route.
+    {
+      const o = body.indexOf('/*TX*/'), c = body.indexOf('/*/TX*/');
+      if (o > -1 && c > o) body = body.slice(0, o) + '/*TX*/var TRANSCRIPTS = {};/*/TX*/' + body.slice(c + 7);
+      if (/"paras"\s*:\s*\[\s*\{/.test(body)) {
+        console.error('FAIL: transcript text survived into ' + pg.out); process.exit(1);
+      }
+    }
+
     // 🛑 AND THE YOUTUBE IDS. An unlisted video is private only while its id is
     // unknown - an id in this public repo IS a link anyone can watch. The guard
     // above only knew about Convex URLs, so six real ids sat in the public preview

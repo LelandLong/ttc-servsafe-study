@@ -65,14 +65,34 @@ const hub = readHub();
 if (!hub) { console.error('no ' + HUB_JSON + ' - run with --import first'); process.exit(1); }
 
 // Only what the PAGE needs. Local paths stay out of a page served from Convex.
-const FIELDS = ['id','media','src','kind','rank','date','time','place','what','dur','added','cook','note','desc'];
+const FIELDS = ['id','media','src','tid','kind','rank','date','time','place','what','dur','added','cook','note','desc'];
 const lit = e => '  { ' + FIELDS.filter(f => e[f] !== undefined && e[f] !== null && e[f] !== '')
   .map(f => f + ':' + JSON.stringify(e[f])).join(', ') + ' }';
+
+// Transcripts ride in the page too - behind the login, and readable offline like
+// the rest of it - but in their OWN block, delimited by markers, so the public
+// preview can remove the whole thing by position without parsing the text.
+// They contain other people's speech; they must never reach the public repo.
+const TX_OPEN = '/*TX*/', TX_CLOSE = '/*/TX*/';
+const transcripts = {};
+for (const e of hub.entries) {
+  if (e.media !== 'audio') continue;
+  const name = path.basename(e.source || e.file || '').replace(/\.[^.]+$/, '');
+  const f = path.join(ROOT, '_transcripts', name + '.tx.json');
+  e.tid = norm(name);
+  if (fs.existsSync(f)) transcripts[e.tid] = JSON.parse(fs.readFileSync(f, 'utf8'));
+}
+// </script> inside a transcript would end the script block early - escape '<'.
+const txBlock = TX_OPEN + 'var TRANSCRIPTS = ' + JSON.stringify(transcripts).replace(/</g, '\\u003c') + ';' + TX_CLOSE;
 
 const body = START + '\n  /* GENERATED from ' + HUB_JSON + ' by scripts/build-hub-data.mjs - edit the\n' +
   '     JSON (or run scripts/describe-videos.mjs), not this array. */\n' +
   hub.entries.map(lit).join(',\n') + END;
-fs.writeFileSync(HUB_PAGE, page.slice(0, a) + body + page.slice(b + END.length));
+let rest = page.slice(b + END.length);
+const o = rest.indexOf(TX_OPEN), c = rest.indexOf(TX_CLOSE);
+if (o > -1 && c > o) rest = rest.slice(0, o) + rest.slice(c + TX_CLOSE.length);   // drop the previous block
+fs.writeFileSync(HUB_PAGE, page.slice(0, a) + body + '\n' + txBlock + rest);
+for (const e of hub.entries) delete e.tid;   // derived at build time; never stored
 
 const described = hub.entries.filter(e => e.what).length;
-console.log('wrote ' + hub.entries.length + ' entries into ' + HUB_PAGE + '  (' + described + ' described)');
+console.log('wrote ' + hub.entries.length + ' entries into ' + HUB_PAGE + '  (' + described + ' described, ' + Object.keys(transcripts).length + ' transcripts)');

@@ -21,7 +21,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execFileSync } from 'child_process';
-import { ROOT, readHub, writeHub, probe, renderTranscript, loopCheck, hms } from './lib/media.mjs';
+import { ROOT, readHub, writeHub, probe, renderTranscript, loopCheck, hms, windowSegments } from './lib/media.mjs';
 
 const A = process.argv.slice(2);
 const opt = k => { const i = A.indexOf(k); return i > -1 ? A[i + 1] : null; };
@@ -66,16 +66,7 @@ let rawPath = path.join(rawDir, name + '.json');
 if (!fs.existsSync(rawPath) && fs.existsSync(path.join(TX, name + '.json'))) fs.renameSync(path.join(TX, name + '.json'), rawPath);
 if (fs.existsSync(rawPath)) {
   const raw = JSON.parse(fs.readFileSync(rawPath, 'utf8'));
-  // Keep a line if MOST of it falls inside the window. "Start inside" was wrong
-  // both ways: Whisper snaps the first line after silence to its 30s grid, so
-  // "Silenzio, cast!" was stamped 420.0 (the shout is at 423.5) and got dropped
-  // while the audio kept it - and a line merely ending inside would let the tail
-  // of cut-out chatter back in.
-  const hi = END === null ? Infinity : END;
-  const inside = s => { const a = Math.max(s.start, START), b = Math.min(s.end ?? s.start, hi);
-    const len = (s.end ?? s.start) - s.start; return len <= 0 ? (s.start >= START && s.start < hi) : (b - a) / len > 0.5; };
-  const segs = raw.segments.filter(inside)
-    .map(s => ({ ...s, start: Math.max(0, s.start - START), end: Math.max(0, (s.end ?? s.start) - START) }));
+  const segs = windowSegments(raw.segments, START, END);   // shared rule - see lib
   const r = renderTranscript({ title: entry.what || name, lang: raw.language, total: after, segs, note: NOTE });
   fs.writeFileSync(path.join(TX, name + '.md'), r.md);
   fs.writeFileSync(path.join(TX, name + '.txt'), r.txt);
