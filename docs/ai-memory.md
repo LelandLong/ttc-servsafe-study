@@ -234,3 +234,17 @@ output. **How to apply:** lists and conditional arguments go through `bash -c '.
 (`args+=(-H "Range: $r")` then `"${args[@]}"`), or are written out explicitly - and every check gets a negative
 control that must fail first.
 
+---
+
+## trip-media-consent-covers-cloud
+
+**Type:** feedback · The HOS-190 Italy trip is covered by **signed disclosures for images, video and audio**.
+Leland, 2026-09-11: *"quit worrying about including student questions in transcription service, if cloud
+based... We can record and post anyone. There is no fear of public viewing or listening."* He had said it
+before. **How to apply:** never cite students' voices, faces or speech as a reason against a cloud service,
+a public link or sharing. The remaining cloud blocker is practical: no OpenAI key, and he does not want
+one. The six unlisted video ids exposed for ~16 hours by the old public preview are **closed as "leave
+them"** (his call, 2026-09-11) - no re-upload, no switch to Private. This is consent, not a repo-hygiene change: the media pages stay behind the login and the
+never-commit-rendered-pages rule in `PRIVATE-PAGES.md` stands until he says otherwise.
+[[private-content-never-inline-in-crossfeed]] still governs trip-logistics values (hotels, phones).
+
