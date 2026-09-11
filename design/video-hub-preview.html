@@ -83,6 +83,26 @@ audio.player{width:100%;display:block}
 .stagewrap .ratio{position:relative;width:100%;padding-top:56.25%}
 .stagewrap .ratio > *{position:absolute;inset:0;width:100%;height:100%;border:0}
 .stagecap{font-size:12px;color:var(--mute);font-weight:700;padding:7px 4px 0}
+/* ---- transcript button + reader ---- */
+.txbtn{margin-top:7px;font-family:inherit;font-size:12px;font-weight:800;color:var(--terra);background:#fff;
+       border:1px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.txbtn:focus-visible{outline:2px solid var(--terra);outline-offset:2px}
+#txv{position:fixed;inset:0;z-index:80;background:var(--paper);overflow:auto;-webkit-overflow-scrolling:touch}
+#txv .txhead{position:sticky;top:0;z-index:2;background:#2b2320;color:#f5efe6;padding:12px 16px 12px}
+#txv .txback{font-family:inherit;font-size:13px;font-weight:800;color:var(--gold);background:transparent;border:0;padding:4px 0;cursor:pointer}
+#txv h2{font-size:18px;font-weight:800;margin-top:4px;line-height:1.3}
+#txv .txmeta{font-size:12px;color:#c9bcb2;font-weight:700;margin-top:3px}
+#txv audio{width:100%;display:block;margin-top:10px}
+#txv .txbody{max-width:40em;margin:0 auto;padding:20px 18px 70px;font:17px/1.65 Georgia,'Iowan Old Style',serif;color:var(--ink)}
+#txv .txbody p{margin:0 0 1.05em}
+#txv .ts{font:800 11.5px -apple-system,'Helvetica Neue',sans-serif;color:var(--terra);background:#fff;border:1px solid var(--line);
+         border-radius:999px;padding:1px 8px;margin-right:8px;cursor:pointer;vertical-align:1px}
+#txv .ts:focus-visible{outline:2px solid var(--terra);outline-offset:2px}
+#txv .ts.now{background:var(--terra);color:#fff;border-color:var(--terra)}
+#txv .txgap{font:italic 13px -apple-system,sans-serif;color:var(--mute);text-align:center;border-top:1px dashed var(--line);
+            border-bottom:1px dashed var(--line);padding:6px 0;margin:0 0 1.05em}
+#txv .note{margin:0 0 20px;font-family:-apple-system,'Helvetica Neue',sans-serif}
+#txv .txfine{font:12px -apple-system,sans-serif;color:var(--mute);margin-top:28px}
 /* The page is a 660px reading column, which is right for text and wrong for a
    video: measured, an iPad and a 1920 desktop both got the SAME 632px player as a
    landscape phone, and at dpr 1 that is only ~632 device px, so YouTube served
@@ -201,10 +221,13 @@ var VIDEOS = [
   { id:"", kind:"raw", date:"2026-09-10", time:"2:58 PM", place:"Parma", what:"Opera house foyer", dur:"1m20s", added:"2026-09-10" },
   { id:"", kind:"raw", date:"2026-09-10", time:"3:35 PM", place:"Parma", what:"Entering Opera House 1st floor Noble Room", dur:"0m31s", added:"2026-09-10" },
   { id:"", kind:"raw", date:"2026-09-10", time:"3:49 PM", place:"Parma", what:"Opera House box seat and stage during rehearsal break", dur:"5m29s", added:"2026-09-10" },
-  { media:"audio", src:"", kind:"raw", date:"2026-09-10", place:"Parma", what:"Opera House tour 1/3", dur:"12m47s", added:"2026-09-10" },
-  { media:"audio", src:"", kind:"raw", date:"2026-09-10", place:"Parma", what:"Opera House tour 2/3", dur:"12m42s", added:"2026-09-10" },
-  { media:"audio", src:"", kind:"raw", date:"2026-09-10", place:"Parma", what:"Opera House tour 3/3", dur:"17m10s", added:"2026-09-10", note:"The opera rehearsal itself, from 0:01 to 13:24 - we were asked not to film or photograph during it, so it was recorded as audio. The guide\u2019s commentary follows." }
+  { media:"audio", src:"", tid:"liceoartisticostatalepaolotoschi", kind:"raw", date:"2026-09-10", place:"Parma", what:"Opera House tour 1/3", dur:"12m47s", added:"2026-09-10" },
+  { media:"audio", src:"", tid:"liceoartisticostatalepaolotoschi2", kind:"raw", date:"2026-09-10", place:"Parma", what:"Opera House tour 2/3", dur:"12m42s", added:"2026-09-10" },
+  { media:"audio", src:"", tid:"liceoartisticostatalepaolotoschi3", kind:"raw", date:"2026-09-10", place:"Parma", what:"Opera House tour 3/3", dur:"17m10s", added:"2026-09-10", note:"The opera rehearsal itself, from 0:01 to 13:24 - we were asked not to film or photograph during it, so it was recorded as audio. The guide\u2019s commentary follows." }
 ];
+/*TX*/var TRANSCRIPTS = {};/*/TX*/
+
+
 
 VIDEOS.forEach(function(v,i){ v._i = i; });
 
@@ -371,6 +394,13 @@ function renderArchive(seen){
       var mm = document.createElement('div'); mm.className='rmeta';
       mm.textContent = bitsRow(timeIfTitled(v), v.place, 'added ' + pretty(v.added));
       rt.appendChild(mm);
+      if (isAudio(v) && window.TRANSCRIPTS && TRANSCRIPTS[v.tid]){
+        var tb=document.createElement('button'); tb.type='button'; tb.className='txbtn';
+        tb.textContent='\u{1F4C4} Transcript';
+        // the ROW plays the audio on tap - the button must not also trigger that
+        tb.onclick=function(e){ e.stopPropagation(); openTranscript(v); };
+        rt.appendChild(tb);
+      }
       r.appendChild(rt);
       var L = document.createElement('div');
       L.className = 'long' + (isHours(v.dur) ? ' hrs' : '');
@@ -383,6 +413,64 @@ function renderArchive(seen){
   });
 }
 
+
+/* The transcript reader. The recording is pinned at the top and every
+   timestamp is a button that jumps the audio there - so it can be read along
+   with, not just read. Opening it pauses anything else playing on the page. */
+function fmtT(t){ t=Math.max(0,Math.floor(t)); var h=Math.floor(t/3600), m=Math.floor(t%3600/60), s=t%60;
+  return (h? h+':'+(m<10?'0':'')+m : m) + ':' + (s<10?'0':'') + s; }
+function closeTranscript(){
+  var o=document.getElementById('txv'); if(!o) return;
+  var a=o.querySelector('audio'); if(a){ try{a.pause();}catch(e){} }
+  o.parentNode.removeChild(o); document.removeEventListener('keydown', txKey);
+}
+function txKey(e){ if(e.key==='Escape') closeTranscript(); }
+function openTranscript(v){
+  var tx=TRANSCRIPTS[v.tid]; if(!tx) return;
+  Array.prototype.forEach.call(document.querySelectorAll('audio'), function(x){ try{x.pause();}catch(e){} });
+  closeTranscript();
+  var o=document.createElement('div'); o.id='txv'; o.setAttribute('role','dialog'); o.setAttribute('aria-label','Transcript');
+  var h=document.createElement('div'); h.className='txhead';
+  var back=document.createElement('button'); back.type='button'; back.className='txback'; back.textContent='\u2190 Back to videos';
+  back.onclick=closeTranscript; h.appendChild(back);
+  var t=document.createElement('h2'); t.textContent=titleOf(v); h.appendChild(t);
+  var m=document.createElement('div'); m.className='txmeta'; m.textContent=tx.meta || bitsRow(pretty(v.date), v.place, v.dur); h.appendChild(m);
+  var a=null;
+  if (v.src){ a=document.createElement('audio'); a.controls=true; a.preload='metadata'; a.src=v.src; h.appendChild(a); }
+  o.appendChild(h);
+  var b=document.createElement('div'); b.className='txbody';
+  if (v.note){ var nt=document.createElement('div'); nt.className='note'; nt.textContent=v.note; b.appendChild(nt); }
+  var stamps=[];
+  tx.paras.forEach(function(p){
+    if (p.g !== undefined){
+      var g=document.createElement('div'); g.className='txgap';
+      g.textContent=fmtT(p.t)+' \u2013 '+fmtT(p.t+p.g)+' \u00b7 no clear speech'; b.appendChild(g); return;
+    }
+    var para=document.createElement('p');
+    var ts=document.createElement('button'); ts.type='button'; ts.className='ts'; ts.textContent=fmtT(p.t);
+    ts.setAttribute('aria-label','Play from '+fmtT(p.t));
+    // a SYNCHRONOUS play() inside the tap - iOS drops playback started later
+    ts.onclick=function(){ if(!a) return; a.currentTime=p.t; a.play(); mark(p.t); };
+    stamps.push({t:p.t, el:ts});
+    para.appendChild(ts); para.appendChild(document.createTextNode(p.x)); b.appendChild(para);
+  });
+  var fine=document.createElement('div'); fine.className='txfine';
+  fine.textContent='Machine transcription (Whisper, run locally). Names, Italian words, singing and crosstalk will have errors.';
+  b.appendChild(fine); o.appendChild(b);
+  // Highlight the paragraph being heard. Marked IMMEDIATELY on a tap, then kept
+  // in step on seek and during playback - waiting for 'timeupdate' alone left the
+  // highlight blank after a jump, because that event is not guaranteed to fire
+  // promptly after a seek.
+  function mark(at){
+    var cur=null; stamps.forEach(function(s){ if(at>=s.t) cur=s; });
+    stamps.forEach(function(s){ s.el.classList.toggle('now', s===cur); });
+  }
+  if (a){ var sync=function(){ mark(a.currentTime); };
+    a.addEventListener('timeupdate', sync); a.addEventListener('seeked', sync); }
+  document.body.appendChild(o); document.addEventListener('keydown', txKey);
+  back.focus();
+  track('transcript', v.src || v.tid || null, titleOf(v));
+}
 
 /* A strip tile is a teaser, not a player: 170x96 is below the size YouTube
    reliably plays at, so jump to the full-size entry and play it there. */

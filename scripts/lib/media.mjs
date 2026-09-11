@@ -160,5 +160,55 @@ export function renderTranscript({ title, lang, total, segs, note }) {
     paras.map(p => p.gap
       ? '*[' + hms(p.from) + ' – ' + hms(p.from + p.len) + ' · no clear speech, ' + hms(p.len) + ']*'
       : '**[' + hms(p.start) + ']** ' + p.text.join(' ')).join('\n\n') + '\n';
-  return { md, txt: keep.map(s => s.text.trim()).join('\n') + '\n', keep, words, dropped: segs.length - keep.length };
+  // STRUCTURED form for the app's transcript view: {t, x} is a paragraph starting
+  // at t seconds, {t, g} a stretch of g seconds with no clear speech.
+  const struct = paras.map(p => p.gap ? { t: Math.round(p.from), g: Math.round(p.len) }
+                                      : { t: Math.round(p.start), x: p.text.join(' ') });
+  return { md, txt: keep.map(s => s.text.trim()).join('\n') + '\n', keep, words,
+           dropped: segs.length - keep.length, paras: struct };
+}
+
+// A SELF-CONTAINED html copy - rendered now, no network needed to read it (the
+// standing rule: a page built on a CDN opens black outside the editor). `audio`
+// is an optional path to a local copy; build-transcripts passes none, because a
+// local file's audio could not be verified to play (the test browser refuses media
+// on file:// by ANY path form - relative, %20-encoded, absolute), and a player that
+// may silently not work is worse than none. Listening along lives in the app.
+export function transcriptHtml({ title, meta, note, paras, audio }) {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const body = paras.map(p => p.g !== undefined
+    ? '<p class="gap">' + hms(p.t) + ' – ' + hms(p.t + p.g) + ' · no clear speech</p>'
+    : '<p>' + (audio ? '<button class="ts" data-t="' + p.t + '">' + hms(p.t) + '</button>'
+                     : '<span class="ts">' + hms(p.t) + '</span>') + esc(p.x) + '</p>').join('\n');
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(title) + '</title><style>' +
+    ':root{--ink:#2b2320;--mute:#8a7f76;--paper:#faf6f0;--line:#e8ded2;--terra:#c1502e}' +
+    '*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.65 Georgia,"Iowan Old Style",serif}' +
+    'header{position:sticky;top:0;background:#2b2320;color:#f5efe6;padding:14px 20px 12px;font-family:-apple-system,"Helvetica Neue",sans-serif}' +
+    'h1{margin:0;font-size:19px;font-weight:800}.meta{font-size:12.5px;color:#c9bcb2;font-weight:700;margin-top:3px}' +
+    'audio{width:100%;margin-top:10px;display:block}main{max-width:40em;margin:0 auto;padding:22px 20px 60px}' +
+    '.note{font:14px/1.5 -apple-system,sans-serif;color:#6b6152;background:#f2ece3;border-left:3px solid #b9ab97;padding:9px 12px;border-radius:0 8px 8px 0;margin:0 0 22px}' +
+    'p{margin:0 0 1.05em}.gap{font:italic 13px -apple-system,sans-serif;color:var(--mute);text-align:center;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:6px 0}' +
+    '.ts{font:700 12px -apple-system,sans-serif;color:var(--terra);background:#fff;border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin-right:8px;cursor:pointer;vertical-align:1px}' +
+    '.ts:focus-visible{outline:2px solid var(--terra);outline-offset:2px}.fine{font:12px -apple-system,sans-serif;color:var(--mute);margin-top:30px}' +
+    '</style></head><body><header><h1>' + esc(title) + '</h1><div class="meta">' + esc(meta) + '</div>' +
+    (audio ? '<audio id="a" controls preload="metadata" src="' + esc(audio) + '"></audio>' : '') + '</header><main>' +
+    (note ? '<div class="note">' + esc(note) + '</div>' : '') + body +
+    '<p class="fine">Machine transcription (Whisper, run locally). Names, Italian words, singing and crosstalk will have errors.</p>' +
+    '</main><script>document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".ts");' +
+    'var a=document.getElementById("a");if(!b||!a)return;a.currentTime=+b.dataset.t;a.play();});</script></body></html>\n';
+}
+
+// The segments of a raw transcript that fall inside a trim window, re-timed to
+// the trimmed audio. Keeps a line if MOST of it is inside: "starts inside" dropped
+// "Silenzio, cast!" (Whisper stamped it 420.0; the shout is at 423.04) while the
+// audio kept it, and "ends inside" would let the tail of cut-out chatter back in.
+// Shared by trim-audio and build-transcripts so they cannot disagree.
+export function windowSegments(segs, start = 0, end = null) {
+  const hi = end === null || end === undefined ? Infinity : end;
+  return segs.filter(s => {
+    const e = s.end ?? s.start, len = e - s.start;
+    if (len <= 0) return s.start >= start && s.start < hi;
+    return (Math.min(e, hi) - Math.max(s.start, start)) / len > 0.5;
+  }).map(s => ({ ...s, start: Math.max(0, s.start - start), end: Math.max(0, (s.end ?? s.start) - start) }));
 }
