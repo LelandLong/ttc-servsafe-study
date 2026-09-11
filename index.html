@@ -667,9 +667,58 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // cached below in localStorage (Convex calls are POSTs — not SW-cacheable)
       // and cleared on logout. Access control stays server-side: the cache is
       // only ever filled from responses the server already authorized.
+      // ── Which version is ACTUALLY running ──
+      // The page and version.js load network-first, so APP_VERSION is always the
+      // newest. The service worker (audio, caches, offline) only changes when a new
+      // one INSTALLS - so on 2026-09-11 a device labelled v09-11-2026-1 was still
+      // running the previous worker, which broke audio. The label now names the
+      // worker whenever it differs, and a worker behind the page is updated in
+      // place: the new one claims this open page as it activates, no reload needed.
+      var ckWorkerVersion = null;      // null = no worker yet; 'older' = predates version reporting
+      var workerVersionListeners = [];
+      function askWorkerVersion() {
+        return new Promise(function (resolve) {
+          var c = navigator.serviceWorker && navigator.serviceWorker.controller;
+          if (!c) return resolve(null);
+          var ch = new MessageChannel(), done = false;
+          ch.port1.onmessage = function (e) { done = true; resolve((e.data && e.data.ckVersion) || 'older'); };
+          c.postMessage('ck-version', [ch.port2]);
+          setTimeout(function () { if (!done) resolve('older'); }, 4000);
+        });
+      }
+      // A worker that has just taken over can be slow to answer while it clears the
+      // old cache, and silence reads as 'older' - so re-ask a few times before the
+      // label settles on it. A genuinely old worker never answers; three tries, then stop.
+      var workerRetries = 0;
+      function syncWorkerVersion(isRetry) {
+        if (!('serviceWorker' in navigator)) return Promise.resolve(null);
+        if (isRetry !== true) workerRetries = 0;
+        var asked = navigator.serviceWorker.controller;
+        return askWorkerVersion().then(function (v) {
+          // An old worker never answers, so its 'older' arrives on a 4s timeout -
+          // AFTER a newer worker has taken over and answered. Drop answers from a
+          // worker that is no longer in charge; controllerchange has re-asked.
+          if (navigator.serviceWorker.controller !== asked) return ckWorkerVersion;
+          ckWorkerVersion = v;
+          workerVersionListeners.forEach(function (fn) { fn(v); });
+          if (v && v !== APP_VERSION) {
+            navigator.serviceWorker.getRegistration().then(function (r) {
+              if (r) r.update().catch(function () {});
+            });
+            if (workerRetries < 3) { workerRetries++; setTimeout(function () { syncWorkerVersion(true); }, 5000); }
+          }
+          return v;
+        });
+      }
+      function versionLabel() {
+        var w = ckWorkerVersion;
+        if (!w || w === APP_VERSION) return 'v' + APP_VERSION;
+        return 'v' + APP_VERSION + ' · worker ' + (w === 'older' ? 'older' : 'v' + w);
+      }
       if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('controllerchange', syncWorkerVersion);
         window.addEventListener('load', function () {
-          navigator.serviceWorker.register('sw.js').catch(function () {});
+          navigator.serviceWorker.register('sw.js').then(syncWorkerVersion).catch(function () {});
         });
       }
 
@@ -4020,7 +4069,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             createElement('div', { className: 'max-w-4xl mx-auto relative' },
               // Version in top right (right padding keeps it clear of the fixed account avatar)
               createElement('div', { className: 'flex justify-end items-center gap-3 mb-2', style: { paddingRight: '3.5rem' } },
-                createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION)
+                createElement('span', { className: 'text-xs text-white/60' }, versionLabel())
               ),
               createElement('div', { className: 'text-center relative' },
                 createElement('div', { className: 'text-5xl mb-1' }, '🍳'),
@@ -4642,7 +4691,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               style: { background: 'var(--band-c)', padding: '40px 20px 48px' }
             },
               createElement('p', { className: 'text-muted text-sm' }, '🏫 CUL 104 • Trident Technical College • Charleston, SC'),
-              createElement('p', { className: 'text-muted text-xs mt-1 opacity-60' }, 'v' + APP_VERSION)
+              createElement('p', { className: 'text-muted text-xs mt-1 opacity-60' }, versionLabel())
             )
           )
         );
@@ -6514,7 +6563,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                 },
                 className: 'text-white/90 hover:text-white text-sm font-medium'
               }, '← ' + (view === 'list' ? 'Back to courses' : view === 'grocery' ? 'Back to menu' : view === 'menu' ? 'Back to menus' : view === 'meal' ? 'Back to menu' : view === 'trip' ? 'Back to trips' : view === 'trips' ? 'Back to menus' : view === 'detail' ? (detailFrom === 'menu' ? 'Back to menu' : detailFrom === 'grocery' ? 'Back to grocery list' : 'Back to recipes') : 'Back to recipes')),
-              createElement('span', { className: 'text-xs text-white/60' }, 'v' + APP_VERSION)
+              createElement('span', { className: 'text-xs text-white/60' }, versionLabel())
             ),
             createElement('div', { className: 'text-center relative' },
               // Gaspard owns the kitchen — flame accent, of course
@@ -7869,13 +7918,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           }
         }, []);
 
-        // Version check: on mount + every 30 minutes
+        // Version check: on mount, every 30 minutes, and whenever the app comes
+        // back to the foreground. A home-screen app resumed from the background
+        // never navigates, so without the foreground check it could sit on an old
+        // version for days. The worker is re-checked at the same moments.
+        const [workerVersion, setWorkerVersion] = useState(ckWorkerVersion);
         useEffect(function() {
-          checkForUpdate().then(function(v) { if (v) setUpdateAvailable(v); });
-          var versionInterval = setInterval(function() {
+          function check() {
             checkForUpdate().then(function(v) { if (v) setUpdateAvailable(v); });
-          }, 30 * 60 * 1000);
-          return function() { clearInterval(versionInterval); };
+            syncWorkerVersion();
+          }
+          function onVisible() { if (document.visibilityState === 'visible') check(); }
+          workerVersionListeners.push(setWorkerVersion);
+          setWorkerVersion(ckWorkerVersion);
+          checkForUpdate().then(function(v) { if (v) setUpdateAvailable(v); });
+          var versionInterval = setInterval(check, 30 * 60 * 1000);
+          document.addEventListener('visibilitychange', onVisible);
+          return function() {
+            clearInterval(versionInterval);
+            document.removeEventListener('visibilitychange', onVisible);
+            workerVersionListeners = workerVersionListeners.filter(function(l) { return l !== setWorkerVersion; });
+          };
         }, []);
 
         // Fetch cloud progress on login

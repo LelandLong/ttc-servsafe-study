@@ -745,7 +745,7 @@ leaderboard.sort((a, b) => {
 ### 6. No Offline Question Sync
 - Admin changes require refresh on student side
 - No push notifications for updates
-- Service worker caches old versions
+- Service worker caches old versions — mitigated 09-11-2026-2: the worker reports its version, the label names it when it lags the page, and a lagging worker updates in place (no reload). A CORE file that fails to download is reused from the previous cache so one dropped fetch cannot discard a new worker.
 
 ### 7. Tailwind Dark Mode Overrides
 - Requires explicit `!important` overrides for each utility class

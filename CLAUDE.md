@@ -250,7 +250,7 @@ npx convex deploy --yes
 - Live timed tests with countdown and leaderboard
 - **Sign-in required (since 2026-08-24):** gamer name + first name, same flow and same `chefKitchenUser` session as the student app; `isProf` or `adminAccess` only. The gate is enforced **server-side** by `requireStaff()` in `convex/staffAuth.ts` across 17 admin functions — the login screen only supplies the identity. Recovery if staff access is ever lost: `npx convex run users:grantStaff '{"gamerName":"<name>","adminAccess":true}' --prod` (internalMutation, CLI-only).
 - Dark/light/system themes
-- **Full offline support** — `sw.js` service worker (cache name stamped with `APP_VERSION`; network-first shell/version.js so updates win; caches CDN React/Tailwind, question banks, images) + private pages prefetched into localStorage on load and served when fetches fail (cleared on sign-out). One online visit required after each release. Progress sync: pending-sync flag, auto-retry on reconnect
+- **Full offline support** — `sw.js` service worker (cache name stamped with `APP_VERSION`; network-first shell/version.js so updates win; the worker reports its own version and the label shows `· worker <v>` whenever it lags the page, then updates itself in place on load/foreground/30 min — plain `vX` means page AND worker are current; caches CDN React/Tailwind, question banks, images) + private pages prefetched into localStorage on load and served when fetches fail (cleared on sign-out). One online visit required after each release. Progress sync: pending-sync flag, auto-retry on reconnect
 - PWA version checking & auto-update banner
 
 ### Admin App (`admin.html`)
