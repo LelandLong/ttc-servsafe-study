@@ -49,7 +49,9 @@ Then publish with `push-private-page.mjs`.
 
 > 🛑 **Never commit a rendered copy of these pages.** A public "design preview" of each lived in
 > `design/` until 2026-09-11. Its guard stripped Convex media URLs but not YouTube ids, so **six unlisted
-> video ids were public for about 16 hours**. It was removed rather than patched again. The pages carry
+> video ids were public for about 16 hours**. It was removed rather than patched again. Leland's call on the
+> exposure (2026-09-11): leave it. The trip is covered by signed disclosures for images, video and audio, so
+> nothing was re-uploaded or set Private. The pages carry
 > media URLs, video ids and transcripts of other people's speech, and none of that belongs in this
 > public repo.
 >
