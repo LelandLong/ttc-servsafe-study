@@ -97,6 +97,24 @@ self.addEventListener('fetch', function (e) {
   if (req.method !== 'GET') return; // Convex POSTs etc. pass through
 
   var url = new URL(req.url);
+
+  // STAND ASIDE FOR CROSS-ORIGIN MEDIA. The trip audio streams from Convex
+  // storage; the browser asks for it in byte RANGES, and this worker used to
+  // answer with its own no-cors fetch - an OPAQUE response. WebKit (Safari, and
+  // every browser on iOS) refuses to stream media from an opaque response a
+  // service worker hands it, so every recording failed instantly with
+  // MediaError 4 ("source not supported") - while Chrome, which tolerates it,
+  // played fine. Serving a cached whole file in reply to a Range request breaks
+  // streaming too. Not calling respondWith() lets the browser go to the network
+  // itself, which is what media needs.
+  // Scoped deliberately: cross-origin only, so the app's own sounds and loops are
+  // untouched, and Convex PHOTOS (destination "image", no Range) are still cached
+  // for the offline gallery.
+  if (url.origin !== self.location.origin &&
+      (req.headers.has('range') || req.destination === 'audio' || req.destination === 'video')) {
+    return;
+  }
+
   var isNavigation = req.mode === 'navigate';
   var isVersion = url.pathname.indexOf('version.js') !== -1;
 
