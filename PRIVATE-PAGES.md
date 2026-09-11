@@ -33,10 +33,28 @@ Current pages, in display order: `hos190-italy` (Italy Itinerary) · `hos190-map
 > changing it does **not** re-publish the page, so repositioning never bumps a page's "info last revised" stamp.
 > A page pushed without an order can float to the top; set it in the same session you push.
 
-> 📄 **Design previews live in [`design/`](./design/), committed and public.** A mockup made of placeholder
-> entries is not private content, and parking one in gitignored `private/` means it exists on exactly one
-> machine — unreachable from a phone or a cloud session, which is where it usually needs to be looked at.
-> Only the page's real DATA (video ids, trip specifics) stays out of the repo.
+## Trip media pages (Video Hub, Photo Gallery)
+
+Both live **only** in Convex, behind the login, like every Class Page. Sources are gitignored:
+`private/video-hub.html` (its entries in `private/video-hub.json`) and `private/photos.html`.
+Media sits on the drive under `/Volumes/Andromeda/Screenflow/Italy/`; originals are never modified.
+
+| Media | Steps (all in `scripts/`) |
+|---|---|
+| Photos | `convert-stills` → `sort-stills` (Leland) → `upload-stills` → `build-gallery-data` |
+| Video | `transcode-videos` → upload in YouTube Studio (Leland) → `link-videos` → `describe-videos` (Leland) → `build-hub-data` |
+| Audio | `upload-audio` → `transcribe-audio` → `trim-audio` → `build-transcripts` → `build-hub-data` |
+
+Then publish with `push-private-page.mjs`.
+
+> 🛑 **Never commit a rendered copy of these pages.** A public "design preview" of each lived in
+> `design/` until 2026-09-11. Its guard stripped Convex media URLs but not YouTube ids, so **six unlisted
+> video ids were public for about 16 hours**. It was removed rather than patched again. The pages carry
+> media URLs, video ids and transcripts of other people's speech, and none of that belongs in this
+> public repo.
+>
+> No footer on these two pages (Leland, 2026-09-11). The source is the recordings themselves, and the
+> app's banner already shows when a page was last revised.
 
 ## Offline behaviour (added 08-11)
 The app shell works offline via `sw.js` (see CHANGELOG 08-11-2026-1). Private pages are additionally
