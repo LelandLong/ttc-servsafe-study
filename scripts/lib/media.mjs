@@ -136,26 +136,39 @@ export { hms };
 // dropped from the TEXT (the raw JSON keeps everything), and any stretch of 20s+
 // with no trusted speech is marked rather than silently closed up - a reader
 // should know a minute of music or silence was there.
-export function renderTranscript({ title, lang, total, segs, note }) {
+// Lines below MIN_CONF (Whisper's own avg_logprob) are shown as [unclear] instead
+// of printed. On this audio - speech ~5 dB above the room - a low-confidence line
+// is usually invented English that merely sounds plausible, and a reader cannot
+// tell it from the real thing. -0.6 was chosen by reading the output: it keeps the
+// real gist of tour 2/3 ("families owned the boxes... to show their status") while
+// dropping most of the nonsense. It cannot catch a line that is confidently WRONG.
+export const MIN_CONF = -0.6;
+export const UNCLEAR = '[unclear]';
+export function renderTranscript({ title, lang, total, segs, note, minConf = MIN_CONF }) {
   const keep = segs.filter(s => !isHallucination(s) &&
     !((s.no_speech_prob ?? 0) > 0.6 && (s.avg_logprob ?? 0) < -1.0));
   const paras = []; let cur = null, lastEnd = 0;
+  let lastUnclear = false;
   for (const s of keep) {
     if (s.start - lastEnd >= 20) {
       paras.push({ gap: true, from: lastEnd, len: s.start - lastEnd });
       cur = null;
     }
-    if (!cur || s.start - cur.start >= 60) { cur = { start: s.start, text: [] }; paras.push(cur); }
-    cur.text.push(s.text.trim());
+    if (!cur || s.start - cur.start >= 60) { cur = { start: s.start, text: [] }; paras.push(cur); lastUnclear = false; }
+    const sure = (s.avg_logprob ?? 0) >= minConf;
+    if (sure) { cur.text.push(s.text.trim()); lastUnclear = false; }
+    else if (!lastUnclear) { cur.text.push(UNCLEAR); lastUnclear = true; }   // one marker per run
     lastEnd = Math.max(lastEnd, s.end ?? s.start);
   }
   if (total - lastEnd >= 20) paras.push({ gap: true, from: lastEnd, len: total - lastEnd });
-  const words = keep.reduce((a, s) => a + s.text.trim().split(/\s+/).length, 0);
+  const sureSegs = keep.filter(s => (s.avg_logprob ?? 0) >= minConf);
+  const words = sureSegs.reduce((a, s) => a + s.text.trim().split(/\s+/).length, 0);
   const md = '# ' + title + '\n\n' +
     '*Transcribed locally with Whisper large-v3-turbo · language ' + lang + ' · ' + hms(total) + ' · ' +
     keep.length + ' segments · ' + words + ' words. Machine transcription: names, Italian words, ' +
     'singing and crosstalk will have errors. ' + (segs.length - keep.length) +
-    ' segments Whisper itself flagged as hallucination were removed.*\n\n' +
+    ' segments Whisper itself flagged as hallucination were removed, and lines it was not confident about are shown as ' +
+    UNCLEAR + '.*\n\n' +
     (note ? '> ' + note + '\n\n' : '') +
     paras.map(p => p.gap
       ? '*[' + hms(p.from) + ' – ' + hms(p.from + p.len) + ' · no clear speech, ' + hms(p.len) + ']*'
@@ -164,7 +177,8 @@ export function renderTranscript({ title, lang, total, segs, note }) {
   // at t seconds, {t, g} a stretch of g seconds with no clear speech.
   const struct = paras.map(p => p.gap ? { t: Math.round(p.from), g: Math.round(p.len) }
                                       : { t: Math.round(p.start), x: p.text.join(' ') });
-  return { md, txt: keep.map(s => s.text.trim()).join('\n') + '\n', keep, words,
+  return { md, txt: keep.map(s => (s.avg_logprob ?? 0) >= minConf ? s.text.trim() : UNCLEAR)
+             .filter((t, i, a) => !(t === UNCLEAR && a[i - 1] === UNCLEAR)).join('\n') + '\n', keep, words,
            dropped: segs.length - keep.length, paras: struct };
 }
 
@@ -179,7 +193,8 @@ export function transcriptHtml({ title, meta, note, paras, audio }) {
   const body = paras.map(p => p.g !== undefined
     ? '<p class="gap">' + hms(p.t) + ' – ' + hms(p.t + p.g) + ' · no clear speech</p>'
     : '<p>' + (audio ? '<button class="ts" data-t="' + p.t + '">' + hms(p.t) + '</button>'
-                     : '<span class="ts">' + hms(p.t) + '</span>') + esc(p.x) + '</p>').join('\n');
+                     : '<span class="ts">' + hms(p.t) + '</span>') +
+      esc(p.x).split(UNCLEAR).join('<span class="unc">' + UNCLEAR + '</span>') + '</p>').join('\n');
   return '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(title) + '</title><style>' +
     ':root{--ink:#2b2320;--mute:#8a7f76;--paper:#faf6f0;--line:#e8ded2;--terra:#c1502e}' +
@@ -190,11 +205,11 @@ export function transcriptHtml({ title, meta, note, paras, audio }) {
     '.note{font:14px/1.5 -apple-system,sans-serif;color:#6b6152;background:#f2ece3;border-left:3px solid #b9ab97;padding:9px 12px;border-radius:0 8px 8px 0;margin:0 0 22px}' +
     'p{margin:0 0 1.05em}.gap{font:italic 13px -apple-system,sans-serif;color:var(--mute);text-align:center;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:6px 0}' +
     '.ts{font:700 12px -apple-system,sans-serif;color:var(--terra);background:#fff;border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin-right:8px;cursor:pointer;vertical-align:1px}' +
-    '.ts:focus-visible{outline:2px solid var(--terra);outline-offset:2px}.fine{font:12px -apple-system,sans-serif;color:var(--mute);margin-top:30px}' +
+    '.ts:focus-visible{outline:2px solid var(--terra);outline-offset:2px}.unc{font:italic 13px -apple-system,sans-serif;color:var(--mute);background:#f2ece3;border-radius:4px;padding:0 5px}.fine{font:12px -apple-system,sans-serif;color:var(--mute);margin-top:30px}' +
     '</style></head><body><header><h1>' + esc(title) + '</h1><div class="meta">' + esc(meta) + '</div>' +
     (audio ? '<audio id="a" controls preload="metadata" src="' + esc(audio) + '"></audio>' : '') + '</header><main>' +
     (note ? '<div class="note">' + esc(note) + '</div>' : '') + body +
-    '<p class="fine">Machine transcription (Whisper, run locally). Names, Italian words, singing and crosstalk will have errors.</p>' +
+    '<p class="fine">Machine transcription (Whisper, run locally) of a quiet recording in a large hall. ' + UNCLEAR + ' marks speech the model could not make out reliably. Names, Italian words and singing will still have errors.</p>' +
     '</main><script>document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".ts");' +
     'var a=document.getElementById("a");if(!b||!a)return;a.currentTime=+b.dataset.t;a.play();});</script></body></html>\n';
 }

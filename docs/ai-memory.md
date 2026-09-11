@@ -221,3 +221,16 @@ against this file. It cannot see two things, and both have already bitten:
 skill, and this mirror — in the same turn, then re-read this file end to end. The checker's
 one expected red flag is `higgsfield-interview-loop-prompts` (withheld on purpose, see
 above); **a green run on everything else is the guard's silence, not proof of currency.**
+
+---
+
+## zsh-does-not-word-split
+
+**Type:** project · The shell behind the Bash tool on the curator's Mac is **zsh**, which does not word-split an
+unquoted variable. On 2026-09-11 that silently broke three checks: a loop over six video ids ran once over all of
+them glued together and reported **0 leaks while all six were public**; `curl ${2:+-H "Range: $2"}` sent **no
+header**, "proving" the server ignored Range requests; a conditional `--language` argument made Whisper write no
+output. **How to apply:** lists and conditional arguments go through `bash -c '...'` with an array
+(`args+=(-H "Range: $r")` then `"${args[@]}"`), or are written out explicitly - and every check gets a negative
+control that must fail first.
+
