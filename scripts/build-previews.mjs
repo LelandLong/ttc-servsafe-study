@@ -138,6 +138,16 @@ function build(pg){
         body = body.replace(m[0], 'var PHOTOS = [\n' + trimmed + '\n];');
       }
     }
+    // 🛑 AND THE YOUTUBE IDS. An unlisted video is private only while its id is
+    // unknown - an id in this public repo IS a link anyone can watch. The guard
+    // above only knew about Convex URLs, so six real ids sat in the public preview
+    // from b6b3ad7 until this was added. Strip them, then refuse to build if one
+    // survives in any form: a bare id field, a watch/embed/youtu.be URL, or a
+    // thumbnail host that embeds the id.
+    body = body.replace(/\bid:"[A-Za-z0-9_-]{11}"/g, 'id:""');
+    const ytLeaks = (body.match(/\bid:"[A-Za-z0-9_-]{11}"|youtu\.be\/[A-Za-z0-9_-]{11}|youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|shorts\/)[A-Za-z0-9_-]{11}|ytimg\.com\/vi\/[A-Za-z0-9_-]{11}/g) || []).length;
+    if (ytLeaks) { console.error('FAIL: ' + ytLeaks + ' YouTube ids survived into ' + pg.out); process.exit(1); }
+
     const after = (body.match(/convex\.cloud/g) || []).length;
     if (after) { console.error('FAIL: ' + after + ' media URLs survived into ' + pg.out); process.exit(1); }
     if (before) console.log('  stripped ' + before + ' live media URLs from the public preview');
