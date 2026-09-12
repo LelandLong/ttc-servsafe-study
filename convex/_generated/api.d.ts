@@ -17,6 +17,7 @@ import type * as recipes from "../recipes.js";
 import type * as seed from "../seed.js";
 import type * as staffAuth from "../staffAuth.js";
 import type * as tests from "../tests.js";
+import type * as usage from "../usage.js";
 import type * as users from "../users.js";
 
 import type {
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   seed: typeof seed;
   staffAuth: typeof staffAuth;
   tests: typeof tests;
+  usage: typeof usage;
   users: typeof users;
 }>;
 
