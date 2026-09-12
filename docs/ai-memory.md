@@ -236,6 +236,18 @@ control that must fail first.
 
 ---
 
+## iphone-checks-use-ios-simulator
+
+**Type:** project · This Mac has Xcode + the **iOS Simulator** (real Mobile Safari). Playwright WebKit is
+*desktop* WebKit: on 2026-09-12 it passed Leland's YouTube Short while his iPhone showed a black screen. The
+Simulator reproduced it at once (iOS blocks autoplay-with-sound; the Shorts player then stays black; fix:
+`autoplay=0` for vertical entries). **How to apply:** reproduce anything reported from the iPhone there —
+`xcrun simctl boot` / `openurl` / `io booted screenshot`, a local harness that loads the private page into a
+`srcdoc` iframe like the app, a known-good control in the same harness, pixels measured over time (the first
+and 30-second frames differed). Also in `.claude/skills/feature-flow/SKILL.md` step 6.
+
+---
+
 ## fix-requests-ship-straight-through
 
 **Type:** feedback · A bug Leland reported or a fix he directed **is the go**: verify it fully, then merge,
