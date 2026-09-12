@@ -178,7 +178,7 @@ AdminApp (root)
 │   ├── Title + stats
 │   ├── Theme toggle
 │   └── Preview Study App button
-├── TabNavigation (Questions | Students | Live Test)
+├── TabNavigation (Questions | Students | Live Test | Recipes | Usage)
 ├── QuestionsTab
 │   ├── Search + filters
 │   ├── Add Question button

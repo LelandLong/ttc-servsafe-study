@@ -6,6 +6,23 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [09-12-2026-1] - September 12, 2026
+
+### Added
+- **Usage tab on the admin page — who has been using the app.** Students started passing the app around by QR code, and "who's on it?" needed a database query and a report written by hand. The new **📊 Usage** tab answers it directly, for the **last hour, today, 7 days or 30 days**:
+  - **New accounts** (when, gamer name, first name) — the QR-code arrivals.
+  - **Signed in or synced** — anyone who opened the app with an account and synced.
+  - **Trip pages** — per person, Video Hub and Photo Gallery activity: page opens, photos viewed, videos/audio/transcripts played, with each play listed by time and title. By **device** time, so a view queued offline lands in the window it happened in.
+  - Refreshes every minute; staff accounts hidden unless *Include staff accounts* is ticked, so your own testing does not inflate the numbers.
+  - **Honest about its blind spot:** people who open the app without creating an account leave no trace (GitHub Pages keeps no visitor log we can read), and the tab says so.
+  - **Staff only, server-side:** `usage:report` (`convex/usage.ts`) is behind `requireStaff` like the student roster — verified: a staff account gets the report, a student account and a call with no account are refused, and a student signing in to the admin page never reaches the tab.
+- The admin tab bar now **scrolls sideways on a phone** instead of pushing the fifth tab off-screen.
+
+### Fixed
+- **Video Hub view records read "Sep 12 · undefined · …"** for a video with no place (the new Short). The label now skips missing parts; older rows are tidied when the Usage tab shows them.
+
+---
+
 ## [09-11-2026-2] - September 11, 2026
 
 ### Fixed

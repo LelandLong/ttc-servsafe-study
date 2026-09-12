@@ -255,7 +255,8 @@ npx convex deploy --yes
 
 ### Admin App (`admin.html`)
 - **Course selector** in header (CUL-104 | CUL-105 toggle), persisted in localStorage
-- 4-tab interface: Questions | Students | Live Test | Recipes
+- 5-tab interface: Questions | Students | Live Test | Recipes | Usage
+- **Usage tab (since 09-12-2026-1):** who has used the app over a window (last hour / today / 7 / 30 days) — new accounts, sign-ins/syncs, and Video Hub / Photo Gallery views per person. Backed by staff-only `usage:report` (`convex/usage.ts`); staff accounts hidden unless ticked. Cannot see visitors who never create an account.
 - Full question CRUD with search/filter (course-scoped)
 - **Recipes tab:** manage the global (shared) recipe library — list/search/filter, add/edit/delete global recipes. Globals can ONLY be edited here; the student app forks a personal copy for any edit (even the curator).
 - Dynamic filters: Chapters for CUL-104, Topics + Type for CUL-105
