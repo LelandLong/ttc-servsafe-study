@@ -236,6 +236,18 @@ control that must fail first.
 
 ---
 
+## fix-requests-ship-straight-through
+
+**Type:** feedback · A bug Leland reported or a fix he directed **is the go**: verify it fully, then merge,
+deploy and verify live without stopping at the PR to ask. On 2026-09-12 this seat held the verified
+version-label fix (PR #68) for a merge go and got *"make it live (don't know why you held off, should have
+been live already!)"*. He is abroad using the real app; a parked fix leaves the bug live for students.
+**How to apply:** ask first only for work he did not request (new features or UX, destructive prod-data
+changes, outward-facing content of a new kind he has not seen). Verification is never what gets skipped;
+the ship is fast because the checks already passed. Also in `.claude/skills/feature-flow/SKILL.md`.
+
+---
+
 ## trip-media-consent-covers-cloud
 
 **Type:** feedback · The HOS-190 Italy trip is covered by **signed disclosures for images, video and audio**.
