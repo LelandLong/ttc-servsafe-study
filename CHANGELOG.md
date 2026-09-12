@@ -6,6 +6,19 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [09-11-2026-2] - September 11, 2026
+
+### Fixed
+- **The version number now tells the truth about what is running.** On a device showing **v09-11-2026-1**, audio still failed with the exact error that release had fixed. The label was right about the *page* and wrong about the *service worker* — the background piece that handles audio, caching and offline:
+  - The page and `version.js` load network-first, so the label always showed the newest version. The service worker only changes when a new one **installs**, and install required every core file to download. **One dropped fetch on hotel wifi threw the new worker away**, and the previous one kept running under a label that said otherwise. So the advice became "refresh until it works" — guessing, which is what the version number exists to prevent.
+  - **The worker now reports its own version**, and the label names it whenever it differs from the page: `v09-11-2026-2 · worker older` (or the worker's version). When they match it is the plain `v09-11-2026-2` — which now means everything is current.
+  - **A worker that is behind the page updates itself, in place, with no reload.** The page asks for the new worker on load, when the app returns to the foreground (a home-screen app resumed from the background never navigates, so it could previously sit on an old version for days), and every 30 minutes. The new worker takes over the open page as it activates.
+  - **A dropped download no longer discards the new worker.** A core file that fails to fetch is taken from the copy the previous version cached. `version.js` is the exception: it *is* the version.
+  - **Verified in WebKit and Chromium** against a real device state, not a simulated one: two servers on the same origin, the first serving the previous worker, the second this release. Stale state confirmed before each run. Before: label reads `worker older`, audio fails with `MediaError 4`. After one foreground event and **zero reloads**: label plain, audio plays. **Negative controls:** today's live page code (no heal logic) stays stale with the audio error; today's live worker with the Tailwind CDN dropped mid-install never installs, while this release's does.
+  - Two defects found by the tests and fixed before shipping: a worker slow to answer right after taking over read as "older" (now re-asked up to three times), and a late timeout from the *old* worker could overwrite the new worker's answer (answers from a worker no longer in charge are now ignored).
+
+---
+
 ## [09-11-2026-1] - September 11, 2026
 
 ### Fixed

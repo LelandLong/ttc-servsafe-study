@@ -1,7 +1,13 @@
 // Chef's Kitchen service worker — offline support (built 08-11-2026).
 // Strategy: cache name is stamped with APP_VERSION, so every release starts a
-// fresh cache and activate() wipes the old ones — a stale SW can never pin
-// users to an old version for more than one load. Navigations and version.js
+// fresh cache and activate() wipes the old ones. (This header used to promise a
+// stale SW "can never pin users to an old version for more than one load". It
+// could: install needs every CORE file, one dropped download on hotel wifi threw
+// the new worker away, and the old one kept running while the page - which loads
+// network-first - showed the NEW version number. 2026-09-11, audio broken on a
+// device labelled v09-11-2026-1. Now CORE falls back to the previous cache, and
+// the worker reports its own version so the label can't claim what isn't
+// running.) Navigations and version.js
 // are NETWORK-FIRST (the update banner keeps working); everything else is
 // cache-first with runtime fill. Convex calls are POSTs and pass through
 // untouched — private-page bodies are cached at the app layer (localStorage),
@@ -70,10 +76,30 @@ function putInCache(cache, url) {
   });
 }
 
+// A CORE file that fails to download is taken from the copy an earlier version
+// cached (old caches still exist until activate() clears them). Without this a
+// single dropped fetch discarded the whole new worker and left the old one in
+// charge. version.js is the exception: it IS the version, so it must be fresh.
+function putCore(cache, url) {
+  return putInCache(cache, url).catch(function (err) {
+    if (url === 'version.js') throw err;
+    return caches.match(url).then(function (hit) {
+      if (hit) return cache.put(url, hit);
+      throw err;
+    });
+  });
+}
+
+// The page asks which version this worker is, so the label reports what is
+// actually running rather than what the server offers.
+self.addEventListener('message', function (e) {
+  if (e.data === 'ck-version' && e.ports && e.ports[0]) e.ports[0].postMessage({ ckVersion: APP_VERSION });
+});
+
 self.addEventListener('install', function (e) {
   e.waitUntil(
     caches.open(CACHE).then(function (cache) {
-      var core = Promise.all(CORE.map(function (u) { return putInCache(cache, u); }));
+      var core = Promise.all(CORE.map(function (u) { return putCore(cache, u); }));
       var images = Promise.all(IMAGES.map(function (u) {
         return putInCache(cache, u).catch(function () {}); // best-effort
       }));
