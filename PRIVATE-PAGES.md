@@ -64,6 +64,10 @@ videos go up**; an empty list hides the line.
 **Vertical videos (YouTube Shorts).** Give the entry `"vertical": true` in `private/video-hub.json`; the
 hub then plays it in a 9:16 player sized to the screen instead of the 16:9 slot (first use: *Class picture
 time with Blake*, 2026-09-12). Vertical *photos* need nothing: the viewer already fits any shape whole.
+Shorts open **without autoplay**: in iOS Safari (tested in the Simulator, real Mobile Safari) the Shorts
+player stays black indefinitely after iOS blocks autoplay-with-sound, while the normal player falls back to its
+poster. With autoplay off, students see the thumbnail and tap play once. Both players show a "Loading the
+video…" note until the frame has drawn: YouTube paints black for several seconds on a phone.
 
 > 🛑 **Never commit a rendered copy of these pages.** A public "design preview" of each lived in
 > `design/` until 2026-09-11. Its guard stripped Convex media URLs but not YouTube ids, so **six unlisted
