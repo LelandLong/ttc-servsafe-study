@@ -282,7 +282,7 @@ npx convex deploy --yes
 
 ## Git Workflow
 
-**NEVER commit without asking.** Do not create commits or push without explicit user approval.
+**NEVER commit without asking** — for work Leland did not request. Exception (2026-09-12): a bug he reported or a fix he directed IS the approval; verify it, then ship the whole chain to live (details: `feature-flow` golden overrides).
 
 **PR review (since 2026-08-18):** the Claude Code review action (`.github/workflows/claude-review.yml`) is triggered by every PR open/push, **but a green check does not always mean a review ran.** The action's built-in validation SKIPS execution — while still concluding "success" — unless the PR branch's workflow file exists and is byte-identical to the copy on `main` (so any PR that adds or edits the workflow, or was branched before it landed, gets a green no-op; verified on PRs #20/#21, 2026-08-18). To know a review actually ran, open the Actions run: a real review takes minutes; a skip finishes in seconds with "Exiting due to workflow validation skip" in the log. When a review DOES run clean it posts NOTHING — silence is pass; findings arrive as a PR comment. CodeRabbit is uninstalled account-wide. Merges are discipline-gated (nothing on the account can enforce a check) — the gate remains your own verification plus Leland.
 
