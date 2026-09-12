@@ -65,7 +65,7 @@ const hub = readHub();
 if (!hub) { console.error('no ' + HUB_JSON + ' - run with --import first'); process.exit(1); }
 
 // Only what the PAGE needs. Local paths stay out of a page served from Convex.
-const FIELDS = ['id','media','src','tid','kind','rank','date','time','place','what','dur','added','cook','note','desc'];
+const FIELDS = ['id','media','src','tid','kind','rank','date','time','place','what','dur','added','cook','note','desc','vertical'];  // vertical: a 9:16 video (a YouTube Short) - played in a tall player
 const lit = e => '  { ' + FIELDS.filter(f => e[f] !== undefined && e[f] !== null && e[f] !== '')
   .map(f => f + ':' + JSON.stringify(e[f])).join(', ') + ' }';
 

@@ -61,6 +61,10 @@ each section as one row with an explicit "Showing the newest 3 of 112" and a Sho
 `VIDEOS_SOON` — the days whose videos are not in the Video Hub yet. **Remove a day from that list when its
 videos go up**; an empty list hides the line.
 
+**Vertical videos (YouTube Shorts).** Give the entry `"vertical": true` in `private/video-hub.json`; the
+hub then plays it in a 9:16 player sized to the screen instead of the 16:9 slot (first use: *Class picture
+time with Blake*, 2026-09-12). Vertical *photos* need nothing: the viewer already fits any shape whole.
+
 > 🛑 **Never commit a rendered copy of these pages.** A public "design preview" of each lived in
 > `design/` until 2026-09-11. Its guard stripped Convex media URLs but not YouTube ids, so **six unlisted
 > video ids were public for about 16 hours**. It was removed rather than patched again. Leland's call on the
