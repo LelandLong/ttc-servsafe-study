@@ -45,7 +45,17 @@ function excluded(key){
   return !!(m && allKeys.has(m[1] + 'IMG_E' + m[2]));
 }
 
-const ADDED = new Date().toISOString().slice(0,10);
+// Each photo keeps the date it was FIRST added. This used to stamp every row with
+// today, so each rebuild marked the whole gallery "new" - found 2026-09-12, when
+// adding one day's 62 photos made "Recently added" show all 304. Matched by image
+// URL, which is fixed once uploaded; only photos not already on the page get today.
+const now = new Date();
+const ADDED = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+const prevAdded = {};
+for (const ln of fs.readFileSync(PAGE, 'utf8').split('\n')) {
+  const m = /^\s*\{ src:("(?:[^"\\]|\\.)*").*, added:("\d{4}-\d\d-\d\d") \},?$/.exec(ln);
+  if (m) prevAdded[JSON.parse(m[1])] = JSON.parse(m[2]);
+}
 const rows = [];
 let noUrl = 0, unsorted = 0;
 
@@ -65,7 +75,7 @@ for (const m of manifest) {
     time:  m.shotTime || '',
     place: places[m.shot] || '',
     what:  (sections[key].what || ''),
-    added: ADDED
+    added: prevAdded[up.full.url] || ADDED
   });
 }
 
@@ -91,6 +101,7 @@ fs.writeFileSync(PAGE, html);
 
 const by = rows.reduce((a,r) => (a[r.section] = (a[r.section]||0)+1, a), {});
 console.log('  gallery entries : ' + rows.length);
+console.log('  kept added date : ' + rows.filter(r => prevAdded[r.src]).length + '   new today (' + ADDED + '): ' + rows.filter(r => !prevAdded[r.src]).length);
 for (const k of ['food','out']) console.log('    ' + k.padEnd(8) + (by[k]||0));
 console.log('  excluded        : ' + (manifest.length - rows.length - noUrl - unsorted));
 console.log('  no URL (skipped): ' + noUrl + '   unsorted: ' + unsorted);
