@@ -370,7 +370,8 @@
         'questions:addQuestion': 1, 'questions:updateQuestion': 1, 'questions:deleteQuestion': 1,
         'questions:addCategory': 1, 'questions:deleteCategory': 1, 'questions:bulkImport': 1,
         'questions:resetToOriginal': 1,
-        'tests:createTest': 1, 'tests:startTest': 1, 'tests:endTest': 1, 'tests:deleteTest': 1
+        'tests:createTest': 1, 'tests:startTest': 1, 'tests:endTest': 1, 'tests:deleteTest': 1,
+        'usage:report': 1
       };
       function withActor(functionName, args) {
         args = args || {};
@@ -2408,6 +2409,117 @@
         );
       }
 
+      // ---- Usage: who has been using the app ----------------------------
+      // Backed by convex/usage.ts (staff only - it returns first names). Three
+      // signals, because none sees everyone: new accounts, sign-ins/syncs, and
+      // views on the Italy media pages (by device time, so a view queued offline
+      // lands in the window it happened in). Refreshes every minute while open.
+      var USAGE_WINDOWS = [
+        { key: 'hour',  label: 'Last hour', since: function(){ return Date.now() - 3600e3; } },
+        { key: 'today', label: 'Today',     since: function(){ var d = new Date(); d.setHours(0,0,0,0); return d.getTime(); } },
+        { key: 'week',  label: '7 days',    since: function(){ return Date.now() - 7 * 864e5; } },
+        { key: 'month', label: '30 days',   since: function(){ return Date.now() - 30 * 864e5; } }
+      ];
+      function UsagePanel() {
+        var s1 = useState('hour'); var win = s1[0], setWin = s1[1];
+        var s2 = useState(null); var data = s2[0], setData = s2[1];
+        var s3 = useState(''); var msg = s3[0], setMsg = s3[1];
+        var s4 = useState(false); var showStaff = s4[0], setShowStaff = s4[1];
+
+        useEffect(function(){
+          var alive = true;
+          function load() {
+            var w = USAGE_WINDOWS.filter(function(x){ return x.key === win; })[0];
+            convexQuery('usage:report', { sinceMs: Math.floor(w.since()) })
+              .then(function(d){ if (alive) { setData(d); setMsg(''); } })
+              .catch(function(err){ if (alive) setMsg('Could not load usage: ' + err.message); });
+          }
+          setData(null); load();
+          var t = setInterval(load, 60000);
+          return function(){ alive = false; clearInterval(t); };
+        }, [win]);
+
+        var longWin = win === 'week' || win === 'month';
+        function when(ms) {
+          var d = new Date(ms);
+          var t = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+          return longWin ? d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + t : t;
+        }
+        function nameOf(p) {
+          var first = p.firstName ? p.firstName.charAt(0).toUpperCase() + p.firstName.slice(1) : '';
+          return p.name + (first ? ' (' + first + ')' : '');
+        }
+        // Rows recorded before 09-12 carry "undefined" where a video had no place.
+        function cleanLabel(l) { return String(l || '').replace(/ · undefined/g, ''); }
+        var keep = function(p){ return showStaff || !p.staff; };
+        var newA = data ? data.newAccounts.filter(keep) : [];
+        var act = data ? data.active.filter(keep) : [];
+        var ppl = data ? data.media.people.filter(keep) : [];
+        var events = ppl.reduce(function(a, p){ return a + p.total; }, 0);
+
+        var card = { backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' };
+        var muted = { color: 'var(--text-secondary)' };
+        function tile(n, label) {
+          return e('div', { className: 'rounded-xl p-3', style: card },
+            e('div', { className: 'text-2xl font-bold', style: { color: 'var(--text-primary)' } }, data ? n : '…'),
+            e('div', { className: 'text-xs', style: muted }, label));
+        }
+        function staffBadge(p) {
+          return p.staff ? e('span', { className: 'ml-2 text-xs px-2 py-0.5 rounded-full', style: { backgroundColor: 'rgba(59,130,246,0.15)', color: '#3b82f6' } }, 'staff') : null;
+        }
+        function section(title, list, render, empty) {
+          return e('div', { className: 'rounded-xl overflow-hidden', style: card },
+            e('div', { className: 'px-3 py-2 text-sm font-bold', style: { borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)' } }, title + (data ? ' · ' + list.length : '')),
+            !data ? e('div', { className: 'p-3 text-sm', style: muted }, 'Loading…')
+              : list.length === 0 ? e('div', { className: 'p-3 text-sm', style: muted }, empty)
+              : list.map(render));
+        }
+        var KINDS = [['page', 'page open', 'page opens'], ['photo', 'photo', 'photos'], ['video', 'video play', 'video plays'],
+                     ['audio', 'audio play', 'audio plays'], ['transcript', 'transcript', 'transcripts']];
+
+        return e('div', { className: 'max-w-4xl mx-auto p-4 space-y-4' },
+          e('div', null,
+            e('h2', { className: 'text-lg font-bold', style: { color: 'var(--text-primary)' } }, '📊 Usage'),
+            e('p', { className: 'text-sm', style: muted }, 'Who has been using the app. Refreshes every minute; times are this device’s local time.')),
+          e('div', { className: 'flex flex-wrap gap-2 items-center' },
+            USAGE_WINDOWS.map(function(w){
+              var on = w.key === win;
+              return e('button', { key: w.key, onClick: function(){ setWin(w.key); }, className: 'px-4 py-2 rounded-full text-sm font-medium',
+                style: on ? { backgroundColor: '#ea580c', color: '#fff' } : { backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' } }, w.label);
+            }),
+            e('label', { className: 'text-sm flex items-center gap-2 ml-auto', style: muted },
+              e('input', { type: 'checkbox', checked: showStaff, onChange: function(ev){ setShowStaff(ev.target.checked); } }), 'Include staff accounts')),
+          msg && e('div', { className: 'p-2 rounded text-sm', style: { backgroundColor: 'rgba(220,38,38,0.1)', color: '#dc2626' } }, msg),
+          e('div', { className: 'grid grid-cols-2 sm:grid-cols-4 gap-3' },
+            tile(newA.length, 'new accounts'), tile(act.length, 'signed in or synced'),
+            tile(ppl.length, 'people on trip pages'), tile(events, 'trip-page views')),
+          section('🆕 New accounts', newA, function(p){
+            return e('div', { key: p.userId, className: 'px-3 py-2 text-sm flex gap-3', style: { borderBottom: '1px solid var(--border-color)' } },
+              e('span', { className: 'w-20 flex-shrink-0', style: muted }, when(p.at)),
+              e('span', { style: { color: 'var(--text-primary)' } }, nameOf(p)), staffBadge(p));
+          }, 'No new accounts in this window.'),
+          section('✅ Signed in or synced', act, function(p){
+            return e('div', { key: p.userId, className: 'px-3 py-2 text-sm flex gap-3', style: { borderBottom: '1px solid var(--border-color)' } },
+              e('span', { className: 'w-20 flex-shrink-0', style: muted }, when(p.at)),
+              e('span', { style: { color: 'var(--text-primary)' } }, nameOf(p)), staffBadge(p));
+          }, 'Nobody signed in or synced in this window.'),
+          section('🎬 Trip pages (Video Hub & Photo Gallery)', ppl, function(p){
+            var counts = KINDS.filter(function(k){ return p[k[0]]; }).map(function(k){ return p[k[0]] + ' ' + (p[k[0]] === 1 ? k[1] : k[2]); }).join(' · ');
+            return e('div', { key: p.userId, className: 'px-3 py-2 text-sm', style: { borderBottom: '1px solid var(--border-color)' } },
+              e('div', { className: 'flex flex-wrap gap-x-3' },
+                e('span', { className: 'font-semibold', style: { color: 'var(--text-primary)' } }, nameOf(p)), staffBadge(p),
+                e('span', { style: muted }, when(p.first) + (when(p.last) !== when(p.first) ? ' – ' + when(p.last) : ''))),
+              e('div', { className: 'text-xs mt-0.5', style: muted }, counts),
+              p.played.length > 0 && e('div', { className: 'mt-1 space-y-0.5' },
+                p.played.map(function(x, i){
+                  return e('div', { key: i, className: 'text-xs', style: { color: 'var(--text-primary)' } },
+                    e('span', { style: muted }, when(x.at) + ' · ' + x.kind + ' · '), cleanLabel(x.label));
+                })));
+          }, 'No Video Hub or Photo Gallery activity in this window.'),
+          e('p', { className: 'text-xs', style: muted }, 'Not visible here: people who open the app without creating an account (GitHub Pages keeps no visitor log we can read), and quiz practice that has not synced yet.')
+        );
+      }
+
       function RecipesAdmin() {
         var s1 = useState(null); var recipes = s1[0], setRecipes = s1[1];
         var s2 = useState(''); var search = s2[0], setSearch = s2[1];
@@ -2698,18 +2810,19 @@
 
           // Tab Navigation
           e('div', { style: { backgroundColor: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' } },
-            e('div', { className: 'max-w-7xl mx-auto flex' },
+            e('div', { className: 'max-w-7xl mx-auto flex overflow-x-auto' },
               [
                 { key: 'questions', label: 'Questions', icon: '\uD83D\uDCDD' },
                 { key: 'students', label: 'Students', icon: '\uD83D\uDC65' },
                 { key: 'livetest', label: 'Live Test', icon: '\u23F1\uFE0F' },
-                { key: 'recipes', label: 'Recipes', icon: '\uD83C\uDF73' }
+                { key: 'recipes', label: 'Recipes', icon: '\uD83C\uDF73' },
+                { key: 'usage', label: 'Usage', icon: '\uD83D\uDCCA' }
               ].map(function(tab) {
                 var isActive = activeTab === tab.key;
                 return e('button', {
                   key: tab.key,
                   onClick: function() { setActiveTab(tab.key); },
-                  className: 'px-6 py-3 text-sm font-medium transition-colors border-b-2',
+                  className: 'px-6 py-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap flex-shrink-0',
                   style: isActive
                     ? { borderColor: 'var(--tab-active-border)', color: 'var(--tab-active-text)' }
                     : { borderColor: 'transparent', color: 'var(--tab-text)' }
@@ -2792,6 +2905,8 @@
           activeTab === 'livetest' && e(LiveTestPanel, { activeCourse: activeCourse }),
 
           activeTab === 'recipes' && e(RecipesAdmin, null),
+
+          activeTab === 'usage' && e(UsagePanel, null),
 
           // Modals (always available)
           editingQuestion && e(QuestionEditor, {
