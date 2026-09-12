@@ -194,7 +194,7 @@ export function transcriptHtml({ title, meta, note, paras, audio }) {
     ? '<p class="gap">' + hms(p.t) + ' – ' + hms(p.t + p.g) + ' · no clear speech</p>'
     : '<p>' + (audio ? '<button class="ts" data-t="' + p.t + '">' + hms(p.t) + '</button>'
                      : '<span class="ts">' + hms(p.t) + '</span>') +
-      esc(p.x).split(UNCLEAR).join('<span class="unc">' + UNCLEAR + '</span>') + '</p>').join('\n');
+      esc(p.x).split(UNCLEAR).join('<span class="unc">' + UNCLEAR + '</span>').replace(/\{([^}]*)\}/g, '<em class="guess">$1</em>') + '</p>').join('\n');
   return '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(title) + '</title><style>' +
     ':root{--ink:#2b2320;--mute:#8a7f76;--paper:#faf6f0;--line:#e8ded2;--terra:#c1502e}' +
@@ -205,11 +205,11 @@ export function transcriptHtml({ title, meta, note, paras, audio }) {
     '.note{font:14px/1.5 -apple-system,sans-serif;color:#6b6152;background:#f2ece3;border-left:3px solid #b9ab97;padding:9px 12px;border-radius:0 8px 8px 0;margin:0 0 22px}' +
     'p{margin:0 0 1.05em}.gap{font:italic 13px -apple-system,sans-serif;color:var(--mute);text-align:center;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:6px 0}' +
     '.ts{font:700 12px -apple-system,sans-serif;color:var(--terra);background:#fff;border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin-right:8px;cursor:pointer;vertical-align:1px}' +
-    '.ts:focus-visible{outline:2px solid var(--terra);outline-offset:2px}.unc{font:italic 13px -apple-system,sans-serif;color:var(--mute);background:#f2ece3;border-radius:4px;padding:0 5px}.fine{font:12px -apple-system,sans-serif;color:var(--mute);margin-top:30px}' +
+    '.ts:focus-visible{outline:2px solid var(--terra);outline-offset:2px}.unc{font:italic 13px -apple-system,sans-serif;color:var(--mute);background:#f2ece3;border-radius:4px;padding:0 5px}.fine{font:12px -apple-system,sans-serif;color:var(--mute);margin-top:30px}.guess{font-style:italic;color:#6b4a3a}' +
     '</style></head><body><header><h1>' + esc(title) + '</h1><div class="meta">' + esc(meta) + '</div>' +
     (audio ? '<audio id="a" controls preload="metadata" src="' + esc(audio) + '"></audio>' : '') + '</header><main>' +
     (note ? '<div class="note">' + esc(note) + '</div>' : '') + body +
-    '<p class="fine">Machine transcription (Whisper, run locally) of a quiet recording in a large hall. ' + UNCLEAR + ' marks speech the model could not make out reliably. Names, Italian words and singing will still have errors.</p>' +
+    '<p class="fine">Transcribed from a quiet recording in a large hall. <em>Italic</em> words are best guesses from context; ' + UNCLEAR + ' marks speech that could not be made out. Names and Italian words may still have errors.</p>' +
     '</main><script>document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".ts");' +
     'var a=document.getElementById("a");if(!b||!a)return;a.currentTime=+b.dataset.t;a.play();});</script></body></html>\n';
 }

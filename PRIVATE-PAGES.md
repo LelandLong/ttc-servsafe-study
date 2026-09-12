@@ -43,9 +43,23 @@ Media sits on the drive under `/Volumes/Andromeda/Screenflow/Italy/`; originals 
 |---|---|
 | Photos | `convert-stills` → `sort-stills` (Leland) → `upload-stills` → `build-gallery-data` |
 | Video | `transcode-videos` → upload in YouTube Studio (Leland) → `link-videos` → `describe-videos` (Leland) → `build-hub-data` |
-| Audio | `upload-audio` → `transcribe-audio` → `trim-audio` → `build-transcripts` → `build-hub-data` |
+| Audio | `upload-audio` → `transcribe-audio` → `trim-audio` → context reconciliation (Claude, below) → `build-transcripts` → `build-hub-data` |
 
 Then publish with `push-private-page.mjs`.
+
+**Context-reconciled transcripts (2026-09-12).** The recordings are too quiet for any single machine
+transcription (the guide is ~5 dB above the room). So each tour is transcribed three ways on the
+*published* audio — Whisper large-v3-turbo, large-v3, and turbo on pause-split clips — and Claude reads the
+three side by side and writes `_transcripts/<name>.ctx.json`, choosing what makes sense on the tour ("opera
+art" → "opera house"). `{braces}` mark a best guess from context and render in italics; `[unclear]` stays
+where no reading made sense. `build-transcripts` uses the `.ctx.json` whenever it exists. Leland's call:
+live transcripts may be improved this way without a preview.
+
+**Page upkeep.** Both pages open with a *Recently added* block of **text lines** (date + count; a tap jumps
+to those items) — thumbnails there read as extra players and confused students. The Photo Gallery shows
+each section as one row with an explicit "Showing the newest 3 of 112" and a Show-all button, and carries
+`VIDEOS_SOON` — the days whose videos are not in the Video Hub yet. **Remove a day from that list when its
+videos go up**; an empty list hides the line.
 
 > 🛑 **Never commit a rendered copy of these pages.** A public "design preview" of each lived in
 > `design/` until 2026-09-11. Its guard stripped Convex media URLs but not YouTube ids, so **six unlisted
