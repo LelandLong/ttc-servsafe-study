@@ -53,6 +53,7 @@ for (const id of ids) {
     id, kind: 'raw',
     date: meta.shot || ('20' + day.slice(4, 6) + '-' + day.slice(0, 2) + '-' + day.slice(2, 4)),
     time: clock(meta.time), place: '', what: '', dur: meta.dur, added: today,
+    ...(meta.vertical ? { vertical: true } : {}),   // portrait clip -> 9:16 player
     base: hit.base, file: hit.mp4 || hit.mov,             // mp4 plays in any browser
   });
   have.add(id); added++;

@@ -61,7 +61,9 @@ each section as one row with an explicit "Showing the newest 3 of 112" and a Sho
 `VIDEOS_SOON` — the days whose videos are not in the Video Hub yet. **Remove a day from that list when its
 videos go up**; an empty list hides the line.
 
-**Vertical videos (YouTube Shorts).** Give the entry `"vertical": true` in `private/video-hub.json`; the
+**Vertical videos (Shorts, and any portrait clip).** `link-videos` sets `"vertical": true` automatically when the
+file is taller than wide *as displayed* (iPhone portrait .MOVs are stored landscape with a rotation tag —
+`isVertical()` in `scripts/lib/media.mjs` accounts for it). For a hand-added entry (a Short), set it yourself. The
 hub then plays it in a 9:16 player sized to the screen instead of the 16:9 slot (first use: *Class picture
 time with Blake*, 2026-09-12). Vertical *photos* need nothing: the viewer already fits any shape whole.
 Shorts open **without autoplay**: in iOS Safari (tested in the Simulator, real Mobile Safari) the Shorts

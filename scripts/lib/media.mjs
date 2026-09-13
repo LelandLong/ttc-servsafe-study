@@ -49,6 +49,22 @@ export async function oembedTitle(id) {
 // the published label read "10:01 AM" when the bus ride was at 12:01 PM in Italy.
 // iPhones also write com.apple.quicktime.creationdate WITH its offset - that is
 // the wall-clock time the person saw, so it wins whenever it is present.
+// Taller than wide AS DISPLAYED. An iPhone portrait .MOV is stored 1920x1080 with
+// a 90-degree rotation tag, so the raw width/height alone call it landscape; the
+// transcoded .mp4 is written upright (1080x1920). Both must read as vertical, so
+// the hub plays them in the 9:16 player instead of a thin strip (2026-09-12).
+export function isVertical(file) {
+  try {
+    const j = JSON.parse(execFileSync('ffprobe', ['-v','error','-select_streams','v:0','-show_entries',
+      'stream=width,height:stream_side_data=rotation', '-of','json', file], { encoding: 'utf8' }));
+    const st = (j.streams || [])[0]; if (!st) return false;
+    let w = st.width, h = st.height;
+    const rot = ((st.side_data_list || []).find(x => x.rotation !== undefined) || {}).rotation || 0;
+    if (Math.abs(rot) % 180 === 90) [w, h] = [h, w];
+    return h > w;
+  } catch { return false; }
+}
+
 export function probe(file) {
   try {
     const out = execFileSync('ffprobe', ['-v','error','-show_entries',
@@ -69,8 +85,9 @@ export function probe(file) {
       dur: h ? h + 'h' + String(m).padStart(2, '0') + 'm' : m + 'm' + String(s).padStart(2, '0') + 's',
       shot: c ? c[1].slice(0, 10) : null,
       time: c ? c[1].slice(11, 16) : null,
+      vertical: isVertical(file),
     };
-  } catch { return { dur: '', shot: null, time: null }; }
+  } catch { return { dur: '', shot: null, time: null, vertical: false }; }
 }
 
 export function clock(t) {
