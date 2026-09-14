@@ -13,6 +13,12 @@
  * build. Re-running is safe: an id already in the hub is left alone, including
  * any description already written for it.
  *
+ * STAGE BEFORE UPLOAD: `--stage <day>` adds a day's clips as entries with NO id,
+ * so descriptions can be written from the drive while YouTube is still uploading.
+ * A later link then FILLS THE ID INTO THAT ENTRY (matched by filename) instead of
+ * adding a second copy, so the description written early is kept.
+ *
+ *   node scripts/link-videos.mjs --stage 091326
  *   node scripts/link-videos.mjs <url-or-id> [more...]
  *   pbpaste | node scripts/link-videos.mjs
  * then: node scripts/describe-videos.mjs  (descriptions)
@@ -31,15 +37,40 @@ function idOf(s) {
 }
 
 const args = process.argv.slice(2);
-const input = args.length ? args : fs.readFileSync(0, 'utf8').split(/\s+/);
+const si = args.indexOf('--stage');
+const stageDay = si > -1 ? args[si + 1] : null;
+const rest = si > -1 ? args.filter((a, i) => i !== si && i !== si + 1) : args;
+const input = stageDay ? [] : (rest.length ? rest : fs.readFileSync(0, 'utf8').split(/\s+/));
 const ids = [...new Set(input.map(idOf).filter(Boolean))];
-if (!ids.length) { console.error('no YouTube links or ids found'); process.exit(1); }
+if (!stageDay && !ids.length) { console.error('no YouTube links or ids found'); process.exit(1); }
 
 const hub = readHub() || { entries: [] };
 const have = new Set(hub.entries.map(e => e.id).filter(Boolean));
 const idx = indexSources();
 const today = new Date().toISOString().slice(0, 10);
-let added = 0, already = 0, failed = 0;
+let added = 0, already = 0, failed = 0, linked = 0;
+
+function entryFor(hit) {
+  const meta = probe(hit.mov || hit.mp4);                 // the original carries the capture time
+  const day = hit.day;
+  return {
+    kind: 'raw',
+    date: meta.shot || ('20' + day.slice(4, 6) + '-' + day.slice(0, 2) + '-' + day.slice(2, 4)),
+    time: clock(meta.time), place: '', what: '', dur: meta.dur, added: today,
+    ...(meta.vertical ? { vertical: true } : {}),   // portrait clip -> 9:16 player
+    base: hit.base, file: hit.mp4 || hit.mov,             // mp4 plays in any browser
+  };
+}
+
+if (stageDay) {
+  const bases = new Set(hub.entries.map(e => e.base).filter(Boolean));
+  for (const hit of Object.values(idx).filter(h => h.day === stageDay).sort((a, b) => a.base.localeCompare(b.base))) {
+    if (bases.has(hit.base)) { console.log('  already in hub  ' + hit.base); already++; continue; }
+    const e = entryFor(hit);
+    hub.entries.push(e); added++;
+    console.log('  staged  ' + hit.base + '  (' + e.date + ' ' + e.time + ', ' + e.dur + (e.vertical ? ', vertical' : '') + ')');
+  }
+}
 
 for (const id of ids) {
   if (have.has(id)) { console.log('  already in hub  ' + id); already++; continue; }
@@ -47,23 +78,24 @@ for (const id of ids) {
   if (!t) { console.error('  ' + id + ': no title (still a DRAFT? private? wrong id?)'); failed++; continue; }
   const hit = idx[norm(t)];
   if (!hit) { console.error('  ' + id + ': title "' + t + '" matches no file on disk'); failed++; continue; }
-  const meta = probe(hit.mov || hit.mp4);                 // the original carries the capture time
-  const day = hit.day;
-  hub.entries.push({
-    id, kind: 'raw',
-    date: meta.shot || ('20' + day.slice(4, 6) + '-' + day.slice(0, 2) + '-' + day.slice(2, 4)),
-    time: clock(meta.time), place: '', what: '', dur: meta.dur, added: today,
-    ...(meta.vertical ? { vertical: true } : {}),   // portrait clip -> 9:16 player
-    base: hit.base, file: hit.mp4 || hit.mov,             // mp4 plays in any browser
-  });
+  // Staged earlier (described while the upload ran)? Fill the id in, keep the text.
+  const staged = hub.entries.find(e => !e.id && e.base === hit.base);
+  if (staged) {
+    staged.id = id;
+    have.add(id); linked++;
+    console.log('  linked  ' + id + '  ->  ' + hit.base + (staged.what ? '  (kept: "' + staged.what + '")' : ''));
+    continue;
+  }
+  const e = entryFor(hit);
+  hub.entries.push({ id, ...e });
   have.add(id); added++;
-  console.log('  added  ' + id + '  ->  ' + hit.base + '  (' + day + ', ' + meta.dur + ')');
+  console.log('  added  ' + id + '  ->  ' + hit.base + '  (' + hit.day + ', ' + e.dur + ')');
 }
 
 // keep the hub in capture order so the page and the describe tool agree
 hub.entries.sort((a, b) => (a.date + (a.media === 'audio' ? '~' : '') + (a.time || ''))
   .localeCompare(b.date + (b.media === 'audio' ? '~' : '') + (b.time || '')));
 writeHub(hub);
-console.log('\nadded ' + added + ' · already there ' + already + ' · failed ' + failed + '  ->  ' + HUB_JSON);
-if (added) console.log('next: node scripts/describe-videos.mjs   then ask Claude to publish');
+console.log('\nadded ' + added + ' · linked to staged ' + linked + ' · already there ' + already + ' · failed ' + failed + '  ->  ' + HUB_JSON);
+if (added || linked) console.log('next: node scripts/describe-videos.mjs   then ask Claude to publish');
 if (failed) process.exit(1);
