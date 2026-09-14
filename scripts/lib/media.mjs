@@ -19,6 +19,17 @@ export const norm = s => String(s).trim().toLowerCase().replace(/\.[^.]+$/, '').
 // Every source video/audio file on the drive, keyed by normalised basename.
 // Keeps BOTH the original and the transcode: the .MOV carries the capture time,
 // the .mp4 plays in any browser (HEVC .MOV plays only in Safari).
+// "8:50 AM" -> "0850" for sorting. Times are stored for DISPLAY in 12-hour form,
+// and sorting those as text puts 10:12 AM before 1:41 PM and 8:50 AM last - which
+// is exactly how the Venice day first appeared in the hub (2026-09-14).
+export function timeKey(t) {
+  const m = /^(\d{1,2}):(\d{2})\s*([AP])M$/i.exec(String(t || '').trim());
+  if (!m) return '9999';
+  let h = +m[1] % 12;
+  if (m[3].toUpperCase() === 'P') h += 12;
+  return String(h).padStart(2, '0') + m[2];
+}
+
 export function indexSources(root = ROOT) {
   const out = {};
   if (!fs.existsSync(root)) return out;
