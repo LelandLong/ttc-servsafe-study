@@ -26,7 +26,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { indexSources, oembedTitle, probe, clock, norm, readHub, writeHub, HUB_JSON } from './lib/media.mjs';
+import { indexSources, oembedTitle, probe, clock, norm, timeKey, readHub, writeHub, HUB_JSON } from './lib/media.mjs';
 
 function idOf(s) {
   s = String(s).trim();
@@ -93,8 +93,8 @@ for (const id of ids) {
 }
 
 // keep the hub in capture order so the page and the describe tool agree
-hub.entries.sort((a, b) => (a.date + (a.media === 'audio' ? '~' : '') + (a.time || ''))
-  .localeCompare(b.date + (b.media === 'audio' ? '~' : '') + (b.time || '')));
+hub.entries.sort((a, b) => (a.date + (a.media === 'audio' ? '~' : '') + timeKey(a.time))
+  .localeCompare(b.date + (b.media === 'audio' ? '~' : '') + timeKey(b.time)));
 writeHub(hub);
 console.log('\nadded ' + added + ' · linked to staged ' + linked + ' · already there ' + already + ' · failed ' + failed + '  ->  ' + HUB_JSON);
 if (added || linked) console.log('next: node scripts/describe-videos.mjs   then ask Claude to publish');
