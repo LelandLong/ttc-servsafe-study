@@ -67,6 +67,10 @@ file is taller than wide *as displayed* (iPhone portrait .MOVs are stored landsc
 `isVertical()` in `scripts/lib/media.mjs` accounts for it). For a hand-added entry (a Short), set it yourself. The
 hub then plays it in a 9:16 player sized to the screen instead of the 16:9 slot (first use: *Class picture
 time with Blake*, 2026-09-12). Vertical *photos* need nothing: the viewer already fits any shape whole.
+**Sideways clips:** a phone sometimes tags a clip portrait when the content is landscape on its side (6 of the
+Sep 12-16 batch). Find them by extracting a frame from each clip and LOOKING - metadata cannot tell you - then
+`node scripts/rotate-video.mjs <base> cw|ccw ...`, which re-encodes from the untouched original and re-derives
+the entry's `vertical` flag. Check a frame of the result before uploading to YouTube.
 Shorts open **without autoplay**: in iOS Safari (tested in the Simulator, real Mobile Safari) the Shorts
 player stays black indefinitely after iOS blocks autoplay-with-sound, while the normal player falls back to its
 poster. With autoplay off, students see the thumbnail and tap play once. Both players show a "Loading the
