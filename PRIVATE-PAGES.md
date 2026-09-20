@@ -43,6 +43,7 @@ Media sits on the drive under `/Volumes/Andromeda/Screenflow/Italy/`; originals 
 |---|---|
 | Photos | `convert-stills` → `sort-stills` (Leland) → `upload-stills` → `build-gallery-data` |
 | Video | `transcode-videos` → upload in YouTube Studio (Leland) → `link-videos` → `describe-videos` (Leland) → `build-hub-data` |
+| Video, skipped takes | a clip Leland skips in `describe-videos` is removed from the hub AND listed in `private/video-skip.json`, or the next `--stage <day>` re-adds it |
 | Video, in parallel | `link-videos --stage <day>` adds the day's clips with **no id** so descriptions can be written while the upload runs; pasting the links later **fills the id into that entry** (matched by filename) and keeps the text |
 | Audio | `upload-audio` → `transcribe-audio` → `trim-audio` → context reconciliation (Claude, below) → `build-transcripts` → `build-hub-data` |
 
