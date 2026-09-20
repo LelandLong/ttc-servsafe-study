@@ -63,8 +63,13 @@ function entryFor(hit) {
 }
 
 if (stageDay) {
+  // Clips deliberately skipped (unusable takes) must not come back every time a day
+  // is re-staged - staging adds anything absent from the hub, so it needs a memory.
+  let skip = new Set();
+  try { skip = new Set(JSON.parse(fs.readFileSync('private/video-skip.json', 'utf8')).skip || []); } catch {}
   const bases = new Set(hub.entries.map(e => e.base).filter(Boolean));
   for (const hit of Object.values(idx).filter(h => h.day === stageDay).sort((a, b) => a.base.localeCompare(b.base))) {
+    if (skip.has(hit.base)) { console.log('  skipped (on the skip list)  ' + hit.base); continue; }
     if (bases.has(hit.base)) { console.log('  already in hub  ' + hit.base); already++; continue; }
     const e = entryFor(hit);
     hub.entries.push(e); added++;
