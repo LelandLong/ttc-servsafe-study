@@ -57,6 +57,14 @@ art" → "opera house"). `{braces}` mark a best guess from context and render in
 where no reading made sense. `build-transcripts` uses the `.ctx.json` whenever it exists. Leland's call:
 live transcripts may be improved this way without a preview.
 
+**Video Hub sections (2026-09-20).** Three: *Watch these* (short edited pieces, `kind: 'edited'`), *Cooking
+classes* (`kind: 'class'` — the full class recordings, one per class, each with `chapters`), and *The full
+archive* (`kind: 'raw'`), which starts compact like the gallery ("Showing the newest 5 of 22") with a
+Show-all toggle. `chapters` is `[[seconds, "label"], …]`; every chapter is a button that starts the embed at
+that second (`&start=`), and tapping another re-points the same player. **Entries with no YouTube id are
+held out of the published page** by `build-hub-data` — staged rows used to appear in the archive and answer
+"this video isn't available yet" when tapped. They publish themselves once `link-videos` gives them an id.
+
 **Page upkeep.** Both pages open with a *Recently added* block of **text lines** (date + count; a tap jumps
 to those items) — thumbnails there read as extra players and confused students. The Photo Gallery shows
 each section as one row with an explicit "Showing the newest 3 of 112" and a Show-all button, and carries
