@@ -289,4 +289,22 @@ entry for the clips it was cut from and drop those. Skipping means BOTH — remo
 `link-videos --stage <day>` re-adds it. The rule is retroactive: applying it also killed the 21
 `Mozzarella N/19` raws covered by the `BuffaloMozarella` edit, which he had not named — 44 clips / 56.2 GB
 down to 21 / 26.0 GB. Never drop an already-PUBLISHED entry on this reasoning without asking; assert the
-target is still staged first. Procedure owned by `PRIVATE-PAGES.md`.
+target is still staged first. **Exception (Leland, 2026-09-21): a short EXCERPT pulled from a longer
+recording does NOT supersede it** — *"rules are meant to be broken; when applicable... This one is just a
+short pulled from the larger tour."* The rule is for edits that REPLACE their sources (Mozzarella,
+Winery, Class #3); a funny excerpt goes in Watch these and the full recording stays. Unsure which? Ask.
+Procedure owned by `PRIVATE-PAGES.md`.
+
+---
+
+## youtube-embeds-need-a-referrer
+
+**Type:** project · YouTube's embed player refuses to load without an HTTP referrer and shows
+*"Video player configuration error — Error 153"*. A harness opened as `file://` sends none, so **every**
+embed fails there, including videos that work for students. Found 2026-09-21: a new Short showed Error 153,
+and the known-good control (live since Sep 12) showed the identical error in the same harness. Served over
+`python3 -m http.server`, both loaded. **How to apply:** any harness that PLAYS a YouTube embed is served and
+loaded from `http://localhost:<port>/`; `file://` is fine only for checks that never start playback (DOM,
+thumbnails, chapter buttons, embed `src` params). Read the YouTube frame's own text: a healthy embed shows
+the video's title and channel. Always run a known-good video beside the one under test. Procedure owned by
+`.claude/skills/feature-flow/SKILL.md` step 6.
