@@ -119,6 +119,13 @@ aside .t.empty{color:#8a7f76;font-style:italic}
 var ITEMS=[], i=0;
 var $=function(id){return document.getElementById(id);};
 function firstUndescribed(){ for(var k=0;k<ITEMS.length;k++){ if(!ITEMS[k].what) return k; } return ITEMS.length; }
+// ?i=<index> opens straight on one clip - a day just linked is already described,
+// so firstUndescribed() would land on the all-done panel instead of that day.
+function startIndex(){
+  var q=new URLSearchParams(location.search).get('i');
+  if(q!==null){ var k=+q; if(k>=0&&k<ITEMS.length) return k; }
+  return firstUndescribed();
+}
 function label(it){ return it.what || (it.time ? it.time : it.date); }
 function renderList(){
   var box=$('list'); box.innerHTML='';
@@ -182,7 +189,7 @@ $('what').addEventListener('keydown',function(e){
 $('save').onclick=save;
 $('skip').onclick=function(){ stopMedia(); i++; render(); };
 $('back').onclick=function(){ if(i>0){ stopMedia(); i--; render(); } };
-fetch('/api/items').then(function(r){return r.json();}).then(function(d){ ITEMS=d; i=firstUndescribed(); render(); });
+fetch('/api/items').then(function(r){return r.json();}).then(function(d){ ITEMS=d; i=startIndex(); render(); });
 </script></body></html>`;
 
 http.createServer((req, res) => {

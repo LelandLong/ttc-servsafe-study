@@ -272,3 +272,21 @@ them"** (his call, 2026-09-11) - no re-upload, no switch to Private. This is con
 never-commit-rendered-pages rule in `PRIVATE-PAGES.md` stands until he says otherwise.
 [[private-content-never-inline-in-crossfeed]] still governs trip-logistics values (hotels, phones).
 
+
+---
+
+## edited-video-supersedes-its-originals
+
+**Type:** feedback · When Leland cuts an edited video out of existing clips, the **original clips are
+ALWAYS skipped** — never publish both. Leland, 2026-09-20, asked as a yes/no about one duplicate and
+answered as a general law: *"yes, when I make an edited video using existing videos, the originals are
+ALWAYS to be skipped"*. The edit is the publishable artifact; shipping its sources too doubles the upload
+and gives students two versions of the same material. First instance: `NUWU7587.mp4`, a 21.5 GB raw of a
+class already live as a 3h39m edit (proved by the `.screenflow` project's `Media/` folder naming it, at a
+byte-identical size). **How to apply:** before handing him an upload list, check every `edited`/`class`
+entry for the clips it was cut from and drop those. Skipping means BOTH — remove the entry from
+`private/video-hub.json` AND add the base name to `private/video-skip.json`, or the next
+`link-videos --stage <day>` re-adds it. The rule is retroactive: applying it also killed the 21
+`Mozzarella N/19` raws covered by the `BuffaloMozarella` edit, which he had not named — 44 clips / 56.2 GB
+down to 21 / 26.0 GB. Never drop an already-PUBLISHED entry on this reasoning without asking; assert the
+target is still staged first. Procedure owned by `PRIVATE-PAGES.md`.

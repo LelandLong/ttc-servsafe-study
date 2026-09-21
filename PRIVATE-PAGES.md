@@ -44,7 +44,9 @@ Media sits on the drive under `/Volumes/Andromeda/Screenflow/Italy/`; originals 
 | Photos | `convert-stills` → `sort-stills` (Leland) → `upload-stills` → `build-gallery-data` |
 | Video | `transcode-videos` → upload in YouTube Studio (Leland) → `link-videos` → `describe-videos` (Leland) → `build-hub-data` |
 | Video, skipped takes | a clip Leland skips in `describe-videos` is removed from the hub AND listed in `private/video-skip.json`, or the next `--stage <day>` re-adds it |
+| Video, **superseded originals** | **an edit made from existing clips ALWAYS supersedes them** (Leland, 2026-09-20) — the sources are skipped the same way: out of the hub, into `video-skip.json`. Never publish an edit and its raws. **Read the sources from the project, don't guess:** `<Edit>.screenflow/Media/` holds each one as `IMG_0791_{GUID}.mp4` → `IMG_0791`. The edit itself (exported into the day folder) is added by hand with his title |
 | Video, in parallel | `link-videos --stage <day>` adds the day's clips with **no id** so descriptions can be written while the upload runs; pasting the links later **fills the id into that entry** (matched by filename) and keeps the text |
+| Video, describe a given clip | `describe-videos` opens at the first clip with **no** description — so once a day is described it lands on the all-done panel. `http://localhost:8788/?i=<index>` opens straight on one clip |
 | Audio | `upload-audio` → `transcribe-audio` → `trim-audio` → context reconciliation (Claude, below) → `build-transcripts` → `build-hub-data` |
 
 Then publish with `push-private-page.mjs`.
@@ -57,11 +59,20 @@ art" → "opera house"). `{braces}` mark a best guess from context and render in
 where no reading made sense. `build-transcripts` uses the `.ctx.json` whenever it exists. Leland's call:
 live transcripts may be improved this way without a preview.
 
-**Video Hub sections (2026-09-20).** Three: *Watch these* (short edited pieces, `kind: 'edited'`), *Cooking
-classes* (`kind: 'class'` — the full class recordings, one per class, each with `chapters`), and *The full
-archive* (`kind: 'raw'`), which starts compact like the gallery ("Showing the newest 5 of 22") with a
-Show-all toggle. `chapters` is `[[seconds, "label"], …]`; every chapter is a button that starts the embed at
-that second (`&start=`), and tapping another re-points the same player. **Entries with no YouTube id are
+**Video Hub sections (2026-09-20).** Three: *Watch these* (`kind: 'edited'` — **only the short pieces
+Leland cuts for quick watching**), *Cooking classes* (`kind: 'class'` — the full class recordings, one per
+class, named into his *Cooking Class #N* series), and *The full archive* (`kind: 'raw'`), which starts
+compact like the gallery ("Showing the newest 5 of 22") with a Show-all toggle. **Everything that is not a
+quick short or a cooking class is filed by DATE in the archive** — tours included, even long edited ones
+(Leland, 2026-09-20: the Buffalo Mozzarella farm visit *"is not cooking… file it under just the date"*).
+
+**Chapters belong to an ENTRY, not a section** (since 2026-09-20). `chapters` is `[[seconds, "label"], …]`
+on any entry; `chapterUI()` in the page builds the buttons for both the classes and the archive, and each
+one starts the embed at that second (`&start=`) — tapping another re-points the same player. Until then
+only `renderClasses` read the field, so a chaptered tour filed by date would have **lost its chapters
+silently**. YouTube's own progress-bar chapters are separate: Leland pastes the same list into the
+description, and it must start at `00:00` with at least 3 entries of 10s or more. Validate a list against
+the file's real runtime (`ffprobe`) before using it. **Entries with no YouTube id are
 held out of the published page** by `build-hub-data` — staged rows used to appear in the archive and answer
 "this video isn't available yet" when tapped. They publish themselves once `link-videos` gives them an id.
 
