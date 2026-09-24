@@ -76,11 +76,18 @@ the file's real runtime (`ffprobe`) before using it. **Entries with no YouTube i
 held out of the published page** by `build-hub-data` — staged rows used to appear in the archive and answer
 "this video isn't available yet" when tapped. They publish themselves once `link-videos` gives them an id.
 
-**Page upkeep.** Both pages open with a *Recently added* block of **text lines** (date + count; a tap jumps
-to those items) — thumbnails there read as extra players and confused students. The Photo Gallery shows
-each section as one row with an explicit "Showing the newest 3 of 112" and a Show-all button, and carries
-`VIDEOS_SOON` — the days whose videos are not in the Video Hub yet. **Remove a day from that list when its
-videos go up**; an empty list hides the line.
+**Page upkeep.** The Photo Gallery shows each section as one row with an explicit "Showing the newest 3
+of 112" and a Show-all button, and carries `VIDEOS_SOON` — the days whose videos are not in the Video Hub
+yet. **Remove a day from that list when its videos go up**; an empty list hides the line entirely.
+
+> **The *Recently added* / *New since you last looked* blocks are GONE (2026-09-24).** Both pages opened
+> with one — a text line per day, plus NEW badges driven by a `localStorage` last-seen stamp. Leland:
+> *"seem pointless and probably just need to go. Almost everything is in and most people aren't even in
+> the app looking yet."* Removed from both pages along with the badges, the last-seen keys
+> (`ckVideoHubLastSeen`, `ckPhotoHubLastSeen`) and the dead CSS. **The Gallery's `VIDEOS_SOON` line lived
+> INSIDE that same block** and was deliberately kept — it is the only thing left in `#newwrap`, which is
+> now shown only when that line has content. Do not re-add a freshness block without asking: the pages
+> are near-complete and the churn is what he objected to.
 
 **Vertical videos (Shorts, and any portrait clip).** `link-videos` sets `"vertical": true` automatically when the
 file is taller than wide *as displayed* (iPhone portrait .MOVs are stored landscape with a rotation tag —
