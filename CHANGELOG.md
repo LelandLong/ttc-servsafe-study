@@ -6,6 +6,18 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [09-24-2026-1] - September 24, 2026
+
+### Fixed
+- **A video thumbnail could be stuck on YouTube's grey placeholder forever.** Cooking Class #2 showed the blank grey icon on the Video Hub for hours after YouTube had produced a real still, and no amount of reloading cleared it.
+  - **Cause: our own service worker.** YouTube stills are cross-origin *images* with no Range header, so they slipped past the media guard and landed in the cache-first branch. The still is requested as soon as an entry is published — and we publish entries while the video is **still processing**, when YouTube serves a generic grey placeholder. The worker cached that placeholder, and cache-first then served it forever. A reload could not dislodge it, and neither could a cache-busting `?nc=`, because the cache lookup uses `ignoreSearch: true`.
+  - **Fix:** the worker now steps aside for `img.youtube.com` and `i.ytimg.com` entirely, so the browser fetches stills itself and always gets the current one. They were never useful offline — the video itself needs the network — and the hub already falls back to a gradient when a still does not load.
+  - **Scoped deliberately:** Convex gallery photos are still cached for the offline gallery, the app's own images are still cached, and the existing stand-aside for cross-origin audio, video and byte-range requests is untouched. Verified by driving the real `sw.js` fetch handler through all six cases; the same test fails on the previous worker, which proves it detects the bug.
+  - Offline gate re-run and passing: the shell boots with no network and Trip Essentials' emergency number and policy reference are still readable.
+  - Because the cache name is stamped with the version, this release also starts a fresh cache, which clears any placeholder already stuck on a device.
+
+---
+
 ## [09-12-2026-1] - September 12, 2026
 
 ### Added
