@@ -141,6 +141,18 @@ self.addEventListener('fetch', function (e) {
     return;
   }
 
+  // NEVER CACHE A YOUTUBE STILL. These are cross-origin IMAGES with no Range, so
+  // they missed the guard above and fell through to the cache-first branch at the
+  // bottom - and a still fetched while YouTube is STILL GENERATING it is the grey
+  // placeholder icon. Cache-first then served that placeholder forever: neither a
+  // reload nor a hard refresh dislodges it, and the `ignoreSearch: true` match
+  // means a ?nc= bust cannot either. Leland's Cooking Class #2 sat on the grey
+  // icon for HOURS after YouTube had produced a real frame (2026-09-24). We file
+  // hub entries while videos are still processing, so this would recur on every
+  // long upload. Stills are useless offline anyway (the video needs the network),
+  // and thumb() already falls back to a gradient when one does not load.
+  if (url.hostname === 'img.youtube.com' || url.hostname === 'i.ytimg.com') return;
+
   var isNavigation = req.mode === 'navigate';
   var isVersion = url.pathname.indexOf('version.js') !== -1;
 
