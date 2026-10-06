@@ -51,6 +51,13 @@ Media sits on the drive under `/Volumes/Andromeda/Screenflow/Italy/`; originals 
 
 Then publish with `push-private-page.mjs`.
 
+> 🔌 **`build-hub-data` refuses to run without the drive** (since 2026-10-06). It reads the tour
+> transcripts from `/Volumes/Andromeda/Screenflow/Italy/_transcripts/`, and a missing file used to be
+> skipped silently — so with Andromeda unplugged it wrote a page with **zero transcripts** and printed
+> a normal "wrote 74 entries" line. Pushed, that strips every transcript from the live hub. It
+> happened for real on 2026-09-28 (caught before the push). Now it stops with *"Is the Andromeda drive
+> plugged in?"* and writes nothing. Plug the drive in and re-run.
+
 **Context-reconciled transcripts (2026-09-12).** The recordings are too quiet for any single machine
 transcription (the guide is ~5 dB above the room). So each tour is transcribed three ways on the
 *published* audio — Whisper large-v3-turbo, large-v3, and turbo on pause-split clips — and Claude reads the

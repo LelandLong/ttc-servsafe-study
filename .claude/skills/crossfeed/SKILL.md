@@ -39,10 +39,15 @@ node ~/crossfeed/crossfeed-cli.mjs post --to XFD --type REPLY \
 the timestamp from the channel**, so there is nothing to invent and nothing to go back and
 "fix". Twice on 2026-08-25 this seat typed a wrong timestamp into a header and then
 **read-modify-wrote a shared log** to correct it; four of six seats did the same, and the
-logs were emptied to zero twice that day. The logs are now `chflags uappnd` (append-only,
-enforced by the filesystem) and posting is channel-first — **so hand-editing is both
-unnecessary and impossible.** If you ever find yourself about to rewrite a shared log,
-stop: that is the failure, not the fix.
+logs were emptied to zero twice that day. Posting is channel-first, so hand-editing is
+**unnecessary** — but it was never impossible: `chflags uappnd` stops truncation and
+in-place rewrites and explicitly ALLOWS append, which is exactly what a hand-append is
+(XFD-052; FXP hand-appended six ids on 2026-10-06 and every seat then skipped real mail).
+**What blocks it now is a PreToolUse hook** in `.claude/settings.json` running
+`~/crossfeed/crossfeed-guard-log.mjs`: Edit/Write onto a log, or Bash that redirects into
+one (`>>`, `>`, `tee`, `sed -i`…), is denied; reads (`cat`, `grep`, `tail`, the monitor)
+pass through. It is a silent no-op where `~/crossfeed/` is absent. If you ever find
+yourself about to write to a shared log, stop: that is the failure, not the fix.
 
 It also refuses a newline in `**Re:**`/`**Type:**`/an addressee, indents body lines starting
 `### ` (which once created phantom dashboard entries), and posts PROCESS messages to BOTH
