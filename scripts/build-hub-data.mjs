@@ -22,6 +22,18 @@ import vm from 'vm';
 import path from 'path';
 import { ROOT, HUB_JSON, HUB_PAGE, readHub, writeHub, indexSources, oembedTitle, norm, isClockLabel } from './lib/media.mjs';
 
+// The tour transcripts are read from the drive, and a missing file was simply
+// skipped - so with Andromeda unplugged this wrote a page with ZERO transcripts and
+// said nothing. Published, that strips every transcript from the live hub. It
+// happened for real on 2026-09-28 (caught before the push). Refuse instead.
+const TX_DIR = path.join(ROOT, '_transcripts');
+if (!fs.existsSync(TX_DIR)) {
+  console.error('Cannot see ' + TX_DIR);
+  console.error('Is the Andromeda drive plugged in? Without it this build would drop every');
+  console.error('tour transcript from the page. Nothing was written.');
+  process.exit(1);
+}
+
 const START = 'var VIDEOS = [', END = '\n];';
 const page = fs.readFileSync(HUB_PAGE, 'utf8');
 const a = page.indexOf(START), b = page.indexOf(END, a);
