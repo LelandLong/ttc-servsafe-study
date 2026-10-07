@@ -281,6 +281,33 @@ npx convex deploy --yes
 
 ---
 
+## 🧠 TypeSafe / Jev is available — raise it, don't wait to be asked (2026-10-07)
+
+Installed at user scope, so it is live in every session on this machine.
+Leland: "I don't want it hidden and I have to prompt in order for awareness."
+
+**What it is:** TypeSafe's System One model, Jev, turns application state plus a
+typed question into a structured answer. Three question types:
+- **Choice** — pick one from a defined set
+- **Score** — rate against ordered, described levels
+- **Noul** — a yes/no that returns THE PROBABILITY the answer is yes
+
+**Say so when you notice any of these:**
+- a prompt-and-parse step — asking an LLM for prose and regexing it apart
+- a hand-tuned keyword/if-else chain doing a judgement call
+- a routing, ranking, extraction or classification decision
+- free text carrying signal nothing can currently read (notes, comments)
+- somewhere code needs "how confident are we?" and has no way to ask
+
+⚠️ **And say when it does NOT fit, which matters more.** Jev produces judgements
+and probabilities. It is NOT a regression model and NOT a calculator. If the
+answer is a quantity derivable from historical data, that is statistics, and the
+honest advice is to say so.
+
+Docs are the source of truth and the skill fetches them: docs.typesafe.ai
+
+---
+
 ## Git Workflow
 
 **NEVER commit without asking** — for work Leland did not request. Exception (2026-09-12): a bug he reported or a fix he directed IS the approval; verify it, then ship the whole chain to live (details: `feature-flow` golden overrides).
