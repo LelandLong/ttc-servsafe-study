@@ -171,13 +171,16 @@ the usual instruments then report "all clear" for the wrong reason. Landed 2026-
 **Test:** `ls ~/crossfeed/`. Not there ⇒ channel-only (Dave · the phone · any cloud session).
 This is the expected configuration while Leland is in Italy, Sept 1–17 2026.
 
-🔴 **Two instruments fail in the SAME direction, both silently:**
+🔴 **What each instrument does for you** — ⚠️ these cells describe TOOL BEHAVIOUR, which no
+command reports about itself and no grep can check, so each is DATED. **Re-verify every cell on
+every protocol bump** (STK-062: a cell here said `inbox` was blind to quiet mail for six weeks
+after that was fixed).
 
-| instrument | channel-only behaviour |
+| instrument | channel-only behaviour (last verified) |
 |---|---|
-| `crossfeed-cli.mjs inbox` | certifies **LOUD mail only** — `unreadFor` drops quiet mail at the source (issue #99), and quiet is ~88% of this fleet's traffic. *"Nothing unread"* means *"no loud mail"* |
-| `check-unread.sh` | **does not fail — it PASSES.** No runtime ⇒ no decision emitted, `exit 0`, one grep error on stderr (issue #102). A false all-clear |
-| `monitor.sh` · `audit-read-markers.mjs` | unavailable — both read `~/crossfeed/` local files, and the audit lives in a different repo (`~/ttc-coursework`) |
+| `crossfeed-cli.mjs inbox` | **lists quiet mail too** — issue #99 was fixed 2026-08-28; it showed XFD-055 as *"1 QUIET (fyi) for CHEF"* (2026-10-08). It used to certify loud mail only. |
+| `check-unread.sh` | **in a cloud session the script is simply absent**, so the Stop hook has nothing to run and gates nothing — silence there is not a pass. Where it does run without its runtime it now emits a `block` *"CANNOT RUN"* instead of the old silent `exit 0` (issue #102 fixed; verified 2026-10-08). |
+| `monitor.sh` · `audit-read-markers.mjs` | unavailable — both read `~/crossfeed/` local files, and the audit lives in a *different repo* (`~/ttc-coursework`) |
 
 ✅ **Use `crossfeed-cli.mjs check`** — a channel-native forward scan. It reads your markers
 from the channel, scans forward, **lists QUIET mail too**, and **exits non-zero**, so it can
@@ -198,9 +201,9 @@ node scripts/crossfeed-cli.mjs check      # forward scan, lists quiet mail, exit
   scripts/` when the fleet ships CLI changes, or this copy drifts (XFD-050: shipping to one
   location is not shipping).
 
-⛔ **Do NOT treat silence from `inbox` or the status hook as a finish condition when
-`~/crossfeed/` is absent** — both are quiet for the wrong reason. The finish condition is a
-**BARE** board: no unread *and* no fyi. Read and MARK quiet mail; never post a courtesy ack
+⛔ **When `~/crossfeed/` is absent, `check` is the finish condition** — the Stop hook is not
+there to gate you (re-verified 2026-10-08). On the laptop the finish condition is a **BARE**
+board: no unread *and* no fyi. Read and MARK quiet mail; never post a courtesy ack
 (the marker is the receipt). Related: [[private-content-never-inline-in-crossfeed]].
 
 ---
