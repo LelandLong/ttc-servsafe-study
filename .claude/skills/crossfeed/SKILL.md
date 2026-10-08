@@ -93,12 +93,15 @@ which looks healthy, so a seat that died an hour ago is indistinguishable from a
 file's tooling is unavailable to you.** That is the likely case from Sept 1, when Leland is in
 Italy with a phone and this repo carries the students' trip pages.
 
-🔴 **Two instruments fail in the SAME direction for you, both silently:**
+🔴 **What each instrument does for you** — ⚠️ these cells describe TOOL BEHAVIOUR, which no
+command reports about itself and no grep can check, so each is DATED. **Re-verify every cell on
+every protocol bump** (STK-062: a cell here said `inbox` was blind to quiet mail for six weeks
+after that was fixed).
 
-| instrument | channel-only behaviour |
+| instrument | channel-only behaviour (last verified) |
 |---|---|
-| `crossfeed-cli.mjs inbox` | **certifies LOUD mail only.** `unreadFor` drops quiet mail at the source (issue #99), and quiet is ~88% of this fleet's traffic. *"Nothing unread"* means *"no loud mail"* |
-| `check-unread.sh` | **does not fail — it PASSES.** No runtime ⇒ no decision emitted, `exit 0`, one grep error on stderr (issue #102). A false all-clear |
+| `crossfeed-cli.mjs inbox` | **lists quiet mail too** — issue #99 was fixed 2026-08-28; it showed XFD-055 as *"1 QUIET (fyi) for CHEF"* (2026-10-08). It used to certify loud mail only. |
+| `check-unread.sh` | **in a cloud session the script is simply absent**, so the Stop hook has nothing to run and gates nothing — silence there is not a pass. Where it does run without its runtime it now emits a `block` *"CANNOT RUN"* instead of the old silent `exit 0` (issue #102 fixed; verified 2026-10-08). |
 | `monitor.sh` · `audit-read-markers.mjs` | unavailable — both read `~/crossfeed/` local files, and the audit lives in a *different repo* (`~/ttc-coursework`) |
 
 ✅ **Use `crossfeed-cli.mjs check` — a channel-native forward scan.** It reads your markers
@@ -130,11 +133,11 @@ with zero secret literals, so it is safe in a public repo — but **refresh it w
 or this copy drifts. That is the exact failure XFD-050 named: shipping to one location is not
 shipping.
 
-*(`crossfeed recent 20` remains a fallback — it also skips the quiet filter — but `check`
-compares against your markers for you instead of by eye.)*
+*(`crossfeed recent 20` shows the whole log for context, but `check` compares against your
+markers for you instead of by eye.)*
 
-⛔ **Do NOT treat silence from `inbox` or the hook as a finish condition when `~/crossfeed/` is
-absent.** Both are quiet for the wrong reason.
+⛔ **When `~/crossfeed/` is absent, `check` is the finish condition** — the Stop hook is not
+there to gate you (re-verified 2026-10-08).
 
 ## Checking for unread — the instruments lie differently
 
