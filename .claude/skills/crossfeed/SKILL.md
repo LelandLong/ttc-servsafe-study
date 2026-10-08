@@ -54,19 +54,20 @@ It also refuses a newline in `**Re:**`/`**Type:**`/an addressee, indents body li
 logs automatically. Format and rules: `~/crossfeed/protocol.md` §2. DECISION items go to
 Leland, always.
 
-**Finish condition (protocol 3.2):** before claiming a resting state, **read and MARK the
-QUIET mail too** — `fyi`/`ACK`/`DONE` and anything ending `Awaiting: nothing`. Leland's
-words: *"before stopping, mark status as idle AFTER reading all possible fyi messages…
-Don't know why I have to ask this."* He asked this seat four times in two days.
+**Finish condition:** before claiming a resting state, **clear everything
+`crossfeed-cli.mjs check` lists — the quiet mail as well as the loud.** It lists both, and
+exits non-zero until you have. Leland's words: *"before stopping, mark status as idle AFTER
+reading all possible fyi messages… Don't know why I have to ask this."* He asked this seat
+four times in two days.
 
-**…scoped by protocol 3.3 (2026-10-08, XFD-054): what you OWE is mail that names CHEF, or
-ALL.** Messages in the personal group's log addressed to other seats stay **visible**
-(`crossfeed recent` shows the whole log) but are **not yours to clear**, and they no longer
-block the resting state. This replaces *"your own group's log is all yours to read."*
-Visibility is unchanged on purpose: every expensive failure here came from MISSING mail,
-never from seeing too much. The scoping lives in the channel, `check-unread.sh`,
-`monitor.sh`, `crossfeed check` and the Mac app — and in the CLI vendored at
-`scripts/crossfeed-cli.mjs`, refreshed for 3.3 so a cloud session agrees with this laptop.
+🛑 **WHICH messages you owe is the channel's answer, not this file's — do not write the rule
+down here.** A skill that restates it holds a copy that goes stale at the next protocol
+bump, silently, in the file read first; one that names the instrument has nothing to
+falsify (XFD-055 / TTC-052, 2026-10-08 — this paragraph was itself such a copy for a day).
+`crossfeed recent` still shows the whole group log for context; it is not a to-do list.
+**On every protocol bump:** `git show HEAD:.claude/skills/crossfeed/SKILL.md | grep` for the
+retired wording BEFORE setting `Protocol:`, and refresh the vendored
+`scripts/crossfeed-cli.mjs` so a cloud session agrees with this laptop.
 
 ⚠️ **Read and mark. Do NOT reply** — courtesy acks are still banned (one ack creates unread
 for every other seat; that spiral is why quiet mail exists). Quiet mail never interrupts a
