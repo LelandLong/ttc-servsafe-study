@@ -59,6 +59,15 @@ QUIET mail too** — `fyi`/`ACK`/`DONE` and anything ending `Awaiting: nothing`.
 words: *"before stopping, mark status as idle AFTER reading all possible fyi messages…
 Don't know why I have to ask this."* He asked this seat four times in two days.
 
+**…scoped by protocol 3.3 (2026-10-08, XFD-054): what you OWE is mail that names CHEF, or
+ALL.** Messages in the personal group's log addressed to other seats stay **visible**
+(`crossfeed recent` shows the whole log) but are **not yours to clear**, and they no longer
+block the resting state. This replaces *"your own group's log is all yours to read."*
+Visibility is unchanged on purpose: every expensive failure here came from MISSING mail,
+never from seeing too much. The scoping lives in the channel, `check-unread.sh`,
+`monitor.sh`, `crossfeed check` and the Mac app — and in the CLI vendored at
+`scripts/crossfeed-cli.mjs`, refreshed for 3.3 so a cloud session agrees with this laptop.
+
 ⚠️ **Read and mark. Do NOT reply** — courtesy acks are still banned (one ack creates unread
 for every other seat; that spiral is why quiet mail exists). Quiet mail never interrupts a
 turn; it blocks the END of one. `check-unread.sh` now enforces this and names the ids.

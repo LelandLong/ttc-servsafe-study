@@ -284,20 +284,20 @@ function mirrorTargets(group, type) {
   return [group];
 }
 
-function mirrorLocally({ messageId, sender, group, addressees, subject, type, body }) {
+function mirrorLocally({ messageId, sender, group, addressees, subject, type, body, postedAt }) {
   const targets = mirrorTargets(group, type);
   if (targets.length > 1) {
     const results = targets.map((g) =>
-      mirrorOne({ messageId, sender, group: g, addressees, subject, type, body })
+      mirrorOne({ messageId, sender, group: g, addressees, subject, type, body, postedAt })
     );
     const done = results.filter((r) => r.mirrored).map((r) => r.file);
     if (!done.length) return { mirrored: false, why: results[0].why };
     return { mirrored: true, file: done.join(" and ") };
   }
-  return mirrorOne({ messageId, sender, group, addressees, subject, type, body });
+  return mirrorOne({ messageId, sender, group, addressees, subject, type, body, postedAt });
 }
 
-function mirrorOne({ messageId, sender, group, addressees, subject, type, body }) {
+function mirrorOne({ messageId, sender, group, addressees, subject, type, body, postedAt }) {
   const file = logPath(group);
   if (!existsSync(file)) return { mirrored: false, why: "no local runtime — nothing to mirror to" };
   // Idempotent: a re-run must not lay the same id down twice, and a PROCESS
@@ -308,7 +308,12 @@ function mirrorOne({ messageId, sender, group, addressees, subject, type, body }
     }
   } catch { /* unreadable is handled by the append below */ }
   const to = addressees.length ? addressees.join(", ") : "ALL";
-  let out = `\n### ${messageId} · ${headerStamp()} · ${sender} → ${to}\n`;
+  // ⚠️ THE ORIGINAL SEND TIME, NOT NOW, when one is supplied (`pull`).
+  // `monitor.sh` computes every age from this line, so stamping a pulled
+  // message with the moment it was pulled would make three-week-old mail read
+  // as brand new on the dashboard Leland actually looks at.
+  const stamp = headerStamp(postedAt ? new Date(postedAt) : new Date());
+  let out = `\n### ${messageId} · ${stamp} · ${sender} → ${to}\n`;
   if (subject) out += `**Re:** ${subject}\n`;
   out += `**Type:** ${type}\n\n${sanitiseBody(body)}`;
   if (!out.endsWith("\n")) out += "\n";
@@ -647,6 +652,101 @@ async function cmdStatus(argv) {
  * `~/crossfeed/` could not read its own read-state, which made an independent
  * forward scan impossible from a phone or a cloud session.
  */
+/**
+ * Bring the local logs up to date with the CHANNEL.
+ *
+ * ⚠️ WHY THIS EXISTS, AND IT IS THE BIGGEST HOLE THIS SYSTEM HAS HAD.
+ *
+ * Leland, 2026-09-18, after three weeks away: *"WHAT IS THE POINT OF A
+ * CROSSFEED MESSAGING SYSTEM WHEN NONE OF THE OTHER SESSIONS CAN READ THE
+ * MESSAGES?"* He opened the dashboard and it stopped at `SCH-192` — the last
+ * message posted FROM THE LAPTOP. Everything posted from his phone or a cloud
+ * session for three weeks was in the channel and invisible on both surfaces he
+ * actually reads: the Mac app and `monitor.sh`, which both read these files.
+ *
+ * Two causes, and neither was a channel problem:
+ *
+ * 1. **The Mac app's applier skips any sender with a registry row**
+ *    (`OutboxApplier.sendersToApply`). That was right when "registry seat"
+ *    meant "writes its own local log from this laptop". **Protocol 3.1 broke
+ *    that assumption in August** — a registry seat can now post from anywhere —
+ *    and the rule was never updated. So mail from SCH-as-a-cloud-session was
+ *    deliberately ignored.
+ * 2. **It only runs while the Mac app is open.** A mailbox that syncs only when
+ *    a GUI happens to be running is not a mailbox.
+ *
+ * So the pull lives HERE, in the CLI every seat's hook already runs, and it
+ * dedupes on the MESSAGE ID rather than on who sent it. Identity is the id;
+ * "is this sender local" was never the right question.
+ */
+async function cmdPull(args) {
+  requireConfig(true);
+  header();
+  const want = Math.min(Number(args?.[0]) || 200, 1000);
+  let before;
+  let scanned = 0;
+  const fetched = [];
+  // Page backwards until we have `want` or the channel runs out. `recent` is
+  // newest-first and bounded, so one call is not "the channel".
+  while (scanned < want) {
+    const page = await query("channel:recent", {
+      tag: SEAT, limit: Math.min(100, want - scanned), ...(before ? { before } : {}),
+    });
+    const msgs = page.messages || [];
+    if (!msgs.length) break;
+    fetched.push(...msgs);
+    scanned += msgs.length;
+    before = page.oldest;
+    if (!page.hasMore || !before) break;
+  }
+
+  // ⚠️ A pull over an empty result is not an up-to-date mirror. Same refusal
+  // `check` makes: an empty answer means the query failed or the token sees
+  // nothing, neither of which is "you have everything".
+  if (!fetched.length) {
+    process.stdout.write(
+      `\n⚠️  REFUSING TO REPORT IN SYNC: the channel returned no messages at all.\n` +
+        `   That is not the same as "nothing to pull". Check the token and deployment.\n\n`
+    );
+    process.exit(2);
+  }
+
+  // ⚠️ OLDEST FIRST. Every parser in the fleet reads the LAST `### ` header as
+  // the newest message (`monitor.sh` literally does `grep '^### ' | tail -1`).
+  // Laying a page down newest-first would make the log lie about what is
+  // current — the defect caught in review of PR #65, one level up.
+  fetched.sort((a, b) => (a.postedAt ?? 0) - (b.postedAt ?? 0));
+
+  let added = 0, already = 0, failed = 0;
+  const addedIds = [];
+  for (const m of fetched) {
+    const r = mirrorLocally({
+      messageId: m.messageId, sender: m.sender, group: m.group,
+      addressees: m.addressees || [], subject: m.subject || "",
+      type: m.type || "", body: m.body || "", postedAt: m.postedAt,
+    });
+    if (!r.mirrored) { failed++; continue; }
+    if (String(r.file).includes("already present")) { already++; continue; }
+    added++;
+    addedIds.push(m.messageId);
+  }
+
+  process.stdout.write(
+    `\n${scanned} message(s) on the channel · ${already} already local · ` +
+      `${added} ADDED · ${failed} could not be written\n\n`
+  );
+  if (added) {
+    process.stdout.write(`  ${addedIds.join(" ")}\n\n`);
+    process.stdout.write(`The dashboard and monitor.sh will show these now.\n\n`);
+  }
+  if (failed) {
+    process.stdout.write(
+      `⚠️  ${failed} could not be written to a local log. If this machine has no\n` +
+        `   ~/crossfeed/ that is expected — the channel is your mailbox, use 'inbox'.\n\n`
+    );
+  }
+}
+
 async function cmdMarkers() {
   requireConfig(true);
   header();
@@ -687,10 +787,27 @@ async function cmdCheck(args) {
   requireConfig(true);
   header();
   const limit = Math.min(Number(args?.[0]) || 100, 200);
-  const [markers, page] = await Promise.all([
+  const [markers, page, board] = await Promise.all([
     query("channel:markersFor", { tag: SEAT }),
     query("channel:recent", { tag: SEAT, limit }),
+    query("channel:board", { tag: SEAT }),
   ]);
+  // WARNING: THE TWO INSTRUMENTS MUST AGREE, AND THEY DID NOT.
+  //
+  // `joinedAt` (#116) stops a new seat being unread on history it was never
+  // part of -- but it was added to the SERVER, in `unreadFor`, and this scan
+  // computes its own answer from raw markers. So the moment PRED was
+  // registered, `check` reported 93 and `inbox` reported 4, on the same seat
+  // at the same second (PRED-002).
+  //
+  // That is worse than either number being wrong. Two instruments exist here
+  // precisely so a disagreement is a signal; one that disagrees BY
+  // CONSTRUCTION trains its reader to ignore it, which is the one thing this
+  // command must never become.
+  const me = ((board && board.seats) || []).find(
+    (x) => String(x.tag).toUpperCase() === SEAT
+  );
+  const joinedAt = (me && me.joinedAt) || 0;
   const markerFor = new Map(markers.map((m) => [m.sender, m.number]));
   const msgs = page.messages || [];
 
@@ -708,6 +825,16 @@ async function cmdCheck(args) {
 
   const above = msgs.filter((m) => {
     if (m.sender === SEAT) return false; // a seat cannot fail to read its own post
+    // Never owed mail that predates this seat's own existence -- same cut the
+    // server makes, so the two answers cannot drift apart.
+    if ((m.postedAt ?? 0) < joinedAt) return false;
+    // Protocol 3.3: the obligation is addressee-or-ALL. `recent` still returns
+    // the whole group log -- this scan just stops DEMANDING a receipt for mail
+    // that names somebody else. Without this the forward scan would keep
+    // reporting what `inbox` no longer does, and two instruments that disagree
+    // by construction are worse than either being wrong.
+    const to = m.addressees || [];
+    if (!to.includes(SEAT) && !to.includes("ALL")) return false;
     const n = Number(String(m.messageId).split("-").pop());
     return Number.isFinite(n) && n > (markerFor.get(m.sender) ?? 0);
   });
@@ -770,6 +897,7 @@ const commands = {
   status: () => cmdStatus(rest),
   whoami: () => cmdWhoami(),
   markers: () => cmdMarkers(),
+  pull: () => cmdPull(rest),
   check: () => cmdCheck(rest),
 };
 
@@ -785,6 +913,8 @@ if (!cmd || cmd === "help" || cmd === "--help" || WANTS_HELP || !commands[cmd]) 
       `  crossfeed status IDLE --now "..."    publish your resting state\n` +
       `  crossfeed whoami                     seat, deployment, registration\n` +
       `  crossfeed markers                    your own Last-read markers, from the channel\n` +
+      `  crossfeed pull [N]                   copy channel messages into the LOCAL logs so\n` +
+      `                                       monitor.sh and the Mac app can see them\n` +
       `  crossfeed check [N]                  forward scan: anything above your markers\n` +
       `                                       (a SECOND instrument — exits 1 if it finds any)\n\n` +
       `Config: CROSSFEED_CHANNEL_URL · CROSSFEED_TOKEN · CROSSFEED_SEAT\n` +
