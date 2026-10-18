@@ -24,7 +24,7 @@ A Progressive Web App (PWA) for culinary course study at Trident Technical Colle
 ## ✨ Features
 
 ### Student Features
-- **Multi-Course Support:** CUL-104 (ServSafe) and CUL-105 (Kitchen Fundamentals)
+- **Multi-Course Support:** CUL-104 (ServSafe), CUL-105 (Kitchen Fundamentals), CUL-112 (Classical Cooking Foundations) and CUL-103 (Nutrition)
 - **905 Total Study Items** (342 CUL-104 quiz + 340 CUL-105 quiz + 223 CUL-105 flashcards)
 - **Multiple Study Modes:**
   - Exam Focus (professor-curated)

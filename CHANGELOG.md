@@ -6,6 +6,26 @@ Format: `MM-DD-YYYY-BUILD`
 
 ---
 
+## [10-18-2026-1] - October 18, 2026
+
+### Added
+- **CUL-103: Nutrition — a fourth course.** Chapter 1 is in: **35 questions** ("A Market for Nutritious Food and Related Opportunities"), 19 marked Exam Focus, across four categories (Market for Nutritious Food · Careers and Opportunities · Nutrition Basics · Credible Sources). The first 10 are the textbook's own *Review Your Learning* questions, every answer checked against the tick the book shows. Drafted by the TTC coursework session from the (DRM'd) textbook and the instructor's PowerPoint; reviewed and shipped here.
+  - **Study by quiz:** Quiz 1–6, one per week, each its own button — plus **Final Test (All Chapters)** for the full-course final (Dec 4). Quiz 6 covers **book chapter 7**: the course skips a chapter, per the topical outline. Quizzes 2–5 are taken to be chapters 2–5.
+  - **Study by chapter** (1–5, 7), **Exam Focus**, **Full Coverage**, **Weak Areas** and **Study by Category**, the same as the other courses. Quizzes and chapters with no questions yet show greyed out until they arrive.
+  - **Achievements:** Quiz 1–6 Ready (answer every question in that quiz) and Quiz 1–6 Master (90%+, min 10), **Quiz King** (master all six), **Final Ready** (answer every question in the course) and **Nutrition Master** (90%+ across the whole course, min 50). None can be earned for a chapter that is not in the app yet — the "answered every question" check would otherwise be true for an empty chapter on day one.
+  - Works offline (both question files are in the service worker's precache) and in the admin page (course toggle, chapter filter and editor show chapters 1–5 and 7).
+  - **IDs 5001+.** The draft used 2001–2035, which collide with CUL-105's flashcards (1001–2223); later chapters take 5101, 5201 and so on.
+
+### Fixed
+- **A course badge earned on one device was filed under CUL-104 on the next.** Badges sync to the cloud as one flat list, and every badge not already on the device was put under CUL-104. A CUL-105 (and now CUL-103) badge earned on a phone therefore never showed under its own course on the laptop, and re-awarded itself with a fresh "new badge!" popup. Synced badges now go to the course their definition names; shared badges stay under CUL-104 as before.
+- **Questions synced from the cloud for an unknown course were filed as CUL-104** — a CUL-103 branch now keeps them in their own course.
+- **Admin:** the chapter picker, chapter filter and "Chapters" stat were hard-wired to CUL-104's 1–15, and new questions in any other course got no chapter; the category list fell back to CUL-104's categories. All now follow the selected course.
+
+### Verified
+- In a real browser with every database write blocked: the CUL-103 home in light and dark mode; Quiz 1 answered end to end (35/35) earned Quiz 1 Ready and Quiz 1 Master, and did **not** earn Quiz 2 Ready, Final Ready or Nutrition Master; the Final Test opens with all 35; CUL-104's quiz groups unchanged. Cloud badge routing tested against the source, with a control proving the fallback. Offline gate re-run and passing.
+
+---
+
 ## [09-24-2026-1] - September 24, 2026
 
 ### Fixed

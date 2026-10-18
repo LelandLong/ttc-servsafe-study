@@ -1,7 +1,7 @@
 # Chef's Kitchen Multi-Course Study PWA - Development Plan
 
-**Last Updated:** June 9, 2026
-**Current Version:** 06-09-2026-4
+**Last Updated:** October 18, 2026
+**Current Version:** 10-18-2026-1
 
 ---
 
@@ -17,6 +17,7 @@
 ## Current Status
 
 ### Recent Versions
+- **10-18-2026-1** - Added CUL-103 Nutrition (4th course): chapter 1 (35 Q), Quiz 1–6 + Final Test groups, CUL-103 achievements; synced badges filed under their own course
 - **06-09-2026-4** - CUL-112 "Final: Vocabulary" quiz (23 testable Q from VOCABULARY.pdf); now 180 items, 9 topics
 - **06-09-2026-3** - CUL-112 Quiz 3 (Pork, 15 Q) verified — fills Quiz 3 gap; now 157 items, 8 topics
 - **06-09-2026-2** - CUL-112 Quiz 5 (Beef, 25 Q) verified; now 142 items, 7 topics
@@ -185,6 +186,8 @@
 - [x] Wired into both student selector and admin toggle (auto via Object.keys(COURSES))
 
 ### Current Focus
+**CUL-103 Nutrition (fall 2026) is in progress:** chapter 1 is in (35 Q). Chapters 2–5 and 7 arrive weekly — Leland screenshots the DRM'd book, the TTC seat drafts JSON into `private/cul103/`, this seat renumbers into the next 100-block (ch.2 → 5101…) and ships. Quizzes 2–5 are ASSUMED to be book chapters 2–5 (only Quiz 6 = ch.7 is stated); confirm as chapters arrive.
+
 CUL-104 and CUL-105 are complete. CUL-112 (Summer 1) is in progress: **Quizzes 1–5 are all in the app, verified** (Stocks & Sauces, Poultry, Pork, Fish & Shellfish, Beef). Note: the student's quiz file names do NOT reliably map to D2L's quiz numbers (e.g. `Quiz - 4.pdf` = D2L "Q5 Beef", `Quiz - 5.pdf` = D2L "Q3 Pork") — always read the PDF's D2L title. Remaining protein-cookery PowerPoints not yet mined into questions: Lamb, Veal, Game, Meat Cookery (Poultry, Fish & Shellfish, Beef, and Pork now covered by their quizzes). Remember to push CUL-112 to Convex via admin "Reset to Original".
 
 ---
@@ -281,6 +284,7 @@ diner scores, in-app sharing, and meal planning. Full design and phased roadmap 
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| 10-18-2026-1 | Oct 18, 2026 | Added CUL-103 Nutrition (4th course), chapter 1 |
 | 06-09-2026-4 | Jun 9, 2026 | CUL-112 "Final: Vocabulary" quiz (23 testable Q) |
 | 06-09-2026-3 | Jun 9, 2026 | CUL-112 Quiz 3 (Pork) verified — fills Quiz 3 gap |
 | 06-09-2026-2 | Jun 9, 2026 | CUL-112 Quiz 5 (Beef) verified |

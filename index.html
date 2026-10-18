@@ -609,6 +609,8 @@
   <script src="questions-cul105-original.js"></script>
   <script src="questions-cul112.js"></script>
   <script src="questions-cul112-original.js"></script>
+  <script src="questions-cul103.js"></script>
+  <script src="questions-cul103-original.js"></script>
   <script src="version.js"></script>
   <script>
   // qrcode-generator v1.4.4 (MIT) — https://github.com/kazuhikoarase/qrcode-generator
@@ -1165,7 +1167,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // Ensure all courses exist
         if (!mergedBadges['CUL-104']) mergedBadges['CUL-104'] = { earned: [], newlyEarned: [] };
         if (!mergedBadges['CUL-105']) mergedBadges['CUL-105'] = { earned: [], newlyEarned: [] };
-        // Add any cloud badges not already present (cloud badges go to CUL-104 by convention for backward compat)
+        // Add any cloud badges not already present. The cloud keeps one FLAT list, so file each
+        // badge under the course its definition names; shared (and unknown) badges stay under
+        // CUL-104 as before. Filing everything under CUL-104 hid a course badge earned on another
+        // device from that course, which then re-awarded it with a fresh "new badge!" toast.
+        var badgeCourse = {};
+        try {
+          badgeDefinitions.forEach(function(d) { if (d.course !== 'shared') badgeCourse[d.id] = d.course; });
+        } catch (e) {}   // definitions not evaluated yet: keep the old behaviour
         cloudBadges.forEach(function(b) {
           // Check if badge exists in any course
           var found = false;
@@ -1173,7 +1182,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             if (mergedBadges[c].earned && mergedBadges[c].earned.indexOf(b) !== -1) found = true;
           });
           if (!found) {
-            mergedBadges['CUL-104'].earned.push(b);
+            var target = badgeCourse[b] || 'CUL-104';
+            if (!mergedBadges[target]) mergedBadges[target] = { earned: [], newlyEarned: [] };
+            mergedBadges[target].earned.push(b);
           }
         });
 
@@ -1184,10 +1195,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // Fetch ALL questions from Convex and split by course
         convexQuery("questions:getAll").then(function(convexQuestions) {
           if (convexQuestions && convexQuestions.length > 0) {
-            // Split into CUL-104, CUL-105, and CUL-112
+            // Split into CUL-104, CUL-105, CUL-112 and CUL-103
             var cul104 = [];
             var cul105 = [];
             var cul112 = [];
+            var cul103 = [];
             convexQuestions.forEach(function(q) {
               var formatted = {
                 id: q.questionId,
@@ -1212,6 +1224,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
                 if (q.flashFront) formatted.flashFront = q.flashFront;
                 if (q.flashBack) formatted.flashBack = q.flashBack;
                 cul112.push(formatted);
+              } else if (q.course === 'CUL-103') {
+                // Chapter-based like CUL-104 - keep the BOOK chapter. Without this
+                // branch the catch-all below files every CUL-103 question as CUL-104.
+                formatted.type = q.type || 'quiz';
+                formatted.course = 'CUL-103';
+                cul103.push(formatted);
               } else {
                 formatted.chapter = q.chapter || 1;
                 cul104.push(formatted);
@@ -1240,6 +1258,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               cul112.forEach(function(q) { questionsCUL112.push(q); });
               try { localStorage.setItem(ADMIN_STORAGE_KEY + '_cul112', JSON.stringify(cul112)); } catch(e) {}
               console.log('Synced ' + cul112.length + ' CUL-112 questions from Convex');
+            }
+
+            // Update CUL-103 — mutate in place to preserve COURSES references
+            if (cul103.length > 0) {
+              questionsCUL103.length = 0;
+              cul103.forEach(function(q) { questionsCUL103.push(q); });
+              try { localStorage.setItem(ADMIN_STORAGE_KEY + '_cul103', JSON.stringify(cul103)); } catch(e) {}
+              console.log('Synced ' + cul103.length + ' CUL-103 questions from Convex');
             }
 
             updateConvexStatus('connected');
@@ -2441,6 +2467,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           hasFlashcards: true,
           examLabel: 'Quiz Focus',
           examDescription: 'questions from completed quizzes.'
+        },
+        'CUL-103': {
+          name: 'CUL-103: Nutrition',
+          shortName: 'CUL-103: Nutrition',
+          icon: '🥗',
+          description: 'Nutrition for Foodservice',
+          questions: questionsCUL103,
+          orgType: 'chapters',
+          orgLabel: 'Chapter',
+          // BOOK chapters. The course skips one: Quiz 6 is "Chapter 7 in book" (topical outline).
+          chapters: [1,2,3,4,5,7],
+          // One quiz per chapter, then a final over all of them. Quizzes 2-5 are taken to be
+          // book chapters 2-5; only Quiz 6 = ch.7 is stated outright. A group with no questions
+          // yet renders disabled ("0 questions") until its chapter is imported.
+          quizGroups: {
+            'q1': { label: 'Quiz 1: Nutritious Food Market', chapters: [1] },
+            'q2': { label: 'Quiz 2: Key Concepts', chapters: [2] },
+            'q3': { label: 'Quiz 3: Standards & Guides', chapters: [3] },
+            'q4': { label: 'Quiz 4: Macronutrients', chapters: [4] },
+            'q5': { label: 'Quiz 5: Vitamins, Minerals & Water', chapters: [5] },
+            'q6': { label: 'Quiz 6: Food Production', chapters: [7] },
+            'final': { label: 'Final Test (All Chapters)', chapters: [1,2,3,4,5,7] }
+          },
+          hasExamFocus: true,
+          hasQuizGroups: true,
+          hasFlashcards: false,
+          examLabel: 'Exam Focus',
+          examDescription: 'questions most likely to be tested.'
         }
       };
 
@@ -2702,7 +2756,43 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         { id: 'midterm50', name: 'Midterm Prepping', icon: '\uD83D\uDCCB', description: 'Get 50 midterm questions correct', category: 'Exam', course: 'CUL-105',
           check: function(p) { return (p.examFocusCorrect || 0) >= 50; } },
         { id: 'midtermall', name: 'Midterm Ready', icon: '\uD83C\uDFC6', description: 'Get 100+ midterm questions correct', category: 'Exam', course: 'CUL-105',
-          check: function(p) { return (p.examFocusCorrect || 0) >= 100; } }
+          check: function(p) { return (p.examFocusCorrect || 0) >= 100; } },
+
+        // === CUL-103 ONLY: QUIZ BADGES (one quiz per book chapter; Quiz 6 = ch.7) ===
+        // Ready = every question in that quiz's chapter answered. Master = 90%+ (min 10 Q).
+        // Neither can be earned for a chapter whose questions are not imported yet.
+        { id: 'n103q1ready', name: 'Quiz 1 Ready', icon: '\u270F\uFE0F', description: 'Answer every Quiz 1 question', category: 'Quizzes', course: 'CUL-103',
+          check: function(p) { return cul103Ready(p, CUL103_QUIZZES[0]); } },
+        { id: 'n103q2ready', name: 'Quiz 2 Ready', icon: '\u270F\uFE0F', description: 'Answer every Quiz 2 question', category: 'Quizzes', course: 'CUL-103',
+          check: function(p) { return cul103Ready(p, CUL103_QUIZZES[1]); } },
+        { id: 'n103q3ready', name: 'Quiz 3 Ready', icon: '\u270F\uFE0F', description: 'Answer every Quiz 3 question', category: 'Quizzes', course: 'CUL-103',
+          check: function(p) { return cul103Ready(p, CUL103_QUIZZES[2]); } },
+        { id: 'n103q4ready', name: 'Quiz 4 Ready', icon: '\u270F\uFE0F', description: 'Answer every Quiz 4 question', category: 'Quizzes', course: 'CUL-103',
+          check: function(p) { return cul103Ready(p, CUL103_QUIZZES[3]); } },
+        { id: 'n103q5ready', name: 'Quiz 5 Ready', icon: '\u270F\uFE0F', description: 'Answer every Quiz 5 question', category: 'Quizzes', course: 'CUL-103',
+          check: function(p) { return cul103Ready(p, CUL103_QUIZZES[4]); } },
+        { id: 'n103q6ready', name: 'Quiz 6 Ready', icon: '\u270F\uFE0F', description: 'Answer every Quiz 6 question', category: 'Quizzes', course: 'CUL-103',
+          check: function(p) { return cul103Ready(p, CUL103_QUIZZES[5]); } },
+        { id: 'n103q1master', name: 'Quiz 1 Master', icon: '\uD83E\uDD47', description: '90%+ on Quiz 1 (min 10 Q)', category: 'Quizzes', course: 'CUL-103',
+          check: function(p) { return cul103Mastered(p, CUL103_QUIZZES[0], 10); } },
+        { id: 'n103q2master', name: 'Quiz 2 Master', icon: '\uD83E\uDD47', description: '90%+ on Quiz 2 (min 10 Q)', category: 'Quizzes', course: 'CUL-103',
+          check: function(p) { return cul103Mastered(p, CUL103_QUIZZES[1], 10); } },
+        { id: 'n103q3master', name: 'Quiz 3 Master', icon: '\uD83E\uDD47', description: '90%+ on Quiz 3 (min 10 Q)', category: 'Quizzes', course: 'CUL-103',
+          check: function(p) { return cul103Mastered(p, CUL103_QUIZZES[2], 10); } },
+        { id: 'n103q4master', name: 'Quiz 4 Master', icon: '\uD83E\uDD47', description: '90%+ on Quiz 4 (min 10 Q)', category: 'Quizzes', course: 'CUL-103',
+          check: function(p) { return cul103Mastered(p, CUL103_QUIZZES[3], 10); } },
+        { id: 'n103q5master', name: 'Quiz 5 Master', icon: '\uD83E\uDD47', description: '90%+ on Quiz 5 (min 10 Q)', category: 'Quizzes', course: 'CUL-103',
+          check: function(p) { return cul103Mastered(p, CUL103_QUIZZES[4], 10); } },
+        { id: 'n103q6master', name: 'Quiz 6 Master', icon: '\uD83E\uDD47', description: '90%+ on Quiz 6 (min 10 Q)', category: 'Quizzes', course: 'CUL-103',
+          check: function(p) { return cul103Mastered(p, CUL103_QUIZZES[5], 10); } },
+        { id: 'n103allquiz', name: 'Quiz King', icon: '\uD83D\uDC51', description: 'Master all 6 quizzes', category: 'Quizzes', course: 'CUL-103',
+          check: function(p) { return CUL103_QUIZZES.every(function(chs) { return cul103Mastered(p, chs, 10); }); } },
+
+        // === CUL-103 ONLY: FINAL TEST (needs every chapter imported first) ===
+        { id: 'n103finalready', name: 'Final Ready', icon: '\uD83D\uDCCB', description: 'Answer every question in the course', category: 'Exam', course: 'CUL-103',
+          check: function(p) { return cul103Ready(p, CUL103_ALL_CHAPTERS); } },
+        { id: 'n103finalmaster', name: 'Nutrition Master', icon: '\uD83C\uDFC6', description: '90%+ across the whole course (min 50 Q)', category: 'Exam', course: 'CUL-103',
+          check: function(p) { return cul103Mastered(p, CUL103_ALL_CHAPTERS, 50); } }
       ];
 
       // Count mastered topics (for CUL-105 badges)
@@ -2731,6 +2821,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // Get question count for a specific chapter
       function getChapterQuestionCount(chapter) {
         return questionsDB.filter(function(q) { return q.chapter === chapter; }).length;
+      }
+
+      // CUL-103 counterparts. getChapterQuestionCount reads questionsDB (CUL-104), and CUL-103
+      // reuses the same chapter numbers, so its badges need their own count. A chapter with NO
+      // questions yet must never count as done: "answered >= 0" is true before chapter 2 even
+      // exists, which would hand out Quiz 2 Ready on day one.
+      var CUL103_QUIZZES = [[1], [2], [3], [4], [5], [7]];
+      var CUL103_ALL_CHAPTERS = [1, 2, 3, 4, 5, 7];
+      function cul103ChapterCount(chapter) {
+        return questionsCUL103.filter(function(q) { return q.chapter === chapter && q.type !== 'flashcard'; }).length;
+      }
+      function cul103Ready(p, chapters) {
+        return chapters.every(function(ch) {
+          var n = cul103ChapterCount(ch);
+          return n > 0 && getChapterProgress(p, ch).answered >= n;
+        });
+      }
+      function cul103Mastered(p, chapters, minQ) {
+        if (!chapters.every(function(ch) { return cul103ChapterCount(ch) > 0; })) return false;
+        var s = getQuizGroupStats(p, chapters);
+        return s.total >= minQ && s.correct / s.total >= 0.90;
       }
 
       // Get progress stats for a specific chapter
