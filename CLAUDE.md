@@ -23,6 +23,7 @@ This file provides context and rules for Claude Code when working on the Chef's 
 |--------|---------|-----------|
 | **CUL-104: ServSafe** | Food Safety Manager Certification — 15 chapters, 7 categories | 342 quiz questions |
 | **CUL-105: Kitchen Fundamentals** | Culinary techniques, ingredients, history — 18 topics, 6 categories | 340 quiz + 223 flashcards (563 total) |
+| **CUL-103: Nutrition** | *Principles of Restaurant Management — Nutrition* 3rd ed. — chapter-based like CUL-104 (book ch. 1–5, 7; the course skips ch. 6), Quiz 1–6 + Final Test groups, own achievements; IDs 5001+ (~100 per chapter). Fall 2026, in progress — chapters arrive weekly from the TTC seat | 35 quiz (ch. 1) |
 | **CUL-112: Classical Foundations** | Stocks, sauces, soups, cooking principles, poultry, pork, fish & shellfish, beef, vocabulary — 9 topics, hybrid topic+quiz (Summer 1 2026, in progress) | 157 quiz + 23 flashcards (180 total) |
 
 ### The Users
@@ -83,7 +84,8 @@ Snark lives in the chrome only — question text, options and explanations are n
 - **Deployment:** GitHub Pages (static hosting)
 - **Database:** 8 Convex tables (questions, categories, metadata, users, userProgress, progressArchives, liveTests, testResults)
 - **User Base:** College classroom (~30 students)
-- **Total Questions:** 1085 (342 CUL-104 + 563 CUL-105 + 180 CUL-112)
+- **Total Questions:** 1120 (342 CUL-104 + 563 CUL-105 + 180 CUL-112 + 35 CUL-103)
+- **Question ID ranges:** CUL-104 1–342 · CUL-105 1001–2223 · CUL-112 3001–4023 · CUL-103 5001+. Check the banks before choosing a block — a schema comment listing only two ranges sent the first CUL-103 draft straight into CUL-105's flashcards.
 
 ---
 

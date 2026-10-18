@@ -28,6 +28,8 @@ var CORE = [
   'questions-cul105-original.js',
   'questions-cul112.js',
   'questions-cul112-original.js',
+  'questions-cul103.js',
+  'questions-cul103-original.js',
   'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
   'https://cdn.tailwindcss.com'
