@@ -8,8 +8,8 @@ description: Leland's cross-project session channel. Invoke when he types "cross
 When Leland says "crossfeed", he means: **go read the channel and deal with what's there.**
 
 1. **`crossfeed-cli.mjs inbox` — the CHANNEL, and it is authoritative.** It is what Dave,
-   the phone and any cloud session see. Then `~/crossfeed/monitor.sh` for the fleet-wide
-   board. Check BOTH: they can disagree, and the channel is right.
+   the phone and any cloud session see. For the fleet-wide board: `crossfeed-cli.mjs board`
+   or the Mac app (`monitor.sh` was retired in protocol 3.4, 2026-11-11).
 2. **Read with `crossfeed-cli.mjs read <ID>`, then `crossfeed-cli.mjs mark <ID>`.** `mark`
    updates all four read-states at once — channel markers, channel ledger, local
    `Last-read:` and `.read-ledger-CHEF` — so do not hand-edit markers.
@@ -73,9 +73,9 @@ retired wording BEFORE setting `Protocol:`, and refresh the vendored
 for every other seat; that spiral is why quiet mail exists). Quiet mail never interrupts a
 turn; it blocks the END of one. `check-unread.sh` now enforces this and names the ids.
 
-**Clear BOTH read-states and check BOTH boards** — `crossfeed-cli.mjs inbox` (the channel,
-authoritative, what Dave and the phone see) and `monitor.sh` (local). `crossfeed mark`
-writes all four places as of 2026-08-27, so marking is one command.
+**Mail is the channel's answer** — `crossfeed-cli.mjs inbox` / `check` (authoritative, what
+Dave and the phone see); the board is `crossfeed-cli.mjs board` or the Mac app. `crossfeed mark`
+writes all four read-state places as of 2026-08-27, so marking is one command.
 
 **Status bookends:** a hook sets WORKING at turn start; the LAST action of every turn sets
 the true resting state (NEEDS-LELAND / WAITING / BLOCKED / REVIEW / IDLE). Never leave
@@ -102,7 +102,7 @@ after that was fixed).
 |---|---|
 | `crossfeed-cli.mjs inbox` | **lists quiet mail too** — issue #99 was fixed 2026-08-28; it showed XFD-055 as *"1 QUIET (fyi) for CHEF"* (2026-10-08). It used to certify loud mail only. |
 | `check-unread.sh` | **in a cloud session the script is simply absent**, so the Stop hook has nothing to run and gates nothing — silence there is not a pass. Where it does run without its runtime it now emits a `block` *"CANNOT RUN"* instead of the old silent `exit 0` (issue #102 fixed; verified 2026-10-08). |
-| `monitor.sh` · `audit-read-markers.mjs` | unavailable — both read `~/crossfeed/` local files, and the audit lives in a *different repo* (`~/ttc-coursework`) |
+| `audit-read-markers.mjs` | unavailable — it reads `~/crossfeed/` local files and lives in a *different repo* (`~/ttc-coursework`). (`monitor.sh` no longer exists anywhere: retired in protocol 3.4.) |
 
 ✅ **Use `crossfeed-cli.mjs check` — a channel-native forward scan.** It reads your markers
 from the channel, scans forward, **lists QUIET mail too**, and **exits non-zero**, so it can
@@ -150,11 +150,11 @@ of this section, and Crossfeed 4.0 would retire that file).
 - It **skips the mailbox scan entirely** while `Status: WORKING` and no `.nagged-working-CHEF`
   exists — first run only. It hid a message addressed to CHEF in a live test.
 - **So: set the resting status FIRST, then run it, then read stdout.**
-- **For a manual check, the CHANNEL is authoritative** — `crossfeed-cli.mjs inbox`. Use
-  `monitor.sh` as the second opinion (it has no WORKING short-circuit, so it beats the hook
-  mid-turn), but **when the two disagree, the channel is right**: on 2026-08-27 the monitor
-  red-flagged a message the channel correctly called quiet, because it only scanned 60 lines
-  for the `Awaiting:` line and that message's sat at line 81.
+- **For a manual check, the CHANNEL is authoritative** — `crossfeed-cli.mjs inbox` / `check`.
+  (`monitor.sh`, once the second opinion here, was retired in protocol 3.4 on 2026-11-11 and is
+  deleted from the runtime. ⚠️ A call to it now fails — and piped through `2>/dev/null` it prints
+  NOTHING, which reads as a clean board. This seat did exactly that in several turns after the
+  retirement; use `crossfeed-cli.mjs board`.)
 - Empty stdout is only trustworthy if **the marker was advanced first**; otherwise you may be
   reading the guard's silence rather than an empty mailbox.
 - Nag retry is **bounded, not one-shot** (v3.4, 2026-08-19): the same id nags at most 3 times,

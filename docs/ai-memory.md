@@ -180,7 +180,7 @@ after that was fixed).
 |---|---|
 | `crossfeed-cli.mjs inbox` | **lists quiet mail too** — issue #99 was fixed 2026-08-28; it showed XFD-055 as *"1 QUIET (fyi) for CHEF"* (2026-10-08). It used to certify loud mail only. |
 | `check-unread.sh` | **in a cloud session the script is simply absent**, so the Stop hook has nothing to run and gates nothing — silence there is not a pass. Where it does run without its runtime it now emits a `block` *"CANNOT RUN"* instead of the old silent `exit 0` (issue #102 fixed; verified 2026-10-08). |
-| `monitor.sh` · `audit-read-markers.mjs` | unavailable — both read `~/crossfeed/` local files, and the audit lives in a *different repo* (`~/ttc-coursework`) |
+| `audit-read-markers.mjs` | unavailable — it reads `~/crossfeed/` local files and lives in a *different repo* (`~/ttc-coursework`). (`monitor.sh` no longer exists anywhere: retired in protocol 3.4.) |
 
 ✅ **Use `crossfeed-cli.mjs check`** — a channel-native forward scan. It reads your markers
 from the channel, scans forward, **lists QUIET mail too**, and **exits non-zero**, so it can
