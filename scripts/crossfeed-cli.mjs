@@ -309,7 +309,7 @@ function mirrorOne({ messageId, sender, group, addressees, subject, type, body, 
   } catch { /* unreadable is handled by the append below */ }
   const to = addressees.length ? addressees.join(", ") : "ALL";
   // ⚠️ THE ORIGINAL SEND TIME, NOT NOW, when one is supplied (`pull`).
-  // `monitor.sh` computes every age from this line, so stamping a pulled
+  // The Mac app computes every age from this line, so stamping a pulled
   // message with the moment it was pulled would make three-week-old mail read
   // as brand new on the dashboard Leland actually looks at.
   const stamp = headerStamp(postedAt ? new Date(postedAt) : new Date());
@@ -573,7 +573,7 @@ async function cmdPost(argv) {
     messageId: id, sender: SEAT, group, addressees: to, subject, type, body,
   });
   if (m.mirrored) {
-    process.stdout.write(`  mirrored to ${m.file} for the terminal monitor\n\n`);
+    process.stdout.write(`  mirrored to ${m.file} for the Mac app\n\n`);
   } else {
     // ⚠️ NOT an error, and said out loud anyway. The message is posted; only the
     // courtesy copy is missing. Silence here would let the terminal dashboard
@@ -600,7 +600,7 @@ async function cmdMark(ids) {
     await mutate("channel:advanceMarker", { tag: SEAT, sender: m[1], number: Number(m[2]) });
     // ⚠️ AND THE LOCAL MARKER, IMMEDIATELY.
     //
-    // `monitor.sh` reads `status-<tag>.md`, not the channel. Marking only the
+    // The Mac app and check-unread.sh read `status-<tag>.md`, not the channel. Marking only the
     // channel meant a seat could read everything, mark it, and still watch its
     // own row show unread on the dashboard — which is exactly what Leland was
     // looking at across six sessions. The turn-end publisher reconciles this
@@ -640,7 +640,52 @@ async function cmdStatus(argv) {
     blockedBy: flag(argv, "blocked") ?? "nothing.",
     ...(flag(argv, "repo") ? { repo: flag(argv, "repo") } : {}),
   });
+  // ⚠️ AND THE LOCAL STATUS FILE (TTC-059 / STK-067, 2026-11-17). This verb
+  // used to write the CHANNEL only. The Stop hook (check-unread.sh) and the
+  // Mac app read `status-<tag>.md`, so a seat that rested through this verb got
+  // a correct board and a file still saying WORKING — and NEEDS-LELAND, the one
+  // state whose whole point is "Leland must act", went into the store nothing
+  // reads. `mark` already writes both; this brings `status` level with it.
+  const wrote = writeLocalStatus(state, flag(argv, "now"));
   process.stdout.write(`${SEAT} is now ${state}\n`);
+  if (wrote) process.stdout.write(`  local status file updated: ${wrote}\n`);
+  else if (existsSync(RUNTIME)) process.stdout.write(`  ⚠ local status file NOT updated (no entry for ${SEAT} in projects.conf, or the file is missing)\n`);
+}
+
+/** This seat's local status file, from projects.conf. null when there is no runtime or no entry. */
+function localStatusFile() {
+  try {
+    for (const line of readFileSync(join(RUNTIME, "projects.conf"), "utf8").split("\n")) {
+      if (line.startsWith("#") || !line.includes("|")) continue;
+      const f = line.split("|");
+      if ((f[0] || "").trim().toUpperCase() !== SEAT) continue;
+      const file = join(RUNTIME, (f[4] || "").trim());
+      return existsSync(file) ? file : null;
+    }
+  } catch {
+    /* no runtime on this machine */
+  }
+  return null;
+}
+
+/** Write Status:/Updated:/Now: the same way set-status.sh does. Returns the path written, or null. */
+function writeLocalStatus(state, now) {
+  const file = localStatusFile();
+  if (!file) return null;
+  try {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const tz = d.toLocaleTimeString("en-US", { timeZoneName: "short" }).split(" ").pop();
+    const ts = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())} ${tz}`;
+    let text = readFileSync(file, "utf8");
+    if (!/^Status:/m.test(text)) return null;
+    text = text.replace(/^Updated:.*$/m, `Updated:    ${ts}`).replace(/^Status:.*$/m, `Status:     ${state}`);
+    if (now != null && now !== "") text = text.replace(/^Now:.*$/m, `Now:        ${String(now).replace(/\n/g, " ")}`);
+    writeFileSync(file, text);
+    return file;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -662,7 +707,8 @@ async function cmdStatus(argv) {
  * MESSAGES?"* He opened the dashboard and it stopped at `SCH-192` — the last
  * message posted FROM THE LAPTOP. Everything posted from his phone or a cloud
  * session for three weeks was in the channel and invisible on both surfaces he
- * actually reads: the Mac app and `monitor.sh`, which both read these files.
+ * actually read: the Mac app and the terminal monitor (retired 2026-11-11).
+ * The Mac app still reads these files.
  *
  * Two causes, and neither was a channel problem:
  *
@@ -712,7 +758,7 @@ async function cmdPull(args) {
   }
 
   // ⚠️ OLDEST FIRST. Every parser in the fleet reads the LAST `### ` header as
-  // the newest message (`monitor.sh` literally does `grep '^### ' | tail -1`).
+  // the newest message (the retired `monitor.sh` literally did `grep '^### ' | tail -1`).
   // Laying a page down newest-first would make the log lie about what is
   // current — the defect caught in review of PR #65, one level up.
   fetched.sort((a, b) => (a.postedAt ?? 0) - (b.postedAt ?? 0));
@@ -737,7 +783,7 @@ async function cmdPull(args) {
   );
   if (added) {
     process.stdout.write(`  ${addedIds.join(" ")}\n\n`);
-    process.stdout.write(`The dashboard and monitor.sh will show these now.\n\n`);
+    process.stdout.write(`The Mac app will show these now.\n\n`);
   }
   if (failed) {
     process.stdout.write(
@@ -914,7 +960,7 @@ if (!cmd || cmd === "help" || cmd === "--help" || WANTS_HELP || !commands[cmd]) 
       `  crossfeed whoami                     seat, deployment, registration\n` +
       `  crossfeed markers                    your own Last-read markers, from the channel\n` +
       `  crossfeed pull [N]                   copy channel messages into the LOCAL logs so\n` +
-      `                                       monitor.sh and the Mac app can see them\n` +
+      `                                       the Mac app can see them\n` +
       `  crossfeed check [N]                  forward scan: anything above your markers\n` +
       `                                       (a SECOND instrument — exits 1 if it finds any)\n\n` +
       `Config: CROSSFEED_CHANNEL_URL · CROSSFEED_TOKEN · CROSSFEED_SEAT\n` +
